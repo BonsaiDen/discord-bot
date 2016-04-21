@@ -12,11 +12,12 @@ mod handle;
 mod message;
 mod server;
 mod user;
+pub mod voice;
 
 
-// Internal Dependencies ------------------------------------------------------
+// Re-Exports -----------------------------------------------------------------
 pub use self::handle::Handle;
-use self::message::Message;
+pub use self::message::Message;
 pub use self::server::Server;
 pub use self::user::User;
 
@@ -30,7 +31,7 @@ pub struct Bot {
     server_whitelist: Option<Vec<ServerId>>,
 
     // Internal State
-    server_states: HashMap<ServerId, Server>,
+    servers: HashMap<ServerId, Server>,
     channel_map: HashMap<ChannelId, ServerId>,
     user_map: HashMap<UserId, Vec<ServerId>>
 
@@ -50,7 +51,7 @@ impl Bot {
             server_whitelist: server_whitelist,
 
             // Internal State
-            server_states: HashMap::new(),
+            servers: HashMap::new(),
             channel_map: HashMap::new(),
             user_map: HashMap::new()
 
@@ -100,7 +101,7 @@ impl Bot {
 
             Event::ServerUpdate(srv) => {
                 if let Some(server) = self.get_server(&srv.id) {
-                    server.name = srv.name.to_string();
+                    server.set_name(srv.name.to_string());
                 }
             }
 
@@ -110,7 +111,7 @@ impl Bot {
                         info!("[State] Mapped channel {}({}) -> {}", channel.name, channel.id.0, channel.server_id.0);
                         self.channel_map.insert(channel.id, channel.server_id);
                         if let Some(server) = self.get_server(&channel.server_id) {
-                            server.channel_count += 1;
+                            server.inc_channels();
                         }
                     }
                 }
@@ -122,7 +123,7 @@ impl Bot {
                         info!("[State] Unmapped channel {}", channel.id.0);
                         self.channel_map.remove(&channel.id);
                         if let Some(server) = self.get_server(&channel.server_id) {
-                            server.channel_count -= 1;
+                            server.dec_channels();
                         }
                     }
                 }
@@ -134,7 +135,7 @@ impl Bot {
                     info!("[State] Mapped user {}({}) -> {}", member.user.name, member.user.id.0, server_id.0);
 
                     if let Some(server) = self.get_server(&server_id) {
-                        server.member_count += 1;
+                        server.inc_members();
                     }
 
                     let server_list = self.user_map.entry(member.user.id).or_insert_with(|| Vec::new());
@@ -158,7 +159,7 @@ impl Bot {
                     }
 
                     if let Some(server) = self.get_server(&server_id) {
-                        server.member_count -= 1;
+                        server.dec_members();
                     }
 
                 }
@@ -169,7 +170,10 @@ impl Bot {
 
                     let author = User::new(&author.unwrap());
 
-                    if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
+                    if author.is_bot {
+                        info!("[Event] Ignored message edit from bot.");
+
+                    } else if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
                         &channel_id, &author
                     ) {
 
@@ -190,7 +194,7 @@ impl Bot {
 
 
                     } else {
-                        info!("[Event] Message edit from non-whitelisted server.");
+                        info!("[Event] Ignored message edit from non-whitelisted server.");
                     }
 
                 }
@@ -200,7 +204,10 @@ impl Bot {
 
                 let author = User::new(&msg.author);
 
-                if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
+                if author.is_bot {
+                    info!("[Event] Ignored message from bot.");
+
+                } else if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
                     &msg.channel_id, &author
                 ) {
 
@@ -220,13 +227,26 @@ impl Bot {
                     );
 
                 } else {
-                    info!("[Event] Message from non-whitelisted server.");
+                    info!("[Event] Ingored message from non-whitelisted server.");
                 }
 
             }
 
-            Event::VoiceStateUpdate(_, _) => {
-                //self.update_voice(server_id, voice_state);
+            Event::VoiceStateUpdate(server_id, voice_state) => {
+
+                if let Some(user) = handle.find_user_by_id(&voice_state.user_id) {
+
+                    if user.is_bot {
+                        info!("[Event] Ingored voice update from bot.");
+
+                    } else if let Some(server) = self.get_server(&server_id) {
+                        server.update_voice(voice_state, user);
+
+                    } else {
+                        info!("[Event] Ingored voice update from non-whitelisted server.");
+                    }
+                }
+
             }
 
             Event::Unknown(name, data) => {
@@ -256,27 +276,40 @@ impl Bot {
             if let Some(server) = self.get_server(&srv.id) {
 
                 // Server Update
-                server.name = srv.name.to_string();
+                server.set_name(srv.name.to_string());
 
                 // Mark this server as valid
                 valid_servers.push(srv.id);
 
-                // Push all of the servers current channels for mappingJ
-                server.channel_count = 0;
+                // Push all of the servers current channels for mapping
+                server.clear_channels();
                 for channel in &srv.channels {
-                    server.channel_count += 1;
+                    server.inc_channels();
                     channels_to_map.push((
                         channel.id, srv.id, channel.name.to_string())
                     );
                 }
 
-                server.member_count = 0;
+                // Push all of the servers current members for mapping
+                server.clear_members();
                 for member in &srv.members {
-                    server.member_count += 1;
+                    server.inc_members();
                     users_to_map.push((
                         member.user.id, srv.id, member.user.name.to_string())
                     );
                 }
+
+                // Push all of the servers current voice states
+                server.clear_voice_states();
+                for voice in &srv.voice_states {
+                    if let Some(channel_id) = voice.channel_id {
+                        if let Some(user) = handle.find_user_by_id(&voice.user_id) {
+                            server.add_voice_state(channel_id, user);
+                        }
+                    }
+                }
+
+                server.initialize_voices();
 
                 info!("[State] Mapped server {}", server);
 
@@ -304,14 +337,14 @@ impl Bot {
         }
 
         // Check for now invalid servers and remove them
-        let invalid_servers = self.server_states.values().filter(|s| {
+        let invalid_servers = self.servers.values().filter(|s| {
             !valid_servers.contains(s.id())
 
         }).map(|s| s.id().clone()).collect::<Vec<ServerId>>();
 
         for server_id in invalid_servers {
             info!("[State] Unmapped server {}", server_id.0);
-            self.server_states.remove(&server_id);
+            self.servers.remove(&server_id);
         }
 
         // Also remove any channels mapped to them
@@ -348,7 +381,7 @@ impl Bot {
     fn get_server(&mut self, server_id: &ServerId) -> Option<&mut Server> {
 
         if self.is_whitelisted_server(server_id) {
-            Some(self.server_states.entry(*server_id).or_insert_with(|| {
+            Some(self.servers.entry(*server_id).or_insert_with(|| {
                 Server::new(*server_id)
             }))
 

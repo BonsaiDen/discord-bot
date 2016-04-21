@@ -8,9 +8,15 @@ mod not_found;
 mod not_unique;
 
 
+// Type Aliases ---------------------------------------------------------------
+pub type CommandResult = Option<Vec<String>>;
+
+
 // Module Interface -----------------------------------------------------------
 pub fn from_args(
-    name: &str, arguments: Vec<&str>, unique_server: bool
+    name: &str,
+    arguments: Vec<&str>,
+    unique_server: bool
 
 ) -> Box<Command> {
 
@@ -33,12 +39,14 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "reload" => Box::new(reload::Reload::new(arguments)),
         _ => Box::new(not_found::NotFound::new(name))
     }
+
 }
 
 
 // Traits ---------------------------------------------------------------------
 pub trait Command {
-    fn execute(&self, &mut Handle, &mut Server, &User) -> Option<Vec<String>>;
+    fn execute(&self, &mut Handle, &mut Server, &User) -> CommandResult;
     fn is_unique(&self) -> bool;
+    fn auto_remove(&self) -> bool;
 }
 

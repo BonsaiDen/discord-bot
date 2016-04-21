@@ -28,8 +28,8 @@ impl<'a> Message<'a> {
         unique_server: bool
     ) {
 
-        if self.author.id == handle.user_id() {
-            debug!("[Message] Ignored response message from bot.");
+        if self.author.is_bot {
+            debug!("[Message] Ignored message from bot.");
             return;
 
         } else {
@@ -52,6 +52,13 @@ impl<'a> Message<'a> {
                 }
             }
 
+            if command.auto_remove() {
+                match handle.delete_message(&self) {
+                    true => info!("[{}] [{}] [Message] Deleted message #{}.", server, self.author, self.id.0),
+                    false => warn!("[{}] [{}] [Message] Cannot delete message in private channel.", server, self.author)
+                }
+            }
+
         }
 
     }
@@ -61,7 +68,7 @@ impl<'a> Message<'a> {
 
             Some(ChannelRef::Public(_, channel)) => {
                 info!(
-                    "[Message] [{}#{}] {}: {}",
+                    "[{}#{}] [{}] [Message]: {}",
                     server, channel.name,
                     self.author.nickname,
                     self.content
@@ -72,7 +79,7 @@ impl<'a> Message<'a> {
 
                 if self.author.name == channel.recipient.name {
                     info!(
-                        "[Message] [{}] [Private] {}: {}",
+                        "[{}] [{}] [Message] [Private]: {}",
                         server,
                         self.author.nickname,
                         self.content
@@ -80,7 +87,7 @@ impl<'a> Message<'a> {
 
                 } else {
                     info!(
-                        "[Message] [{}] [Private] To {}#{}: {}",
+                        "[{}] [Message] [Private] To [{}#{}]: {}",
                         server,
                         channel.recipient.name, channel.recipient.discriminator,
                         self.content
@@ -90,7 +97,7 @@ impl<'a> Message<'a> {
             }
 
             None => info!(
-                "[Message] [{}] [Unknown Channel] {}: {}",
+                "[{}] [{}] [Message] [Unknown Channel]: {}",
                 server,
                 self.author.nickname,
                 self.content

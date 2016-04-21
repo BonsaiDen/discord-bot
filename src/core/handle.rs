@@ -3,6 +3,10 @@ use discord::{ChannelRef, Connection, Discord, State, Error};
 use discord::model::{Event, ChannelId, UserId, LiveServer, PrivateChannel};
 
 
+// Internal Dependencies ------------------------------------------------------
+use super::{Message, User};
+
+
 // Discord State Handle -------------------------------------------------------
 pub struct Handle {
     discord: Discord,
@@ -93,10 +97,6 @@ impl Handle {
 // Getters --------------------------------------------------------------------
 impl Handle {
 
-    pub fn user_id(&self) -> UserId {
-        self.state.user().id
-    }
-
     pub fn servers(&self) -> &[LiveServer] {
         self.state.servers()
     }
@@ -109,6 +109,18 @@ impl Handle {
         self.discord.create_private_channel(user_id).ok()
     }
 
+    pub fn find_user_by_id(&self, user_id: &UserId) -> Option<User> {
+
+        for srv in self.state.servers().iter() {
+            if let Some(member) = srv.members.iter().find(|m| m.user.id == *user_id) {
+                return Some(User::new(&member.user));
+            }
+        }
+
+        None
+
+    }
+
     pub fn send_message_to_user(&self, user_id: &UserId, content: &str) {
         if let Some(channel) = self.find_private_channel_for_user(user_id) {
             self.send_message(&channel.id, content);
@@ -117,6 +129,15 @@ impl Handle {
 
     pub fn send_message(&self, channel_id: &ChannelId, content: &str) {
         self.discord.send_message(channel_id, content, "", false).ok();
+    }
+
+    pub fn delete_message(&self, message: &Message) -> bool {
+        if let Err(_) = self.discord.delete_message(message.channel_id, message.id) {
+            false
+
+        } else {
+            true
+        }
     }
 
 }
