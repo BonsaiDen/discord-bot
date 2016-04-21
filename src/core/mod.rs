@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 
 // Discord Dependencies -------------------------------------------------------
-use discord::model::{Event, Channel, User, ChannelId, UserId, ServerId};
+use discord::model::{Event, Channel, ChannelId, UserId, ServerId};
 
 
 // Modules --------------------------------------------------------------------
@@ -11,12 +11,14 @@ mod command;
 mod handle;
 mod message;
 mod server;
+mod user;
 
 
 // Internal Dependencies ------------------------------------------------------
 pub use self::handle::Handle;
 use self::message::Message;
 pub use self::server::Server;
+pub use self::user::User;
 
 
 // Bot Abstraction ------------------------------------------------------------
@@ -163,17 +165,20 @@ impl Bot {
             }
 
             Event::MessageUpdate { id, channel_id, author, content, .. } => {
-                if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
-                    &channel_id, author.as_ref()
-                ) {
-                    if !author.is_none() && !content.is_none() {
+                if !author.is_none() && !content.is_none() {
+
+                    let author = User::new(&author.unwrap());
+
+                    if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
+                        &channel_id, &author
+                    ) {
 
                         let message = Message {
                             id: &id,
                             server_id: &server_id,
                             channel_id: &channel_id,
-                            author: &author.unwrap(),
-                            content: &content.unwrap_or("".to_string()),
+                            author: &author,
+                            content: &content.unwrap(),
                             was_edited: true
                         };
 
@@ -183,24 +188,27 @@ impl Bot {
                             unique
                         );
 
+
+                    } else {
+                        info!("[Event] Message edit from non-whitelisted server.");
                     }
 
-                } else {
-                    info!("[Event] Message edit from non-whitelisted server.");
                 }
             }
 
             Event::MessageCreate(msg) => {
+
+                let author = User::new(&msg.author);
+
                 if let Some((server_id, unique)) = self.server_id_for_channel_or_user(
-                    &msg.channel_id,
-                    Some(&msg.author)
+                    &msg.channel_id, &author
                 ) {
 
                     let message = Message {
                         id: &msg.id,
                         server_id: &server_id,
                         channel_id: &msg.channel_id,
-                        author: &msg.author,
+                        author: &author,
                         content: &msg.content,
                         was_edited: false
                     };
@@ -214,6 +222,7 @@ impl Bot {
                 } else {
                     info!("[Event] Message from non-whitelisted server.");
                 }
+
             }
 
             Event::VoiceStateUpdate(_, _) => {
@@ -352,7 +361,7 @@ impl Bot {
     fn server_id_for_channel_or_user(
         &self,
         channel_id: &ChannelId,
-        user: Option<&User>
+        user: &User
 
     ) -> Option<(ServerId, bool)> {
 
@@ -364,20 +373,15 @@ impl Bot {
                 None
             }
 
-        } else if let Some(user) = user {
-            if let Some(server_list) = self.user_map.get(&user.id) {
-                if server_list.is_empty() {
-                    None
-
-                } else {
-                    Some((
-                        server_list.get(0).unwrap().clone(),
-                        server_list.len() == 1
-                    ))
-                }
+        } else if let Some(server_list) = self.user_map.get(&user.id) {
+            if server_list.is_empty() {
+                None
 
             } else {
-                None
+                Some((
+                    server_list.get(0).unwrap().clone(),
+                    server_list.len() == 1
+                ))
             }
 
         } else {

@@ -1,10 +1,10 @@
 // Discord Dependencies -------------------------------------------------------
 use discord::{ChannelRef};
-use discord::model::{ChannelId, MessageId, User, ServerId};
+use discord::model::{ChannelId, MessageId, ServerId};
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::{command, Handle, Server};
+use super::{command, Handle, Server, User};
 
 
 // Message Abstraction --------------------------------------------------------
@@ -22,7 +22,10 @@ pub struct Message<'a> {
 impl<'a> Message<'a> {
 
     pub fn handle(
-        &self, handle: &mut Handle, server: &mut Server, unique_server: bool
+        &self,
+        handle: &mut Handle,
+        server: &mut Server,
+        unique_server: bool
     ) {
 
         if self.author.id == handle.user_id() {
@@ -43,7 +46,7 @@ impl<'a> Message<'a> {
                 unique_server
             );
 
-            if let Some(responses) = command.execute(handle, server) {
+            if let Some(responses) = command.execute(handle, server, self.author) {
                 for response in responses {
                     handle.send_message_to_user(&self.author.id, &response);
                 }
@@ -58,9 +61,9 @@ impl<'a> Message<'a> {
 
             Some(ChannelRef::Public(_, channel)) => {
                 info!(
-                    "[Message] [{}#{}] {}#{}: {}",
+                    "[Message] [{}#{}] {}: {}",
                     server, channel.name,
-                    self.author.name, self.author.discriminator,
+                    self.author.nickname,
                     self.content
                 );
             }
@@ -69,9 +72,9 @@ impl<'a> Message<'a> {
 
                 if self.author.name == channel.recipient.name {
                     info!(
-                        "[Message] [{}] [Private] {}#{}: {}",
+                        "[Message] [{}] [Private] {}: {}",
                         server,
-                        self.author.name, self.author.discriminator,
+                        self.author.nickname,
                         self.content
                     );
 
@@ -87,9 +90,9 @@ impl<'a> Message<'a> {
             }
 
             None => info!(
-                "[Message] [{}] [Unknown Channel] {}#{}: {}",
+                "[Message] [{}] [Unknown Channel] {}: {}",
                 server,
-                self.author.name, self.author.discriminator,
+                self.author.nickname,
                 self.content
             )
         }

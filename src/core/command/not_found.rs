@@ -1,5 +1,5 @@
 // Internal Dependencies ------------------------------------------------------
-use super::super::{Handle, Server};
+use super::super::{Handle, Server, User};
 use super::Command;
 
 
@@ -22,8 +22,8 @@ impl NotFound {
 // Command Implementation -----------------------------------------------------
 impl Command for NotFound {
 
-    fn execute(&self, _: &mut Handle, _: &mut Server) -> Option<Vec<String>> {
-        info!("[Command] [NotFound] {}", self.name);
+    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> Option<Vec<String>> {
+        info!("[Command] [{}] [NotFound] The command \"{}\" does not exist.", server, self.name);
         Some(vec![format!(
             "The command `{}` does not exist, please type `!help` for a list of all available commands.",
             self.name

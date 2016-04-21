@@ -1,5 +1,5 @@
 // Internal Dependencies ------------------------------------------------------
-use super::super::{Handle, Server};
+use super::super::{Handle, Server, User};
 use super::Command;
 
 
@@ -22,8 +22,8 @@ impl NotUnique {
 // Command Implementation -----------------------------------------------------
 impl Command for NotUnique {
 
-    fn execute(&self, _: &mut Handle, _: &mut Server) -> Option<Vec<String>> {
-        info!("[Command] [NotUnique] {}", self.name);
+    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> Option<Vec<String>> {
+        info!("[Command] [{}] [NotUnique] Not unique target for command \"{}\".", server, self.name);
         Some(vec![format!(
             "The command `{}` requires a unique server as its target, but you're a member of at least two different servers.
              Please re-issue the command from one of the public channels of the server you want to run it for.",

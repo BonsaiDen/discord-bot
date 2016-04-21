@@ -1,5 +1,5 @@
 // Internal Dependencies ------------------------------------------------------
-use super::{Handle, Server};
+use super::{Handle, Server, User};
 
 
 // Commands -------------------------------------------------------------------
@@ -38,7 +38,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
 
 // Traits ---------------------------------------------------------------------
 pub trait Command {
-    fn execute(&self, &mut Handle, &mut Server) -> Option<Vec<String>>;
+    fn execute(&self, &mut Handle, &mut Server, &User) -> Option<Vec<String>>;
     fn is_unique(&self) -> bool;
 }
 
