@@ -9,7 +9,10 @@ use discord::model::{ChannelId, ServerId, VoiceState};
 
 // Internal Dependencies ------------------------------------------------------
 use super::{Handle, User};
-use super::voice::Greeting;
+use super::voice::{
+    Greeting, Listener, Mixer,
+    Queue, QueueHandle, QueueEntry, EmptyQueue
+};
 
 
 // Server Abstraction ---------------------------------------------------------
@@ -23,9 +26,10 @@ pub struct Server {
 
     // Voice
     last_voice_channel: Option<ChannelId>,
-    voice_receiver_handle: Option<()>,
+    voice_listener_handle: Option<QueueHandle>,
     voice_states: Vec<(ChannelId, User)>,
-    voice_greetings: HashMap<String, Greeting>
+    voice_greetings: HashMap<String, Greeting>,
+    voice_queue: Queue
 
 }
 
@@ -42,9 +46,10 @@ impl Server {
 
             // Voice
             last_voice_channel: None,
-            voice_receiver_handle: None,
+            voice_listener_handle: None,
             voice_states: Vec::new(),
-            voice_greetings: HashMap::new()
+            voice_greetings: HashMap::new(),
+            voice_queue: EmptyQueue::new()
 
         }
     }
@@ -70,7 +75,7 @@ impl Server {
 
             } else {
                 info!("[Server] [{}] [Voice] Left channel.", self);
-                self.voice_receiver_handle = None;
+                self.voice_listener_handle = None;
             }
 
         } else if let Some(channel_id) = voice.channel_id {
@@ -108,7 +113,7 @@ impl Server {
 
         if let Some(target_id) = channel_id.or(self.last_voice_channel) {
 
-            if self.last_voice_channel.is_none() || self.voice_receiver_handle.is_none() {
+            if self.last_voice_channel.is_none() || self.voice_listener_handle.is_none() {
                 info!("[Server] [{}] [Voice] Joining channel.", self);
                 self.init_voice_connection(handle, target_id);
                 true
@@ -139,28 +144,27 @@ impl Server {
         let voice_connection = handle.get_server_voice(self.id);
         voice_connection.connect(channel_id);
 
-        match self.voice_receiver_handle {
+        match self.voice_listener_handle {
 
             Some(ref handle) => {
                 info!("[Server] [{}] [Voice] Resetting existing handle.", self);
+                handle.send(QueueEntry::Reset).ok();
             }
 
             None => {
                 info!("[Server] [{}] [Voice] Creating new handle.", self);
-                //let mut receiver = listener::AudioListener::new(
-                //    self.audio_effect_queue.clone(),
-                //    silent_effects,
-                //    self.config.silence_threshold
-                //);
 
-                self.voice_receiver_handle = Some(());
+                let mut listener = Listener::new(
+                    self.voice_queue.clone()
+                );
 
-                //self.audio_receiver_handle = receiver.take_handle();
-                //voice_connection.set_receiver(Box::new(receiver));
+                self.voice_listener_handle = listener.take_handle();
 
-                //voice_connection.play(
-                //    Box::new(mixer::AudioMixer::new(self.audio_effect_queue.clone()))
-                //);
+                voice_connection.set_receiver(Box::new(listener));
+                voice_connection.play(
+                    Box::new(Mixer::new(self.voice_queue.clone()))
+                );
+
             }
 
         }
