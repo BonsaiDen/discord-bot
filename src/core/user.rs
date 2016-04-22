@@ -8,7 +8,7 @@ use discord::model::User as DiscordUser;
 
 
 // User Abstraction -----------------------------------------------------------
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct User {
     pub id: UserId,
     pub name: String,

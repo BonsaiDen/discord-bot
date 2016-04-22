@@ -81,8 +81,14 @@ impl Bot {
                     self.handle_event(&mut handle, event);
 
                     if handle.was_updated() {
+
                         info!("[State] Connection updated.");
-                        self.init_servers_and_channels(&handle);
+                        self.init_servers_and_channels(&mut handle);
+
+                        for (_, server) in &mut self.servers {
+                            server.initialize_voices(&mut handle);
+                        }
+
                     }
 
                 }
@@ -227,7 +233,7 @@ impl Bot {
                     );
 
                 } else {
-                    info!("[Event] Ingored message from non-whitelisted server.");
+                    info!("[Event] Ignored message from non-whitelisted server.");
                 }
 
             }
@@ -236,14 +242,14 @@ impl Bot {
 
                 if let Some(user) = handle.find_user_by_id(&voice_state.user_id) {
 
-                    if user.is_bot {
-                        info!("[Event] Ingored voice update from bot.");
+                    if user.is_bot && user.id != handle.user_id() {
+                        info!("[Event] Ignored voice update from bot.");
 
                     } else if let Some(server) = self.get_server(&server_id) {
-                        server.update_voice(voice_state, user);
+                        server.update_voice(handle, voice_state, user);
 
                     } else {
-                        info!("[Event] Ingored voice update from non-whitelisted server.");
+                        info!("[Event] Ignored voice update from non-whitelisted server.");
                     }
                 }
 
@@ -264,7 +270,7 @@ impl Bot {
 // Servers and Channels -------------------------------------------------------
 impl Bot {
 
-    fn init_servers_and_channels(&mut self, handle: &Handle) {
+    fn init_servers_and_channels(&mut self, handle: &mut Handle) {
 
         let mut channels_to_map = Vec::new();
         let mut users_to_map = Vec::new();
@@ -308,8 +314,6 @@ impl Bot {
                         }
                     }
                 }
-
-                server.initialize_voices();
 
                 info!("[State] Mapped server {}", server);
 

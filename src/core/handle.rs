@@ -1,6 +1,9 @@
 // Discord Dependencies -------------------------------------------------------
 use discord::{ChannelRef, Connection, Discord, State, Error};
-use discord::model::{Event, ChannelId, UserId, LiveServer, PrivateChannel};
+use discord::model::{
+    Event, ChannelId, UserId, ServerId, LiveServer, PrivateChannel
+};
+use discord::voice::VoiceConnection;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -94,8 +97,26 @@ impl Handle {
 }
 
 
+// Server Voice ---------------------------------------------------------------
+impl Handle {
+
+    pub fn get_server_voice(&mut self, server_id: ServerId) -> &mut VoiceConnection {
+        self.connection.voice(server_id)
+    }
+
+    pub fn disconnect_server_voice(&mut self, server_id: ServerId){
+        self.connection.drop_voice(server_id);
+    }
+
+}
+
+
 // Getters --------------------------------------------------------------------
 impl Handle {
+
+    pub fn user_id(&self) -> UserId {
+        self.state.user().id
+    }
 
     pub fn servers(&self) -> &[LiveServer] {
         self.state.servers()
@@ -107,6 +128,18 @@ impl Handle {
 
     pub fn find_private_channel_for_user(&self, user_id: &UserId) -> Option<PrivateChannel> {
         self.discord.create_private_channel(user_id).ok()
+    }
+
+    pub fn find_voice_channel_id_for_user(&self, user_id: &UserId) -> Option<ChannelId> {
+
+        let voice_channel = self.state.find_voice_user(*user_id);
+        if let Some((_, channel_id)) = voice_channel {
+            Some(channel_id)
+
+        } else {
+            None
+        }
+
     }
 
     pub fn find_user_by_id(&self, user_id: &UserId) -> Option<User> {

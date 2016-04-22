@@ -8,7 +8,7 @@ use discord::model::{ChannelId, ServerId, VoiceState};
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::User;
+use super::{Handle, User};
 use super::voice::Greeting;
 
 
@@ -22,6 +22,8 @@ pub struct Server {
     member_count: usize,
 
     // Voice
+    last_voice_channel: Option<ChannelId>,
+    voice_receiver_handle: Option<()>,
     voice_states: Vec<(ChannelId, User)>,
     voice_greetings: HashMap<String, Greeting>
 
@@ -39,6 +41,8 @@ impl Server {
             member_count: 0,
 
             // Voice
+            last_voice_channel: None,
+            voice_receiver_handle: None,
             voice_states: Vec::new(),
             voice_greetings: HashMap::new()
 
@@ -50,39 +54,118 @@ impl Server {
 // Voice Handling --------------------------------------------------------------
 impl Server {
 
-    pub fn initialize_voices(&mut self) {
+    pub fn initialize_voices(&mut self, handle: &mut Handle) {
 
         info!("[Server] [{}] [Voice] Initializing.", self);
 
-        // TODO re-join last connected voice channel
+        self.join_voice_channel(handle, None);
 
     }
 
-    pub fn update_voice(&mut self, voice: VoiceState, user: User) {
+    pub fn update_voice(&mut self, handle: &mut Handle, voice: VoiceState, user: User) {
 
-        if let Some(channel_id) = voice.channel_id {
-            if self.voice_states.iter().any(|&(_, ref u)| u.id == user.id) {
-                info!("[Server] [{}] [{}] [Voice] Switched voice channel.", self, user);
+        if user.id == handle.user_id() {
+            if let Some(_) = voice.channel_id {
+                info!("[Server] [{}] [Voice] Joined channel.", self);
 
             } else {
-                info!("[Server] [{}] [{}] [Voice] Joined voice channel.", self, user);
+                info!("[Server] [{}] [Voice] Left channel.", self);
+                self.voice_receiver_handle = None;
+            }
+
+        } else if let Some(channel_id) = voice.channel_id {
+            // TODO IW: Make this look nicer, borrowck really isn't too smart
+            // about this case
+            if self.voice_states.iter().any(|&(_, ref u)| u.id == user.id) {
+                {
+                    // Update voice state channel
+                    if let Some(mut voice_state) = self.voice_states.iter_mut().find(|&&mut (_, ref u)| u.id == user.id) {
+                        voice_state.0 = channel_id;
+                    }
+                }
+                info!("[Server] [{}] [{}] [Voice] User switched channel.", self, user);
+
+            } else {
+                info!("[Server] [{}] [{}] [Voice] User joined channel.", self, user);
                 self.add_voice_state(channel_id, user);
             }
 
         } else {
-            info!("[Server] [{}] [{}] [Voice] Left voice channel.", self, user);
+            info!("[Server] [{}] [{}] [Voice] User left channel.", self, user);
             self.voice_states.retain(|&(_, ref u)| u.id != user.id);
         }
 
-        // Leave the voice channel if it becomes empty
-        //if let Some(channel) = self.connection.voice(server_id).current_channel() {
-        //    if let Some(srv) = self.state.servers().iter().find(|srv| srv.id == server_id) {
-        //        if srv.voice_states.iter().filter(|vs| vs.channel_id == Some(channel)).count() <= 1 {
-        //            info!("[Audio] [Info] Leaving empty Voice Channel");
-        //            self.connection.drop_voice(server_id);
-        //        }
-        //    }
-        //}
+        if let Some(channel_id) = handle.get_server_voice(self.id).current_channel() {
+            if self.voice_states.iter().filter(|&&(id, _)| id == channel_id).count() == 0 {
+                info!("[Server] [{}] [Voice] Leaving empty channel.", self);
+                handle.disconnect_server_voice(self.id)
+            }
+        }
+
+    }
+
+    pub fn join_voice_channel(&mut self, handle: &mut Handle, channel_id: Option<ChannelId>) -> bool {
+
+        if let Some(target_id) = channel_id.or(self.last_voice_channel) {
+
+            if self.last_voice_channel.is_none() || self.voice_receiver_handle.is_none() {
+                info!("[Server] [{}] [Voice] Joining channel.", self);
+                self.init_voice_connection(handle, target_id);
+                true
+
+            } else if channel_id.is_none() {
+                info!("[Server] [{}] [Voice] Re-joining channel.", self);
+                self.init_voice_connection(handle, target_id);
+                true
+
+            } else if channel_id != self.last_voice_channel {
+                info!("[Server] [{}] [Voice] Switching channel.", self);
+                self.init_voice_connection(handle, target_id);
+                true
+
+            } else {
+                info!("[Server] [{}] [Voice] Already in channel.", self);
+                false
+            }
+
+        } else {
+            false
+        }
+
+    }
+
+    fn init_voice_connection(&mut self, handle: &mut Handle, channel_id: ChannelId) {
+
+        let voice_connection = handle.get_server_voice(self.id);
+        voice_connection.connect(channel_id);
+
+        match self.voice_receiver_handle {
+
+            Some(ref handle) => {
+                info!("[Server] [{}] [Voice] Resetting existing handle.", self);
+            }
+
+            None => {
+                info!("[Server] [{}] [Voice] Creating new handle.", self);
+                //let mut receiver = listener::AudioListener::new(
+                //    self.audio_effect_queue.clone(),
+                //    silent_effects,
+                //    self.config.silence_threshold
+                //);
+
+                self.voice_receiver_handle = Some(());
+
+                //self.audio_receiver_handle = receiver.take_handle();
+                //voice_connection.set_receiver(Box::new(receiver));
+
+                //voice_connection.play(
+                //    Box::new(mixer::AudioMixer::new(self.audio_effect_queue.clone()))
+                //);
+            }
+
+        }
+
+        self.last_voice_channel = Some(channel_id);
 
     }
 
@@ -124,8 +207,13 @@ impl Server {
     }
 
     pub fn add_voice_state(&mut self, channel_id: ChannelId, user: User) {
-        info!("[Server] [{}] [{}] [Voice] State added.", self, user);
-        self.voice_states.push((channel_id, user));
+        if user.is_bot {
+            info!("[Server] [{}] [{}] [Voice] Ignored state for bot.", self, user);
+
+        } else {
+            info!("[Server] [{}] [{}] [Voice] State added.", self, user);
+            self.voice_states.push((channel_id, user));
+        }
     }
 
 }
