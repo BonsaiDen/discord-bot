@@ -42,19 +42,8 @@ impl Handle {
         match self.connection.recv_event() {
 
             Ok(event) => {
-
                 self.state.update(&event);
-
-                if let Event::GatewayChanged(data, ready) = event {
-                    info!("[State] Gateway changed: {}", data);
-                    self.state = State::new(ready);
-                    self.was_updated = true;
-                    self.recv_event()
-
-                } else {
-                    Ok(event)
-                }
-
+                Ok(event)
             }
 
             Err(err) => {
