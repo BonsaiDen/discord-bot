@@ -8,6 +8,7 @@ use discord::model::{Event, Channel, ChannelId, UserId, ServerId};
 
 // Modules --------------------------------------------------------------------
 mod command;
+mod effect;
 mod handle;
 mod message;
 mod server;
@@ -20,6 +21,7 @@ pub use self::handle::Handle;
 pub use self::message::Message;
 pub use self::server::Server;
 pub use self::user::User;
+pub use self::effect::{Effect, EffectManager};
 
 
 // Bot Abstraction ------------------------------------------------------------

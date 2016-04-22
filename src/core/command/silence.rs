@@ -3,24 +3,25 @@ use super::super::{Handle, Server, User};
 use super::{Command, CommandResult};
 
 
-// Server Configuration Reload ------------------------------------------------
-pub struct Reload;
+// Server Silence Request -----------------------------------------------------
+pub struct Silence;
 
 
 // Interface ------------------------------------------------------------------
-impl Reload {
-    pub fn new() -> Reload {
-        Reload
+impl Silence {
+    pub fn new() -> Silence {
+        Silence
     }
 }
 
 
 // Command Implementation -----------------------------------------------------
-impl Command for Reload {
+impl Command for Silence {
 
     fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
-        info!("[{}] [{}] [Command] [Reload] Server configuration reloaded.", server, user);
-        Some(vec!["Server configuration reloaded.".to_string()])
+        info!("[{}] [{}] [Command] [Silence] Silence requested.", server, user);
+        server.request_silence();
+        None
     }
 
     fn is_unique(&self) -> bool {
@@ -28,7 +29,7 @@ impl Command for Reload {
     }
 
     fn auto_remove(&self) -> bool {
-        true
+        false
     }
 
 }

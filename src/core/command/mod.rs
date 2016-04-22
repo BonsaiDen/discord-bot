@@ -6,6 +6,7 @@ use super::{Handle, Server, User};
 mod not_found;
 mod not_unique;
 mod reload;
+mod silence;
 mod sound;
 
 
@@ -39,7 +40,8 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
     match name {
         "s" => Box::new(sound::Sound::new(arguments, false)),
         "q" => Box::new(sound::Sound::new(arguments, true)),
-        "reload" => Box::new(reload::Reload::new(arguments)),
+        "silence" => Box::new(silence::Silence::new()),
+        "reload" => Box::new(reload::Reload::new()),
         _ => Box::new(not_found::NotFound::new(name))
     }
 

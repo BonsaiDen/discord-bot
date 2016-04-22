@@ -8,11 +8,15 @@ use discord::model::{ChannelId, ServerId, VoiceState};
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::{Handle, User};
+use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
     Greeting, Listener, Mixer,
     Queue, QueueHandle, QueueEntry, EmptyQueue
 };
+
+
+// Statics --------------------------------------------------------------------
+static PLAY_EFFECT_JOIN_DELAY: usize = 300;
 
 
 // Server Abstraction ---------------------------------------------------------
@@ -29,7 +33,10 @@ pub struct Server {
     voice_listener_handle: Option<QueueHandle>,
     voice_states: Vec<(ChannelId, User)>,
     voice_greetings: HashMap<String, Greeting>,
-    voice_queue: Queue
+    voice_queue: Queue,
+
+    // Effects
+    effect_manager: EffectManager
 
 }
 
@@ -49,22 +56,65 @@ impl Server {
             voice_listener_handle: None,
             voice_states: Vec::new(),
             voice_greetings: HashMap::new(),
-            voice_queue: EmptyQueue::new()
+            voice_queue: EmptyQueue::new(),
+
+            // Effects
+            effect_manager: EffectManager::new()
 
         }
     }
 
 }
 
-// Voice Handling --------------------------------------------------------------
+// Effect Playback ------------------------------------------------------------
+impl Server {
+
+    pub fn play_effects(
+        &mut self,
+        handle: &mut Handle,
+        channel_id: ChannelId,
+        effects: Vec<Effect>,
+        immediate: bool,
+        mut delay: usize
+    ) {
+
+        // Add additional delay if we need to join the channel
+        if self.join_voice_channel(handle, Some(channel_id)) {
+            delay += PLAY_EFFECT_JOIN_DELAY;
+        }
+
+        if let Ok(mut queue) = self.voice_queue.lock() {
+            if immediate {
+                info!("[Server] [{}] [Voice] {} effect(s) added for immediate playback in {}ms.", self, effects.len(), delay);
+                queue.push_back(QueueEntry::EffectList(effects, delay));
+
+            } else {
+                info!("[Server] [{}] [Voice] {} effect(s) added for queued playback in {}ms.", self, effects.len(), delay);
+                queue.push_back(QueueEntry::QueuedEffectList(effects, delay));
+            }
+        }
+
+    }
+
+    pub fn request_silence(&mut self) {
+        if let Ok(mut queue) = self.voice_queue.lock() {
+            queue.push_front(QueueEntry::SilenceRequest);
+        }
+    }
+
+    pub fn map_effects(&mut self, list: &Vec<String>) -> Vec<Effect> {
+        self.effect_manager.map_from_names(list)
+    }
+
+}
+
+
+// Voice Handling -------------------------------------------------------------
 impl Server {
 
     pub fn initialize_voices(&mut self, handle: &mut Handle) {
-
         info!("[Server] [{}] [Voice] Initializing.", self);
-
         self.join_voice_channel(handle, None);
-
     }
 
     pub fn update_voice(&mut self, handle: &mut Handle, voice: VoiceState, user: User) {

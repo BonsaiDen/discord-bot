@@ -1,26 +1,30 @@
 // STD Dependencies -----------------------------------------------------------
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Sender;
+use std::collections::VecDeque;
+
+
+// Internal Dependencies ------------------------------------------------------
+use super::super::Effect;
 
 
 // Voice Audio Queue Abstraction ----------------------------------------------
 pub enum QueueEntry {
-    EffectList(Vec<PathBuf>),
-    DelayedEffectList(Vec<PathBuf>, usize),
+    EffectList(Vec<Effect>, usize),
+    QueuedEffectList(Vec<Effect>, usize),
     SilenceRequest,
     Reset
 }
 
 pub type QueueHandle = Sender<QueueEntry>;
 
-pub type Queue = Arc<Mutex<Vec<QueueEntry>>>;
+pub type Queue = Arc<Mutex<VecDeque<QueueEntry>>>;
 
 pub struct EmptyQueue;
 
 impl EmptyQueue {
     pub fn new() -> Queue {
-        Arc::new(Mutex::new(Vec::new()))
+        Arc::new(Mutex::new(VecDeque::new()))
     }
 }
 
