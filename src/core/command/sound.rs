@@ -44,13 +44,15 @@ impl Command for Sound {
                 None
 
             } else {
-                Some(vec![
-                    format!(
-                        "None of the requested sound effect(s) `{}` exist. \
-                        Please see `!sounds` for a list of all available effects.",
-                        self.effect_names.join("`, `")
-                    )
-                ])
+                server.play_effects(handle, channel_id, effects, self.immediate, 0);
+                None
+                //Some(vec![
+                //    format!(
+                //        "None of the requested sound effect(s) `{}` exist. \
+                //        Please see `!sounds` for a list of all available effects.",
+                //        self.effect_names.join("`, `")
+                //    )
+                //])
             }
 
         } else {

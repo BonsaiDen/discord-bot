@@ -13,7 +13,9 @@ pub struct User {
     pub id: UserId,
     pub name: String,
     pub nickname: String,
-    pub is_bot: bool
+    pub is_bot: bool,
+    pub mute: bool,
+    pub deaf: bool
 }
 
 
@@ -25,7 +27,9 @@ impl User {
             id: user.id.clone(),
             name: user.name.to_string(),
             nickname: format!("{}#{}", user.name, user.discriminator),
-            is_bot: user.bot
+            is_bot: user.bot,
+            mute: false,
+            deaf: false
         }
     }
 

@@ -22,12 +22,13 @@ impl EffectManager {
         }
     }
 
-    pub fn load_from_directory(&mut self, directory: PathBuf) {
+    pub fn load_from_directory(&mut self, _: PathBuf) {
         // TODO pre-load all effects and calculate compression?
         self.effects.clear();
+        self.aliases.clear();
     }
 
-    pub fn map_from_names(&mut self, list: &Vec<String>) -> Vec<Effect> {
+    pub fn map_from_names(&mut self, _: &Vec<String>) -> Vec<Effect> {
         Vec::new()
     }
 

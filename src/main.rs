@@ -5,6 +5,7 @@ extern crate chrono;
 extern crate discord;
 extern crate rand;
 extern crate dotenv;
+extern crate flac;
 
 
 // STD Dependencies -----------------------------------------------------------

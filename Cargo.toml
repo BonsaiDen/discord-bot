@@ -5,6 +5,7 @@ authors = ["Ivo Wetzel <ivo.wetzel@googlemail.com>"]
 
 [dependencies]
 discord = { git = "https://github.com/SpaceManiac/discord-rs.git", rev = "ee072652" }
+flac = { git = "https://github.com/bonsaiden/flac.git", rev = "fdf88e4" }
 oauth2 = "*"
 rand = "*"
 dotenv = "*"

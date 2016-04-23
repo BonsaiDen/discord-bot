@@ -12,7 +12,6 @@ use super::super::Effect;
 pub enum QueueEntry {
     EffectList(Vec<Effect>, usize),
     QueuedEffectList(Vec<Effect>, usize),
-    SilenceRequest,
     Reset
 }
 

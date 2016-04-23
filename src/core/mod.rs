@@ -312,7 +312,7 @@ impl Bot {
                 for voice in &srv.voice_states {
                     if let Some(channel_id) = voice.channel_id {
                         if let Some(user) = handle.find_user_by_id(&voice.user_id) {
-                            server.add_voice_state(channel_id, user);
+                            server.add_voice_state(channel_id, voice, user);
                         }
                     }
                 }

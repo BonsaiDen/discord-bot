@@ -103,7 +103,7 @@ impl Server {
     pub fn request_silence(&mut self) {
         if let Ok(mut queue) = self.voice_queue.lock() {
             queue.clear();
-            queue.push_front(QueueEntry::SilenceRequest);
+            queue.push_back(QueueEntry::Reset);
         }
     }
 
@@ -144,7 +144,7 @@ impl Server {
 
             } else {
                 info!("[Server] [{}] [{}] [Voice] User joined channel.", self, user);
-                self.add_voice_state(channel_id, user);
+                self.add_voice_state(channel_id, &voice, user);
             }
 
         } else {
@@ -152,16 +152,27 @@ impl Server {
             self.voice_states.retain(|&(_, ref u)| u.id != user.id);
         }
 
-        // Update Listener Count
         if let Some(channel_id) = handle.get_server_voice(self.id).current_channel() {
 
-            // TODO check mute / deaf status
-            let listener_count = self.voice_states.iter().filter(|&&(id, _)| id == channel_id).count();
+            // TODO clean up
+
+            // Update Active Listener Count
+            let active_listener_count = self.voice_states.iter().filter(|&&(ref id, ref user)| {
+                *id == channel_id && !user.mute && !user.deaf
+
+            }).count();
+
             if let Ok(mut count) = self.voice_listener_count.lock() {
-                *count = listener_count;
+                *count = active_listener_count;
             }
 
-            if listener_count == 0 {
+            // Check channel user count and leave if empty
+            let channel_user_count = self.voice_states.iter().filter(|&&(ref id, _)| {
+                *id == channel_id
+
+            }).count();
+
+            if channel_user_count == 0 {
                 info!("[Server] [{}] [Voice] Leaving empty channel.", self);
                 handle.disconnect_server_voice(self.id)
             }
@@ -201,12 +212,16 @@ impl Server {
     }
 
     fn update_voice_state(&mut self, channel_id: ChannelId, voice: VoiceState, user: &User) -> bool {
-        if let Some(mut voice_state) = self.voice_states.iter_mut().find(|&&mut (_, ref u)| u.id == user.id) {
-            if voice_state.0 == channel_id {
+        if let Some(&mut(ref mut channel, ref mut user)) = self.voice_states.iter_mut().find(|&&mut (_, ref u)| u.id == user.id) {
+
+            user.deaf = voice.deaf || voice.self_deaf;
+            user.mute = voice.mute || voice.self_mute;
+
+            if *channel == channel_id {
                 false
 
             } else {
-                voice_state.0 = channel_id;
+                *channel = channel_id;
                 true
             }
 
@@ -287,12 +302,19 @@ impl Server {
         self.voice_states.clear();
     }
 
-    pub fn add_voice_state(&mut self, channel_id: ChannelId, user: User) {
+    pub fn add_voice_state(
+        &mut self,
+        channel_id: ChannelId,
+        voice: &VoiceState,
+        mut user: User
+    ) {
         if user.is_bot {
             info!("[Server] [{}] [{}] [Voice] Ignored state for bot.", self, user);
 
         } else {
             info!("[Server] [{}] [{}] [Voice] State added.", self, user);
+            user.deaf = voice.deaf || voice.self_deaf;
+            user.mute = voice.mute || voice.self_mute;
             self.voice_states.push((channel_id, user));
         }
     }
