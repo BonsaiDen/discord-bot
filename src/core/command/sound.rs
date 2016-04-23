@@ -33,7 +33,7 @@ impl Command for Sound {
 
         if self.effect_names.is_empty() {
             Some(vec![
-                 "You must specify at least one sound effect.".to_string()
+                "You must specify at least one sound effect.".to_string()
             ])
 
         } else if let Some(channel_id) = handle.find_voice_channel_id_for_user(&user.id) {

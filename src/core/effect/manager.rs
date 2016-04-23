@@ -9,14 +9,16 @@ use super::Effect;
 
 // Sound Effect Manager -------------------------------------------------------
 pub struct EffectManager {
-    effects: HashMap<String, Effect>
+    effects: HashMap<String, Effect>,
+    aliases: HashMap<String, String>
 }
 
 impl EffectManager {
 
     pub fn new() -> EffectManager {
         EffectManager {
-            effects: HashMap::new()
+            effects: HashMap::new(),
+            aliases: HashMap::new()
         }
     }
 

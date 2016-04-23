@@ -4,18 +4,25 @@ use discord::voice::AudioSource;
 
 // Internal Dependencies ------------------------------------------------------
 use super::queue::Queue;
+use super::source::SourceList;
 
 
 // Voice Audio Mixer ----------------------------------------------------------
 pub struct Mixer {
-    queue: Queue
+    queue: Queue,
+    source_buffer: [i16; 960 * 2],
+    active_lists: Vec<SourceList>,
+    waiting_lists: Vec<SourceList>
 }
 
 impl Mixer {
 
     pub fn new(queue: Queue) -> Mixer {
         Mixer {
-            queue: queue
+            queue: queue,
+            active_lists: Vec::new(),
+            waiting_lists: Vec::new(),
+            source_buffer: [0; 960 * 2]
         }
     }
 

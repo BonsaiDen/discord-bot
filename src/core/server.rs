@@ -10,7 +10,9 @@ use discord::model::{ChannelId, ServerId, VoiceState};
 // Internal Dependencies ------------------------------------------------------
 use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
-    Greeting, Listener, Mixer,
+    Greeting,
+    Listener, ListenerCount, EmptyListenerCount,
+    Mixer,
     Queue, QueueHandle, QueueEntry, EmptyQueue
 };
 
@@ -31,6 +33,7 @@ pub struct Server {
     // Voice
     last_voice_channel: Option<ChannelId>,
     voice_listener_handle: Option<QueueHandle>,
+    voice_listener_count: ListenerCount,
     voice_states: Vec<(ChannelId, User)>,
     voice_greetings: HashMap<String, Greeting>,
     voice_queue: Queue,
@@ -54,6 +57,7 @@ impl Server {
             // Voice
             last_voice_channel: None,
             voice_listener_handle: None,
+            voice_listener_count: EmptyListenerCount::new(),
             voice_states: Vec::new(),
             voice_greetings: HashMap::new(),
             voice_queue: EmptyQueue::new(),
@@ -98,6 +102,7 @@ impl Server {
 
     pub fn request_silence(&mut self) {
         if let Ok(mut queue) = self.voice_queue.lock() {
+            queue.clear();
             queue.push_front(QueueEntry::SilenceRequest);
         }
     }
@@ -129,16 +134,13 @@ impl Server {
             }
 
         } else if let Some(channel_id) = voice.channel_id {
-            // TODO IW: Make this look nicer, borrowck really isn't too smart
-            // about this case
             if self.voice_states.iter().any(|&(_, ref u)| u.id == user.id) {
-                {
-                    // Update voice state channel
-                    if let Some(mut voice_state) = self.voice_states.iter_mut().find(|&&mut (_, ref u)| u.id == user.id) {
-                        voice_state.0 = channel_id;
-                    }
+                if self.update_voice_state(channel_id, voice, &user) {
+                    info!("[Server] [{}] [{}] [Voice] User switched channel.", self, user);
+
+                } else {
+                    info!("[Server] [{}] [{}] [Voice] User state updated.", self, user);
                 }
-                info!("[Server] [{}] [{}] [Voice] User switched channel.", self, user);
 
             } else {
                 info!("[Server] [{}] [{}] [Voice] User joined channel.", self, user);
@@ -150,11 +152,20 @@ impl Server {
             self.voice_states.retain(|&(_, ref u)| u.id != user.id);
         }
 
+        // Update Listener Count
         if let Some(channel_id) = handle.get_server_voice(self.id).current_channel() {
-            if self.voice_states.iter().filter(|&&(id, _)| id == channel_id).count() == 0 {
+
+            // TODO check mute / deaf status
+            let listener_count = self.voice_states.iter().filter(|&&(id, _)| id == channel_id).count();
+            if let Ok(mut count) = self.voice_listener_count.lock() {
+                *count = listener_count;
+            }
+
+            if listener_count == 0 {
                 info!("[Server] [{}] [Voice] Leaving empty channel.", self);
                 handle.disconnect_server_voice(self.id)
             }
+
         }
 
     }
@@ -189,6 +200,21 @@ impl Server {
 
     }
 
+    fn update_voice_state(&mut self, channel_id: ChannelId, voice: VoiceState, user: &User) -> bool {
+        if let Some(mut voice_state) = self.voice_states.iter_mut().find(|&&mut (_, ref u)| u.id == user.id) {
+            if voice_state.0 == channel_id {
+                false
+
+            } else {
+                voice_state.0 = channel_id;
+                true
+            }
+
+        } else {
+            false
+        }
+    }
+
     fn init_voice_connection(&mut self, handle: &mut Handle, channel_id: ChannelId) {
 
         let voice_connection = handle.get_server_voice(self.id);
@@ -205,7 +231,8 @@ impl Server {
                 info!("[Server] [{}] [Voice] Creating new handle.", self);
 
                 let mut listener = Listener::new(
-                    self.voice_queue.clone()
+                    self.voice_queue.clone(),
+                    self.voice_listener_count.clone()
                 );
 
                 self.voice_listener_handle = listener.take_handle();
