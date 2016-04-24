@@ -193,9 +193,15 @@ impl Server {
                 true
 
             } else if channel_id.is_none() {
-                info!("[Server] [{}] [Voice] Re-joining channel.", self);
-                self.init_voice_connection(handle, target_id);
-                true
+                if self.voice_listener_handle.is_none() {
+                    info!("[Server] [{}] [Voice] Re-joining channel.", self);
+                    self.init_voice_connection(handle, target_id);
+                    true
+
+                } else {
+                    info!("[Server] [{}] [Voice] Already in channel.", self);
+                    false
+                }
 
             } else if channel_id == self.last_voice_channel {
                 info!("[Server] [{}] [Voice] Already in channel.", self);
