@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 // Filesystem Utilities -------------------------------------------------------
 pub fn filter_dir<F: FnMut(String, PathBuf)>(
-    path: &PathBuf,
+    path: PathBuf,
     ext: &str,
     mut callback: F
 ) {

@@ -1,4 +1,5 @@
 // STD Dependencies -----------------------------------------------------------
+use std::path::PathBuf;
 use std::collections::HashMap;
 
 
@@ -34,6 +35,9 @@ pub struct Bot {
     // Whitelisting
     server_whitelist: Option<Vec<ServerId>>,
 
+    // Effects
+    effects_directory: PathBuf,
+
     // Internal State
     servers: HashMap<ServerId, Server>,
     channel_map: HashMap<ChannelId, ServerId>,
@@ -45,7 +49,11 @@ pub struct Bot {
 // Connection Handling --------------------------------------------------------
 impl Bot {
 
-    pub fn new(token: String, server_whitelist: Option<Vec<ServerId>>) -> Bot {
+    pub fn new(
+        token: String,
+        server_whitelist: Option<Vec<ServerId>>,
+        effects_directory: PathBuf
+    ) -> Bot {
 
         Bot {
 
@@ -53,6 +61,9 @@ impl Bot {
 
             // Whitelisting
             server_whitelist: server_whitelist,
+
+            // Effects
+            effects_directory: effects_directory,
 
             // Internal State
             servers: HashMap::new(),
@@ -396,11 +407,20 @@ impl Bot {
     fn get_server(&mut self, server_id: &ServerId) -> Option<&mut Server> {
 
         if self.is_whitelisted_server(server_id) {
-            Some(self.servers.entry(*server_id).or_insert_with(|| {
-                let mut server = Server::new(*server_id);
+
+            if !self.servers.contains_key(server_id) {
+
+                let mut server = Server::new(
+                    *server_id,
+                    self.effects_directory.clone()
+                );
+
                 server.reload_configuration();
-                server
-            }))
+                self.servers.insert(*server_id, server);
+
+            }
+
+            self.servers.get_mut(server_id)
 
         } else {
             None

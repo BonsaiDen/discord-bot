@@ -13,6 +13,7 @@ extern crate flac;
 
 // STD Dependencies -----------------------------------------------------------
 use std::env;
+use std::path::PathBuf;
 
 
 // External Dependencies ------------------------------------------------------
@@ -45,7 +46,8 @@ fn main() {
                 ServerId(id.parse().unwrap_or(0))
 
             }).collect::<Vec<ServerId>>())
-        })
+        }),
+        PathBuf::from(env::var_os("EFFECTS_DIRECTORY").unwrap_or("".into()))
     );
 
     bot.connect();

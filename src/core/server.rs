@@ -47,7 +47,7 @@ pub struct Server {
 
 impl Server {
 
-    pub fn new(id: ServerId) -> Server {
+    pub fn new(id: ServerId, effects_directory: PathBuf) -> Server {
 
         Server {
 
@@ -66,7 +66,7 @@ impl Server {
             voice_queue: EmptyQueue::create(),
 
             // Effects
-            effect_manager: EffectManager::new()
+            effect_manager: EffectManager::new(effects_directory)
 
         }
 
@@ -274,8 +274,7 @@ impl Server {
 impl Server {
 
     pub fn reload_configuration(&mut self) {
-        let path = PathBuf::from("");
-        self.effect_manager.load_effects_from_directory(&path);
+        self.effect_manager.load_effects();
     }
 
 }

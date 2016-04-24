@@ -14,26 +14,38 @@ use super::Effect;
 
 // Sound Effect Manager -------------------------------------------------------
 pub struct EffectManager {
+
+    // Effects
     effects: HashMap<String, Effect>,
+    effects_directory: PathBuf,
+
+    // Aliases
     aliases: HashMap<String, String>
+
 }
 
 impl EffectManager {
 
-    pub fn new() -> EffectManager {
+    pub fn new(effects_directory: PathBuf) -> EffectManager {
         EffectManager {
+
+            // Effects
             effects: HashMap::new(),
+            effects_directory: effects_directory,
+
+            // Aliases
             aliases: HashMap::new()
+
         }
     }
 
-    pub fn load_effects_from_directory(&mut self, directory: &PathBuf) {
+    pub fn load_effects(&mut self) {
 
         // TODO pre-load all effects and calculate compression?
         self.effects.clear();
         self.aliases.clear();
 
-        util::filter_dir(directory, "flac", |name, path| {
+        util::filter_dir(self.effects_directory.clone(), "flac", |name, path| {
             self.effects.insert(name.clone(), Effect::new(name, path));
         });
 
@@ -97,15 +109,15 @@ fn match_name_pattern(name: &str, pattern: &str) -> bool {
 
     // Contains
     } else if len > 2 && pattern.starts_with('*') && pattern.ends_with('*') {
-        name.contains(pattern)
+        name.contains(&pattern[1..len - 1])
 
     // Endswith
     } else if len > 1 && pattern.starts_with('*') {
-        name.ends_with(pattern)
+        name.ends_with(&pattern[1..])
 
     // Startswith
     } else if len > 1 && pattern.ends_with('*') {
-        name.starts_with(pattern)
+        name.starts_with(&pattern[0..len - 1])
 
     } else if len > 0 {
 
