@@ -388,7 +388,9 @@ impl Bot {
 
         if self.is_whitelisted_server(server_id) {
             Some(self.servers.entry(*server_id).or_insert_with(|| {
-                Server::new(*server_id)
+                let mut server = Server::new(*server_id);
+                server.reload_configuration();
+                server
             }))
 
         } else {

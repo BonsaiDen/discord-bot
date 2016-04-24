@@ -1,5 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
+use std::path::PathBuf;
 use std::collections::HashMap;
 
 
@@ -46,6 +47,7 @@ pub struct Server {
 impl Server {
 
     pub fn new(id: ServerId) -> Server {
+
         Server {
 
             // General
@@ -66,6 +68,7 @@ impl Server {
             effect_manager: EffectManager::new()
 
         }
+
     }
 
 }
@@ -108,7 +111,7 @@ impl Server {
     }
 
     pub fn map_effects(&mut self, list: &Vec<String>) -> Vec<Effect> {
-        self.effect_manager.map_from_names(list)
+        self.effect_manager.map_from_patterns(list)
     }
 
 }
@@ -266,6 +269,18 @@ impl Server {
     }
 
 }
+
+
+// Commands -------------------------------------------------------------------
+impl Server {
+
+    pub fn reload_configuration(&mut self) {
+        let path = PathBuf::from("");
+        self.effect_manager.load_effects_from_directory(&path);
+    }
+
+}
+
 
 // Setters --------------------------------------------------------------------
 impl Server {

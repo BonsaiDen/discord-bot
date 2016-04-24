@@ -31,6 +31,7 @@ impl SourceList {
             delay_ticks: delay / MILLIS_PER_SOURCE_TICK
         };
 
+        list.effects.reverse();
         list.update();
         list
 

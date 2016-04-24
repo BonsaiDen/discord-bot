@@ -23,6 +23,7 @@ use discord::model::ServerId;
 // Internal Dependencies ------------------------------------------------------
 mod core;
 mod logger;
+mod util;
 
 
 // Main -----------------------------------------------------------------------
