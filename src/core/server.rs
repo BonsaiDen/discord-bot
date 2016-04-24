@@ -121,18 +121,9 @@ impl Server {
 // Voice Handling -------------------------------------------------------------
 impl Server {
 
-    pub fn initialize(&mut self, handle: &mut Handle, reset: bool) {
-
-        if reset {
-            info!("[Server] [{}] Connection was reset, re-initializing.", self);
-            self.voice_listener_handle = None;
-
-        } else {
-            info!("[Server] [{}] Initializing.", self);
-        }
-
+    pub fn initialize(&mut self, handle: &mut Handle) {
+        info!("[Server] [{}] Initializing.", self);
         self.join_voice_channel(handle, None);
-
     }
 
     pub fn update_voice(&mut self, handle: &mut Handle, voice: VoiceState, user: User) {
