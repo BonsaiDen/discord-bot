@@ -38,8 +38,8 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
 
     // Match command and arguments
     match name {
-        "s" => Box::new(sound::Sound::new(arguments, false)),
-        "q" => Box::new(sound::Sound::new(arguments, true)),
+        "s" => Box::new(sound::Sound::new(arguments, true)),
+        "q" => Box::new(sound::Sound::new(arguments, false)),
         "silence" => Box::new(silence::Silence::new()),
         "reload" => Box::new(reload::Reload::new()),
         _ => Box::new(not_found::NotFound::new(name))

@@ -101,7 +101,7 @@ impl Bot {
                         self.init_servers_and_channels(&mut handle);
 
                         for (_, server) in &mut self.servers {
-                            server.initialize_voices(&mut handle);
+                            server.initialize(&mut handle, false);
                         }
 
                     }
@@ -119,6 +119,18 @@ impl Bot {
 
     fn handle_event(&mut self, handle: &mut Handle, event: Event) {
         match event {
+
+            Event::Resumed { .. } => {
+                for (_, server) in &mut self.servers {
+                    server.initialize(handle, true);
+                }
+            }
+
+            Event::VoiceServerUpdate { server_id, .. } => {
+                if let Some(server) = self.get_server(&server_id) {
+                    server.initialize(handle, true);
+                }
+            }
 
             Event::ServerUpdate(srv) => {
                 if let Some(server) = self.get_server(&srv.id) {
