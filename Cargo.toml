@@ -11,4 +11,8 @@ rand = "*"
 dotenv = "*"
 log = "*"
 chrono = "*"
+clippy = { version = "*", optional = true }
+
+[features]
+lint = ["clippy"]
 

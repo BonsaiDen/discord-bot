@@ -22,7 +22,7 @@ pub type Queue = Arc<Mutex<VecDeque<QueueEntry>>>;
 pub struct EmptyQueue;
 
 impl EmptyQueue {
-    pub fn new() -> Queue {
+    pub fn create() -> Queue {
         Arc::new(Mutex::new(VecDeque::new()))
     }
 }

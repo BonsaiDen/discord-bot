@@ -1,7 +1,8 @@
 // STD Dependencies -----------------------------------------------------------
 use std::thread;
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
 use std::sync::mpsc::{channel, Sender};
 
 
@@ -15,13 +16,13 @@ use super::queue::{Queue, QueueEntry, QueueHandle};
 
 
 // Types ----------------------------------------------------------------------
-pub type ListenerCount = Arc<Mutex<usize>>;
+pub type ListenerCount = Arc<AtomicUsize>;
 
 pub struct EmptyListenerCount;
 
 impl EmptyListenerCount {
-    pub fn new() -> ListenerCount {
-        Arc::new(Mutex::new(0))
+    pub fn create() -> ListenerCount {
+        Arc::new(AtomicUsize::new(0))
     }
 }
 
@@ -60,11 +61,8 @@ impl Listener {
 
                 // Status Commands
                 while let Ok(status) = status_receive.try_recv() {
-                    match status {
-                        QueueEntry::Reset => {
-                            silent_for_seconds = 0;
-                        },
-                        _ => {}
+                    if let QueueEntry::Reset = status {
+                        silent_for_seconds = 0;
                     }
                 }
 

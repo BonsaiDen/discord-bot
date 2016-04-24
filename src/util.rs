@@ -15,7 +15,7 @@ pub fn filter_dir<F: FnMut(String, PathBuf)>(
             if let Ok(entry) = entry {
                 if entry.file_type().unwrap().is_file() {
                     let path = entry.path();
-                    if path.extension().unwrap_or(OsStr::new("")) == ext {
+                    if path.extension().unwrap_or_else(||OsStr::new("")) == ext {
                         if let Some(stem) = path.file_stem() {
                             if stem != "" {
                                 callback(

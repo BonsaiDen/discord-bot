@@ -24,7 +24,7 @@ impl User {
 
     pub fn new(user: &DiscordUser) -> User {
         User {
-            id: user.id.clone(),
+            id: user.id,
             name: user.name.to_string(),
             nickname: format!("{}#{}", user.name, user.discriminator),
             is_bot: user.bot,

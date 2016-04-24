@@ -1,3 +1,6 @@
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+
 // Crates ---------------------------------------------------------------------
 #[macro_use]
 extern crate log;
@@ -26,6 +29,7 @@ mod logger;
 mod util;
 
 
+
 // Main -----------------------------------------------------------------------
 fn main() {
 
@@ -37,7 +41,7 @@ fn main() {
     let mut bot = core::Bot::new(
         env::var("DISCORD_BOT_TOKEN").unwrap_or("".into()),
         env::var("SERVER_WHITELIST").ok().and_then(|servers| {
-            Some(servers.split(",").map(|id| {
+            Some(servers.split(',').map(|id| {
                 ServerId(id.parse().unwrap_or(0))
 
             }).collect::<Vec<ServerId>>())

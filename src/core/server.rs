@@ -2,6 +2,7 @@
 use std::fmt;
 use std::path::PathBuf;
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 
 // Discord Dependencies -------------------------------------------------------
@@ -59,10 +60,10 @@ impl Server {
             // Voice
             last_voice_channel: None,
             voice_listener_handle: None,
-            voice_listener_count: EmptyListenerCount::new(),
+            voice_listener_count: EmptyListenerCount::create(),
             voice_states: Vec::new(),
             voice_greetings: HashMap::new(),
-            voice_queue: EmptyQueue::new(),
+            voice_queue: EmptyQueue::create(),
 
             // Effects
             effect_manager: EffectManager::new()
@@ -110,7 +111,7 @@ impl Server {
         }
     }
 
-    pub fn map_effects(&mut self, list: &Vec<String>) -> Vec<Effect> {
+    pub fn map_effects(&mut self, list: &[String]) -> Vec<Effect> {
         self.effect_manager.map_from_patterns(list)
     }
 
@@ -165,9 +166,7 @@ impl Server {
 
             }).count();
 
-            if let Ok(mut count) = self.voice_listener_count.lock() {
-                *count = active_listener_count;
-            }
+            self.voice_listener_count.store(active_listener_count, Ordering::Relaxed);
 
             // Check channel user count and leave if empty
             let channel_user_count = self.voice_states.iter().filter(|&&(ref id, _)| {
@@ -198,14 +197,14 @@ impl Server {
                 self.init_voice_connection(handle, target_id);
                 true
 
-            } else if channel_id != self.last_voice_channel {
+            } else if channel_id == self.last_voice_channel {
+                info!("[Server] [{}] [Voice] Already in channel.", self);
+                false
+
+            } else {
                 info!("[Server] [{}] [Voice] Switching channel.", self);
                 self.init_voice_connection(handle, target_id);
                 true
-
-            } else {
-                info!("[Server] [{}] [Voice] Already in channel.", self);
-                false
             }
 
         } else {

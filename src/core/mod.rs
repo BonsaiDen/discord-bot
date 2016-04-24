@@ -3,7 +3,9 @@ use std::collections::HashMap;
 
 
 // Discord Dependencies -------------------------------------------------------
-use discord::model::{Event, Channel, ChannelId, UserId, ServerId};
+use discord::model::{
+    Event, Channel, Member, ChannelId, UserId, ServerId, User as DiscordUser
+};
 
 
 // Modules --------------------------------------------------------------------
@@ -113,65 +115,13 @@ impl Bot {
                 }
             }
 
-            Event::ChannelCreate(channel) => {
-                if let Channel::Public(channel) = channel {
-                    if self.is_whitelisted_server(&channel.server_id) {
-                        info!("[State] Mapped channel {}({}) -> {}", channel.name, channel.id.0, channel.server_id.0);
-                        self.channel_map.insert(channel.id, channel.server_id);
-                        if let Some(server) = self.get_server(&channel.server_id) {
-                            server.inc_channels();
-                        }
-                    }
-                }
-            }
+            Event::ChannelCreate(channel) => self.handle_channel_create(channel),
 
-            Event::ChannelDelete(channel) => {
-                if let Channel::Public(channel) = channel {
-                    if self.is_whitelisted_server(&channel.server_id) {
-                        info!("[State] Unmapped channel {}", channel.id.0);
-                        self.channel_map.remove(&channel.id);
-                        if let Some(server) = self.get_server(&channel.server_id) {
-                            server.dec_channels();
-                        }
-                    }
-                }
-            }
+            Event::ChannelDelete(channel) => self.handle_channel_delete(channel),
 
-            Event::ServerMemberAdd(server_id, member) => {
-                if self.is_whitelisted_server(&server_id) {
+            Event::ServerMemberAdd(server_id, member) => self.handle_server_member_add(server_id, member),
 
-                    info!("[State] Mapped user {}({}) -> {}", member.user.name, member.user.id.0, server_id.0);
-
-                    if let Some(server) = self.get_server(&server_id) {
-                        server.inc_members();
-                    }
-
-                    let server_list = self.user_map.entry(member.user.id).or_insert_with(|| Vec::new());
-                    if !server_list.contains(&server_id) {
-                        server_list.push(server_id);
-                    }
-
-
-                }
-            }
-
-            Event::ServerMemberRemove(server_id, user) => {
-                if self.is_whitelisted_server(&server_id) {
-
-                    info!("[State] Unmapped user {:?}", user.id);
-
-                    if let Some(server_list) = self.user_map.get_mut(&user.id) {
-                        server_list.retain(|id| {
-                            *id != server_id
-                        });
-                    }
-
-                    if let Some(server) = self.get_server(&server_id) {
-                        server.dec_members();
-                    }
-
-                }
-            }
+            Event::ServerMemberRemove(server_id, user) => self.handle_server_member_remove(server_id, user),
 
             Event::MessageUpdate { id, channel_id, author, content, .. } => {
                 if !author.is_none() && !content.is_none() {
@@ -266,6 +216,65 @@ impl Bot {
         }
     }
 
+    fn handle_channel_create(&mut self, channel: Channel) {
+        if let Channel::Public(channel) = channel {
+            if self.is_whitelisted_server(&channel.server_id) {
+                info!("[State] Unmapped channel {}", channel.id.0);
+                self.channel_map.remove(&channel.id);
+                if let Some(server) = self.get_server(&channel.server_id) {
+                    server.dec_channels();
+                }
+            }
+        }
+    }
+
+    fn handle_channel_delete(&mut self, channel: Channel) {
+        if let Channel::Public(channel) = channel {
+            if self.is_whitelisted_server(&channel.server_id) {
+                info!("[State] Mapped channel {}({}) -> {}", channel.name, channel.id.0, channel.server_id.0);
+                self.channel_map.insert(channel.id, channel.server_id);
+                if let Some(server) = self.get_server(&channel.server_id) {
+                    server.inc_channels();
+                }
+            }
+        }
+    }
+
+    fn handle_server_member_add(&mut self, server_id: ServerId, member: Member) {
+        if self.is_whitelisted_server(&server_id) {
+
+            info!("[State] Mapped user {}({}) -> {}", member.user.name, member.user.id.0, server_id.0);
+
+            if let Some(server) = self.get_server(&server_id) {
+                server.inc_members();
+            }
+
+            let server_list = self.user_map.entry(member.user.id).or_insert_with(Vec::new);
+            if !server_list.contains(&server_id) {
+                server_list.push(server_id);
+            }
+
+        }
+    }
+
+    fn handle_server_member_remove(&mut self, server_id: ServerId, user: DiscordUser) {
+        if self.is_whitelisted_server(&server_id) {
+
+            info!("[State] Unmapped user {:?}", user.id);
+
+            if let Some(server_list) = self.user_map.get_mut(&user.id) {
+                server_list.retain(|id| {
+                    *id != server_id
+                });
+            }
+
+            if let Some(server) = self.get_server(&server_id) {
+                server.dec_members();
+            }
+
+        }
+    }
+
 }
 
 
@@ -334,7 +343,7 @@ impl Bot {
         // Insert new users to map
         for (user_id, server_id, user_name) in users_to_map {
 
-            let server_list = self.user_map.entry(user_id).or_insert_with(|| Vec::new());
+            let server_list = self.user_map.entry(user_id).or_insert_with(Vec::new);
             if !server_list.contains(&server_id) {
                 info!("[State] Mapped user {}({}) -> {}", user_name, user_id.0, server_id.0);
                 server_list.push(server_id);
@@ -346,7 +355,7 @@ impl Bot {
         let invalid_servers = self.servers.values().filter(|s| {
             !valid_servers.contains(s.id())
 
-        }).map(|s| s.id().clone()).collect::<Vec<ServerId>>();
+        }).map(|s| *s.id()).collect::<Vec<ServerId>>();
 
         for server_id in invalid_servers {
             info!("[State] Unmapped server {}", server_id.0);
@@ -357,7 +366,7 @@ impl Bot {
         let invalid_channels = self.channel_map.iter().filter(|&(_, s)| {
             !valid_servers.contains(&s)
 
-        }).map(|(c, _)| c.clone()).collect::<Vec<ChannelId>>();
+        }).map(|(c, _)| *c).collect::<Vec<ChannelId>>();
 
         for channel_id in invalid_channels {
             info!("[State] Unmapped channel {}", channel_id.0);
@@ -375,7 +384,7 @@ impl Bot {
         let invalid_users = self.user_map.iter().filter(|&(_, server_list)| {
             server_list.is_empty()
 
-        }).map(|(c, _)| c.clone()).collect::<Vec<UserId>>();
+        }).map(|(c, _)| *c).collect::<Vec<UserId>>();
 
         for user_id in invalid_users {
             info!("[State] Unmapped user {}", user_id.0);
@@ -408,7 +417,7 @@ impl Bot {
 
         if let Some(server_id) = self.channel_map.get(channel_id) {
             if self.is_whitelisted_server(server_id) {
-                Some((server_id.clone(), true))
+                Some((*server_id, true))
 
             } else {
                 None
@@ -420,7 +429,7 @@ impl Bot {
 
             } else {
                 Some((
-                    server_list.get(0).unwrap().clone(),
+                    *server_list.get(0).unwrap(),
                     server_list.len() == 1
                 ))
             }

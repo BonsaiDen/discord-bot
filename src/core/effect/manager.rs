@@ -44,7 +44,7 @@ impl EffectManager {
         self.aliases.clear();
     }
 
-    pub fn map_from_patterns(&self, names: &Vec<String>) -> Vec<Effect> {
+    pub fn map_from_patterns(&self, names: &[String]) -> Vec<Effect> {
 
         let effects: Vec<Effect> = names.iter()
              .map(|name| self.map_from_pattern(name))
@@ -91,21 +91,21 @@ fn match_name_pattern(name: &str, pattern: &str) -> bool {
 
     let len = pattern.len();
 
+    // Random
+    if pattern == "*" {
+        true
+
     // Contains
-    if len > 2 && pattern.starts_with("*") && pattern.ends_with("*") {
+    } else if len > 2 && pattern.starts_with('*') && pattern.ends_with('*') {
         name.contains(pattern)
 
     // Endswith
-    } else if len > 1 && pattern.starts_with("*") {
+    } else if len > 1 && pattern.starts_with('*') {
         name.ends_with(pattern)
 
     // Startswith
-    } else if len > 1 && pattern.ends_with("*") {
+    } else if len > 1 && pattern.ends_with('*') {
         name.starts_with(pattern)
-
-    // Random
-    } else if pattern == "*" {
-        true
 
     } else if len > 0 {
 

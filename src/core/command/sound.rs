@@ -39,13 +39,7 @@ impl Command for Sound {
         } else if let Some(channel_id) = handle.find_voice_channel_id_for_user(&user.id) {
 
             let effects = server.map_effects(&self.effect_names);
-            if !effects.is_empty() {
-                server.play_effects(handle, channel_id, effects, self.immediate, 0);
-                None
-
-            } else {
-                //server.play_effects(handle, channel_id, effects, self.immediate, 0);
-                //None
+            if effects.is_empty() {
                 Some(vec![
                     format!(
                         "None of the requested sound effect(s) `{}` exist. \
@@ -53,6 +47,10 @@ impl Command for Sound {
                         self.effect_names.join("`, `")
                     )
                 ])
+
+            } else {
+                server.play_effects(handle, channel_id, effects, self.immediate, 0);
+                None
             }
 
         } else {

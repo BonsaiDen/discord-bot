@@ -36,9 +36,9 @@ impl<'a> Message<'a> {
             self.log(handle, server);
         }
 
-        if self.content.starts_with("!") {
+        if self.content.starts_with('!') {
 
-            let mut split = self.content.split(" ");
+            let mut split = self.content.split(' ');
             let name = split.next().unwrap_or("!");
             let command = command::from_args(
                 &name[1..],
@@ -53,9 +53,11 @@ impl<'a> Message<'a> {
             }
 
             if command.auto_remove() {
-                match handle.delete_message(&self) {
-                    true => info!("[{}] [{}] [Message] Deleted message #{}.", server, self.author, self.id.0),
-                    false => warn!("[{}] [{}] [Message] Cannot delete message in private channel.", server, self.author)
+                if handle.delete_message(&self) {
+                    info!("[{}] [{}] [Message] Deleted message #{}.", server, self.author, self.id.0);
+
+                } else {
+                    warn!("[{}] [{}] [Message] Cannot delete message in private channel.", server, self.author);
                 }
             }
 
