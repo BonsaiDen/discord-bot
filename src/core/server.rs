@@ -74,7 +74,7 @@ impl Server {
 
 }
 
-// Effect Playback ------------------------------------------------------------
+// Sounds Effect --------------------------------------------------------------
 impl Server {
 
     pub fn play_effects(
@@ -113,6 +113,10 @@ impl Server {
 
     pub fn map_effects(&mut self, list: &[String]) -> Vec<Effect> {
         self.effect_manager.map_from_patterns(list)
+    }
+
+    pub fn list_effects(&self) -> Vec<&str> {
+        self.effect_manager.list_effects()
     }
 
 }
@@ -276,7 +280,7 @@ impl Server {
 }
 
 
-// Commands -------------------------------------------------------------------
+// Configuration --------------------------------------------------------------
 impl Server {
 
     pub fn reload_configuration(&mut self) {

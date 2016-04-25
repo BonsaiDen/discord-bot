@@ -5,9 +5,11 @@ use super::{Handle, Server, User};
 // Commands -------------------------------------------------------------------
 mod not_found;
 mod not_unique;
+mod help;
 mod reload;
 mod silence;
 mod sound;
+mod sounds;
 
 
 // Type Aliases ---------------------------------------------------------------
@@ -40,8 +42,10 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
     match name {
         "s" => Box::new(sound::Sound::new(arguments, true)),
         "q" => Box::new(sound::Sound::new(arguments, false)),
+        "sounds" => Box::new(sounds::Sounds::new()),
         "silence" => Box::new(silence::Silence::new()),
         "reload" => Box::new(reload::Reload::new()),
+        "help" => Box::new(help::Help::new()),
         _ => Box::new(not_found::NotFound::new(name))
     }
 

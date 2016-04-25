@@ -51,6 +51,13 @@ impl EffectManager {
 
     }
 
+    pub fn list_effects(&self) -> Vec<&str> {
+        self.effects.keys().map(|effect| {
+            effect.as_str()
+
+        }).collect()
+    }
+
     pub fn load_aliases(&mut self) {
         // TODO load for specific server
         self.aliases.clear();

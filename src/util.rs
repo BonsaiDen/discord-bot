@@ -1,5 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fs;
+use std::cmp;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
@@ -29,5 +30,37 @@ pub fn filter_dir<F: FnMut(String, PathBuf)>(
             }
         }
     }
+}
+
+
+// Listing Utilities ----------------------------------------------------------
+pub fn list_words<'a>(
+    title: &str,
+    words: Vec<&str>,
+    block_size: usize,
+    line_size: usize
+
+) -> Vec<String> {
+
+    let total = words.len();
+    words.chunks(block_size).enumerate().map(|(index, block)| {
+
+        let lines: Vec<String> = block.chunks(line_size).map(|c| {
+            c.join(", ")
+
+        }).collect();
+
+        let offset = index * block_size + 1;
+        format!(
+            "\n__{} {} - {} of {}:__\n\n - {}",
+            title,
+            offset,
+            cmp::min(offset + (block_size - 1), total),
+            total,
+            lines.join("\n - ")
+        )
+
+    }).collect()
+
 }
 
