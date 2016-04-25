@@ -61,11 +61,15 @@ impl Command for Sound {
 
     }
 
-    fn is_server_unique(&self) -> bool {
+    fn requires_unique_server(&self) -> bool {
         true
     }
 
     fn auto_remove_message(&self) -> bool {
+        true
+    }
+
+    fn private_response(&self)-> bool {
         true
     }
 

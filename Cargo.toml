@@ -12,6 +12,7 @@ dotenv = "*"
 log = "*"
 chrono = "*"
 clippy = { version = "*", optional = true }
+hyper = "0.8.1"
 
 [features]
 lint = ["clippy"]

@@ -9,6 +9,7 @@ extern crate discord;
 extern crate rand;
 extern crate dotenv;
 extern crate flac;
+extern crate hyper;
 
 
 // STD Dependencies -----------------------------------------------------------

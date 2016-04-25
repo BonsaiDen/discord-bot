@@ -48,7 +48,11 @@ impl<'a> Message<'a> {
 
             if let Some(responses) = command.execute(handle, server, self.author) {
                 for response in responses {
-                    handle.send_message_to_user(&self.author.id, &response);
+                    if command.private_response() {
+                        handle.send_message_to_user(&self.author.id, &response);
+                    } else {
+                        handle.send_message_to_channel(&self.channel_id, &response);
+                    }
                 }
             }
 

@@ -145,11 +145,11 @@ impl Handle {
 
     pub fn send_message_to_user(&self, user_id: &UserId, content: &str) {
         if let Some(channel) = self.find_private_channel_for_user(user_id) {
-            self.send_message(&channel.id, content);
+            self.send_message_to_channel(&channel.id, content);
         }
     }
 
-    pub fn send_message(&self, channel_id: &ChannelId, content: &str) {
+    pub fn send_message_to_channel(&self, channel_id: &ChannelId, content: &str) {
         self.discord.send_message(channel_id, content, "", false).ok();
     }
 

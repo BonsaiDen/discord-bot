@@ -6,6 +6,7 @@ use super::{Handle, Server, User};
 mod not_found;
 mod not_unique;
 mod help;
+mod ip;
 mod reload;
 mod silence;
 mod sound;
@@ -25,7 +26,7 @@ pub fn from_args(
 ) -> Box<Command> {
 
     let command = match_from_args(name, arguments);
-    if !unique_server && command.is_server_unique() {
+    if !unique_server && command.requires_unique_server() {
         Box::new(not_unique::NotUnique::new(name))
 
     } else {
@@ -44,6 +45,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "q" => Box::new(sound::Sound::new(arguments, false)),
         "sounds" => Box::new(sounds::Sounds::new()),
         "silence" => Box::new(silence::Silence::new()),
+        "ip" => Box::new(ip::Ip::new()),
         "reload" => Box::new(reload::Reload::new()),
         "help" => Box::new(help::Help::new()),
         _ => Box::new(not_found::NotFound::new(name))
@@ -55,7 +57,8 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
 // Traits ---------------------------------------------------------------------
 pub trait Command {
     fn execute(&self, &mut Handle, &mut Server, &User) -> CommandResult;
-    fn is_server_unique(&self) -> bool;
+    fn requires_unique_server(&self) -> bool;
     fn auto_remove_message(&self) -> bool;
+    fn private_response(&self) -> bool;
 }
 

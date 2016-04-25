@@ -44,11 +44,15 @@ impl Command for Help {
         Some(vec![HELP_TEXT.to_string()])
     }
 
-    fn is_server_unique(&self) -> bool {
+    fn requires_unique_server(&self) -> bool {
         false
     }
 
     fn auto_remove_message(&self) -> bool {
+        true
+    }
+
+    fn private_response(&self)-> bool {
         true
     }
 
