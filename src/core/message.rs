@@ -52,7 +52,7 @@ impl<'a> Message<'a> {
                 }
             }
 
-            if command.auto_remove() {
+            if command.auto_remove_message() {
                 if handle.delete_message(&self) {
                     info!("[{}] [{}] [Message] Deleted message #{}.", server, self.author, self.id.0);
 

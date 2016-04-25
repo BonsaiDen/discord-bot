@@ -25,7 +25,7 @@ pub fn from_args(
 ) -> Box<Command> {
 
     let command = match_from_args(name, arguments);
-    if !unique_server && command.is_unique() {
+    if !unique_server && command.is_server_unique() {
         Box::new(not_unique::NotUnique::new(name))
 
     } else {
@@ -55,7 +55,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
 // Traits ---------------------------------------------------------------------
 pub trait Command {
     fn execute(&self, &mut Handle, &mut Server, &User) -> CommandResult;
-    fn is_unique(&self) -> bool;
-    fn auto_remove(&self) -> bool;
+    fn is_server_unique(&self) -> bool;
+    fn auto_remove_message(&self) -> bool;
 }
 

@@ -34,11 +34,11 @@ impl Command for NotUnique {
 
     }
 
-    fn is_unique(&self) -> bool {
+    fn is_server_unique(&self) -> bool {
         false
     }
 
-    fn auto_remove(&self) -> bool {
+    fn auto_remove_message(&self) -> bool {
         false
     }
 

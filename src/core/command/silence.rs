@@ -24,11 +24,11 @@ impl Command for Silence {
         None
     }
 
-    fn is_unique(&self) -> bool {
+    fn is_server_unique(&self) -> bool {
         true
     }
 
-    fn auto_remove(&self) -> bool {
+    fn auto_remove_message(&self) -> bool {
         false
     }
 
