@@ -1,4 +1,5 @@
 // STD Dependencies -----------------------------------------------------------
+use std::cmp;
 use std::thread;
 use std::time::Duration;
 use std::sync::Arc;
@@ -67,6 +68,7 @@ impl Listener {
                 }
 
                 if silent_for_seconds > 100 {
+                    // TODO check if at least 3 people listening
                     silent_for_seconds = 0;
                 }
 
@@ -80,7 +82,7 @@ impl Listener {
             timer_thread: Some(timer),
             peak_sender: peak_sender,
             queue_handle: Some(status_sender),
-            silence_threshold: 7500
+            silence_threshold: 0
         }
 
     }
@@ -107,11 +109,15 @@ impl AudioReceiver for Listener {
     fn speaking_update(&mut self, _: u32, _: &UserId, _: bool) {}
 
     fn voice_packet(&mut self, _: u32, _: u16, _: u32, _: bool, data: &[i16]) {
-        // TODO use dynamic / adaptive peak calculation
+
         let peak = (*data.iter().max_by_key(|s| (**s as i32).abs()).unwrap_or(&0) as i32).abs() as u32;
-        if peak > self.silence_threshold {
+        if peak > self.silence_threshold * 2 {
             self.peak_sender.send(Some(peak)).ok();
         }
+
+        // TODO use bigger sliding window
+        self.silence_threshold = cmp::max((self.silence_threshold + peak) / 2, 2000);
+
     }
 
 }

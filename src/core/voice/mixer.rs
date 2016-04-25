@@ -3,6 +3,10 @@ use std::cmp;
 use std::collections::VecDeque;
 
 
+// Statics --------------------------------------------------------------------
+static MAX_PARALLEL_SOURCE_LISTS: usize = 2;
+
+
 // Discord Dependencies -------------------------------------------------------
 use discord::voice::AudioSource;
 
@@ -33,30 +37,35 @@ impl Mixer {
 
     fn mix(&mut self, buffer: &mut [i16]) -> usize {
 
-        // Pop the next effect list from the queue
-        if let Some(entry) = {
-            self.queue.lock().unwrap().pop_front()
+        // Allow maximum of two sound lists to be played in parallel
+        if self.active_lists.len() < MAX_PARALLEL_SOURCE_LISTS {
 
-        } {
-            match entry {
-                QueueEntry::EffectList(effects, delay) => {
-                    self.active_lists.push(SourceList::new(effects, delay));
-                },
-                QueueEntry::QueuedEffectList(effects, delay) => {
-                    self.waiting_lists.push_back(SourceList::new(effects, delay));
-                },
-                QueueEntry::Reset => {
-                    self.active_lists.clear();
-                    self.waiting_lists.clear();
+            // Pop the next effect list from the queue
+            if let Some(entry) = {
+                self.queue.lock().unwrap().pop_front()
+
+            } {
+                match entry {
+                    QueueEntry::EffectList(effects, delay) => {
+                        self.active_lists.push(SourceList::new(effects, delay));
+                    },
+                    QueueEntry::QueuedEffectList(effects, delay) => {
+                        self.waiting_lists.push_back(SourceList::new(effects, delay));
+                    },
+                    QueueEntry::Reset => {
+                        self.active_lists.clear();
+                        self.waiting_lists.clear();
+                    }
+                }
+
+            // If there is no next effect in the queue and we currently have no active
+            // lists, pop a list from the waiting stack and make it active
+            } else if self.active_lists.is_empty() {
+                if let Some(list) = self.waiting_lists.pop_front() {
+                    self.active_lists.push(list);
                 }
             }
 
-        // If there is no next effect in the queue and we currently have no active
-        // lists, pop a list from the waiting stack and make it active
-        } else if self.active_lists.is_empty() {
-            if let Some(list) = self.waiting_lists.pop_front() {
-                self.active_lists.push(list);
-            }
         }
 
         // Maximum possible sample value

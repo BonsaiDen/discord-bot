@@ -143,6 +143,22 @@ impl Handle {
 
     }
 
+    pub fn find_server_user_by_nickname(&self, server_id: &ServerId, nickname: &str) -> Option<User> {
+
+        for srv in self.state.servers().iter() {
+            if srv.id == *server_id {
+                if let Some(member) = srv.members.iter().find(|m| {
+                    &format!("{}#{}", m.user.name, m.user.discriminator) == nickname
+                }) {
+                    return Some(User::new(&member.user));
+                }
+            }
+        }
+
+        None
+
+    }
+
     pub fn send_message_to_user(&self, user_id: &UserId, content: &str) {
         if let Some(channel) = self.find_private_channel_for_user(user_id) {
             self.send_message_to_channel(&channel.id, content);

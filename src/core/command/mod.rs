@@ -5,6 +5,7 @@ use super::{Handle, Server, User};
 // Commands -------------------------------------------------------------------
 mod not_found;
 mod not_unique;
+mod greeting;
 mod help;
 mod ip;
 mod reload;
@@ -46,6 +47,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "sounds" => Box::new(sounds::Sounds::new()),
         "silence" => Box::new(silence::Silence::new()),
         "ip" => Box::new(ip::Ip::new()),
+        "greeting" => Box::new(greeting::Greeting::new(arguments)),
         "reload" => Box::new(reload::Reload::new()),
         "help" => Box::new(help::Help::new()),
         _ => Box::new(not_found::NotFound::new(name))
@@ -56,9 +58,14 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
 
 // Traits ---------------------------------------------------------------------
 pub trait Command {
+
     fn execute(&self, &mut Handle, &mut Server, &User) -> CommandResult;
+
     fn requires_unique_server(&self) -> bool;
+
     fn auto_remove_message(&self) -> bool;
+
     fn private_response(&self) -> bool;
+
 }
 

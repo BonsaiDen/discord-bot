@@ -11,6 +11,7 @@ use hyper::header::Connection;
 use super::super::{Handle, Server, User};
 use super::{Command, CommandResult};
 
+
 // Bot IP Information ---------------------------------------------------------
 pub struct Ip;
 
@@ -54,7 +55,7 @@ fn get_ip() -> String {
 
     let client = Client::new();
     let mut res = client.get(
-        "http://icanhazip.com/"
+        "https://icanhazip.com/"
 
     ).header(Connection::close()).send().unwrap();
 

@@ -12,7 +12,6 @@ use discord::model::{ChannelId, ServerId, VoiceState};
 // Internal Dependencies ------------------------------------------------------
 use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
-    Greeting,
     Listener, ListenerCount, EmptyListenerCount,
     Mixer,
     Queue, QueueHandle, QueueEntry, EmptyQueue
@@ -37,7 +36,7 @@ pub struct Server {
     voice_listener_handle: Option<QueueHandle>,
     voice_listener_count: ListenerCount,
     voice_states: Vec<(ChannelId, User)>,
-    voice_greetings: HashMap<String, Greeting>,
+    //voice_greetings: HashMap<String, Greeting>,
     voice_queue: Queue,
 
     // Effects
@@ -62,7 +61,7 @@ impl Server {
             voice_listener_handle: None,
             voice_listener_count: EmptyListenerCount::create(),
             voice_states: Vec::new(),
-            voice_greetings: HashMap::new(),
+            //voice_greetings: HashMap::new(),
             voice_queue: EmptyQueue::create(),
 
             // Effects
@@ -130,7 +129,12 @@ impl Server {
         self.join_voice_channel(handle, None);
     }
 
-    pub fn update_voice(&mut self, handle: &mut Handle, voice: VoiceState, user: User) {
+    pub fn update_voice(
+        &mut self,
+        handle: &mut Handle,
+        voice: VoiceState,
+        user: User
+    ) {
 
         if user.id == handle.user_id() {
             if let Some(_) = voice.channel_id {
@@ -145,6 +149,7 @@ impl Server {
             if self.voice_states.iter().any(|&(_, ref u)| u.id == user.id) {
                 if self.update_voice_state(channel_id, voice, &user) {
                     info!("[Server] [{}] [{}] [Voice] User switched channel.", self, user);
+                    self.greet_user(channel_id, &user);
 
                 } else {
                     info!("[Server] [{}] [{}] [Voice] User state updated.", self, user);
@@ -152,6 +157,7 @@ impl Server {
 
             } else {
                 info!("[Server] [{}] [{}] [Voice] User joined channel.", self, user);
+                self.greet_user(channel_id, &user);
                 self.add_voice_state(channel_id, &voice, user);
             }
 
@@ -274,6 +280,10 @@ impl Server {
         }
 
         self.last_voice_channel = Some(channel_id);
+
+    }
+
+    fn greet_user(&mut self, _: ChannelId, _: &User) {
 
     }
 
