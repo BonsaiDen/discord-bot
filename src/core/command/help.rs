@@ -11,6 +11,8 @@ static HELP_TEXT: &'static str = "
 - `!q <sound>` - Queues up the requested sound to be played once all other currently playing / queued sounds have finished.
 - `!sounds` - Sends a listing of all available sound effects in a private channel.
 - `!silence` - Immediately stops all playing sounds and removes all other queued effects.
+- `!leave` - Makes the bot leave its current voice channel.
+- `!ip` - Posts the bot's the public IP onto the current channel.
 - `!reload` - Reloads the sound list from the on disk flac files.
 - `!help` - Displays this help text.
 

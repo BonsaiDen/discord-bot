@@ -8,6 +8,7 @@ mod not_unique;
 mod greeting;
 mod help;
 mod ip;
+mod leave;
 mod reload;
 mod silence;
 mod sound;
@@ -46,6 +47,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "q" => Box::new(sound::Sound::new(arguments, false)),
         "sounds" => Box::new(sounds::Sounds::new()),
         "silence" => Box::new(silence::Silence::new()),
+        "leave" => Box::new(leave::Leave::new()),
         "ip" => Box::new(ip::Ip::new()),
         "greeting" => Box::new(greeting::Greeting::new(arguments)),
         "reload" => Box::new(reload::Reload::new()),

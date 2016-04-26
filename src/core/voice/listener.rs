@@ -3,6 +3,7 @@ use std::cmp;
 use std::thread;
 use std::time::Duration;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::sync::atomic::AtomicUsize;
 use std::sync::mpsc::{channel, Sender};
 
@@ -38,7 +39,7 @@ pub struct Listener {
 
 impl Listener {
 
-    pub fn new(_: Queue, _: ListenerCount) -> Listener {
+    pub fn new(_: Queue, listener_count: ListenerCount) -> Listener {
 
         let (peak_sender, peak_receive) = channel::<(Option<u32>)>();
         let (status_sender, status_receive) = channel::<(QueueEntry)>();
@@ -46,9 +47,16 @@ impl Listener {
         let timer = thread::spawn(move || {
 
             let mut silent_for_seconds: usize = 0;
-            loop {
+            'outer: loop {
 
-                silent_for_seconds += 1;
+                // Check number of active users in channel
+                let active_listeners = listener_count.load(Ordering::Relaxed);
+                if active_listeners > 2 {
+                    silent_for_seconds += 1;
+
+                } else {
+                    silent_for_seconds = 0;
+                }
 
                 // Sample Peaks
                 while let Ok(option) = peak_receive.try_recv() {
@@ -56,7 +64,7 @@ impl Listener {
                         silent_for_seconds = 0;
 
                     } else {
-                        break;
+                        break 'outer;
                     }
                 }
 
@@ -67,8 +75,8 @@ impl Listener {
                     }
                 }
 
-                if silent_for_seconds > 100 {
-                    // TODO check if at least 3 people listening
+                if silent_for_seconds > 60 {
+                    info!("[Listener] Silence for 60 seconds detected.");
                     silent_for_seconds = 0;
                 }
 
@@ -115,7 +123,7 @@ impl AudioReceiver for Listener {
             self.peak_sender.send(Some(peak)).ok();
         }
 
-        // TODO use bigger sliding window
+        // TODO use bigger sliding window?
         self.silence_threshold = cmp::max((self.silence_threshold + peak) / 2, 2000);
 
     }

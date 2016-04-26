@@ -122,10 +122,21 @@ impl Server {
         self.effect_manager.list_effects()
     }
 
-    pub fn get_effect_suggestions(&self, name: &str, max_distance: u32, count: usize) -> Vec<&str> {
+    pub fn get_effect_suggestions(
+        &self,
+        name: &str,
+        max_distance: u32,
+        count: usize
+
+    ) -> Vec<&str> {
 
         let mut suggestions: Vec<(u32, &str)> = self.list_effects().iter().map(|effect| {
-            (edit_distance(name, effect).abs() as u32, *effect)
+            if effect.contains(name) {
+                (max_distance / 2, *effect)
+
+            } else {
+                (edit_distance(name, effect).abs() as u32, *effect)
+            }
 
         }).filter(|&(l, _)| l < max_distance).collect();
 
@@ -156,9 +167,12 @@ impl Server {
             if let Some(_) = voice.channel_id {
                 info!("[Server] [{}] [Voice] Joined channel.", self);
 
-            } else {
+            } else if self.voice_listener_handle.is_some() {
                 info!("[Server] [{}] [Voice] Left channel.", self);
                 self.voice_listener_handle = None;
+
+            } else {
+                info!("[Server] [{}] [Voice] Ignored leave from previous connection.", self);
             }
 
         } else if let Some(channel_id) = voice.channel_id {
@@ -181,6 +195,16 @@ impl Server {
             info!("[Server] [{}] [{}] [Voice] User left channel.", self, user);
             self.voice_states.retain(|&(_, ref u)| u.id != user.id);
         }
+
+        // Only do this as long as we are connected, otherwise we'll be leaking
+        // voice threads
+        if self.voice_listener_handle.is_some() {
+            self.update_voice_count(handle);
+        }
+
+    }
+
+    fn update_voice_count(&mut self, handle: &mut Handle) {
 
         if let Some(channel_id) = handle.get_server_voice(self.id).current_channel() {
 
@@ -243,6 +267,11 @@ impl Server {
             false
         }
 
+    }
+
+    pub fn leave_voice_channel(&mut self, handle: &mut Handle) {
+        handle.disconnect_server_voice(self.id);
+        self.last_voice_channel = None;
     }
 
     fn update_voice_state(&mut self, channel_id: ChannelId, voice: VoiceState, user: &User) -> bool {
