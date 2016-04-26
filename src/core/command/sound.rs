@@ -40,13 +40,32 @@ impl Command for Sound {
 
             let effects = server.map_effects(&self.effect_names);
             if effects.is_empty() {
-                Some(vec![
-                    format!(
-                        "None of the requested sound effect(s) `{}` exist. \
-                        Please see `!sounds` for a list of all available effects.",
-                        self.effect_names.join("`, `")
-                    )
-                ])
+
+                let suggestions = server.get_effect_suggestions(
+                    self.effect_names.get(0).unwrap(),
+                    6, 5
+                );
+
+                if suggestions.is_empty() {
+                    Some(vec![
+                        format!(
+                            "None of the requested sound effect(s) `{}` exist. \
+                            See `!sounds` for a list of all available effects.",
+                            self.effect_names.join("`, `")
+                        )
+                    ])
+
+                } else {
+                    Some(vec![
+                        format!(
+                            "None of the requested sound effect(s) `{}` exist. \
+                            Did you mean one of `{}`?  \
+                            If not, see `!sounds` for a list of all available effects.",
+                            self.effect_names.join("`, `"),
+                            suggestions.join("`, `")
+                        )
+                    ])
+                }
 
             } else {
                 server.play_effects(handle, channel_id, effects, self.immediate, 0);

@@ -10,6 +10,7 @@ extern crate rand;
 extern crate dotenv;
 extern crate flac;
 extern crate hyper;
+extern crate edit_distance;
 
 
 // STD Dependencies -----------------------------------------------------------

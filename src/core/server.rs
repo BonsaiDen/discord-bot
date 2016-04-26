@@ -1,12 +1,16 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::path::PathBuf;
-use std::collections::HashMap;
+//use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
 
 // Discord Dependencies -------------------------------------------------------
 use discord::model::{ChannelId, ServerId, VoiceState};
+
+
+// External Dependencies ------------------------------------------------------
+use edit_distance::edit_distance;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -116,6 +120,18 @@ impl Server {
 
     pub fn list_effects(&self) -> Vec<&str> {
         self.effect_manager.list_effects()
+    }
+
+    pub fn get_effect_suggestions(&self, name: &str, max_distance: u32, count: usize) -> Vec<&str> {
+
+        let mut suggestions: Vec<(u32, &str)> = self.list_effects().iter().map(|effect| {
+            (edit_distance(name, effect).abs() as u32, *effect)
+
+        }).filter(|&(l, _)| l < max_distance).collect();
+
+        suggestions.sort();
+        suggestions.iter().map(|&(_, s)| s).take(count).collect()
+
     }
 
 }

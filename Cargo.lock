@@ -6,6 +6,7 @@ dependencies = [
  "clippy 0.0.63 (registry+https://github.com/rust-lang/crates.io-index)",
  "discord 0.5.0 (git+https://github.com/SpaceManiac/discord-rs.git?rev=master)",
  "dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "edit-distance 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "flac 0.3.0 (git+https://github.com/bonsaiden/flac.git?rev=master)",
  "hyper 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -142,6 +143,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "regex 0.1.68 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "edit-distance"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "env_logger"
