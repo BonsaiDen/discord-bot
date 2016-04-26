@@ -20,7 +20,7 @@ impl Command for Reload {
 
     fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Reload] Server configuration reloaded.", server, user);
-        server.reload_configuration();
+        server.load_config();
         Some(vec![
             format!("{} requested a configuration reload for this server.", user.nickname)
         ])

@@ -16,11 +16,11 @@ use super::Effect;
 pub struct EffectManager {
 
     // Effects
-    effects: HashMap<String, Effect>,
+    effects: HashMap<String, Vec<Effect>>,
     effects_directory: PathBuf,
 
     // Aliases
-    aliases: HashMap<String, String>
+    aliases: HashMap<String, Vec<Effect>>
 
 }
 
@@ -39,14 +39,39 @@ impl EffectManager {
         }
     }
 
-    pub fn load_effects(&mut self) {
+    pub fn set_aliases(&mut self, aliases: HashMap<String, Vec<String>>) {
 
-        // TODO pre-load all effects and calculate compression?
-        self.effects.clear();
         self.aliases.clear();
 
+        for (alias, names) in aliases {
+
+            // TODO support * names
+            let mapped: Vec<Effect> = names.iter().filter(|name| {
+                self.effects.contains_key(*name)
+
+            }).map(|name| {
+                self.effects.get(name).unwrap().clone()
+
+            }).flat_map(|s| s).collect();
+
+            if !mapped.is_empty() {
+                self.aliases.insert(alias, mapped);
+            }
+
+        }
+
+    }
+
+    pub fn get_aliases(&self) -> &HashMap<String, Vec<Effect>> {
+        &self.aliases
+    }
+
+    pub fn load_effects(&mut self) {
+
+        self.effects.clear();
+
         util::filter_dir(self.effects_directory.clone(), "flac", |name, path| {
-            self.effects.insert(name.clone(), Effect::new(name, path));
+            self.effects.insert(name.clone(), vec![Effect::new(name, path)]);
         });
 
     }
@@ -58,38 +83,47 @@ impl EffectManager {
         }).collect()
     }
 
-    pub fn load_aliases(&mut self) {
-        // TODO load for specific server
-        self.aliases.clear();
-    }
-
     pub fn map_from_patterns(&self, names: &[String]) -> Vec<Effect> {
 
         let effects: Vec<Effect> = names.iter()
              .map(|name| self.map_from_pattern(name))
              .filter(|e| e.is_some())
              .map(|e|e.unwrap())
-             .collect();
+             .flat_map(|s| s).collect();
 
         // TODO improve effects name listing
         info!(
             "[EffectManager] Mapped \"{}\" to \"{}\"",
             names.join("\", \""),
-            effects.iter().map(|e| e.name.as_str() ).collect::<Vec<&str>>().join("\", \"")
+            effects.iter().map(|e| {
+                e.name.as_str()
+
+            }).collect::<Vec<&str>>().join("\", \"")
         );
+
         effects
 
     }
 
-    fn map_from_pattern(&self, pattern: &str) -> Option<Effect> {
+    fn map_from_pattern(&self, pattern: &str) -> Option<Vec<Effect>> {
 
-        let matching: Vec<&str> = self.effects.keys().map(|n| {
+        let mut matching: Vec<&str> = self.effects.keys().map(|n| {
             n.as_str()
 
         }).filter(|name| match_name_pattern(name, pattern) ).collect();
 
+        let matching_aliases: Vec<&str> = self.aliases.keys().map(|n| {
+            n.as_str()
+
+        }).filter(|name| match_name_pattern(name, pattern) ).collect();
+
+        matching.extend(matching_aliases);
+
         if let Some(name) = thread_rng().choose(&matching[..]) {
             if let Some(effect) = self.effects.get(*name) {
+                Some(effect.clone())
+
+            } else if let Some(effect) = self.aliases.get(*name) {
                 Some(effect.clone())
 
             } else {

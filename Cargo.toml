@@ -14,6 +14,7 @@ chrono = "*"
 clippy = { version = "*", optional = true }
 hyper = "0.8.1"
 edit-distance = "^1.0.0"
+toml = "0.1"
 
 [features]
 lint = ["clippy"]

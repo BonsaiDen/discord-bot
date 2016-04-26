@@ -35,8 +35,9 @@ pub struct Bot {
     // Whitelisting
     server_whitelist: Option<Vec<ServerId>>,
 
-    // Effects
+    // Directories
     effects_directory: PathBuf,
+    config_directory: PathBuf,
 
     // Internal State
     servers: HashMap<ServerId, Server>,
@@ -52,7 +53,9 @@ impl Bot {
     pub fn new(
         token: String,
         server_whitelist: Option<Vec<ServerId>>,
-        effects_directory: PathBuf
+        effects_directory: PathBuf,
+        config_directory: PathBuf
+
     ) -> Bot {
 
         Bot {
@@ -62,8 +65,9 @@ impl Bot {
             // Whitelisting
             server_whitelist: server_whitelist,
 
-            // Effects
+            // Directories
             effects_directory: effects_directory,
+            config_directory: config_directory,
 
             // Internal State
             servers: HashMap::new(),
@@ -424,10 +428,11 @@ impl Bot {
 
                 let mut server = Server::new(
                     *server_id,
-                    self.effects_directory.clone()
+                    self.effects_directory.clone(),
+                    self.config_directory.clone()
                 );
 
-                server.reload_configuration();
+                server.load_config();
                 self.servers.insert(*server_id, server);
 
             }

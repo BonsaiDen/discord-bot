@@ -10,6 +10,7 @@ extern crate rand;
 extern crate dotenv;
 extern crate flac;
 extern crate hyper;
+extern crate toml;
 extern crate edit_distance;
 
 
@@ -32,7 +33,6 @@ mod logger;
 mod util;
 
 
-
 // Main -----------------------------------------------------------------------
 fn main() {
 
@@ -49,7 +49,8 @@ fn main() {
 
             }).collect::<Vec<ServerId>>())
         }),
-        PathBuf::from(env::var_os("EFFECTS_DIRECTORY").unwrap_or("".into()))
+        PathBuf::from(env::var_os("EFFECTS_DIRECTORY").unwrap_or("".into())),
+        PathBuf::from(env::var_os("CONFIG_DIRECTORY").unwrap_or("".into()))
     );
 
     bot.connect();

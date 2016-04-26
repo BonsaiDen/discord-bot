@@ -36,6 +36,7 @@ impl Greeting {
         );
 
         if let Some(user) = greeted_user {
+            server.store_config();
             Some(vec![format!(
                 "Added custom greeting \"{}\" for {} on the current server.",
                 self.effect.as_ref().unwrap(), user.nickname
@@ -58,6 +59,7 @@ impl Greeting {
         );
 
         if let Some(user) = greeted_user {
+            server.store_config();
             Some(vec![format!(
                 "Removed custom greeting for {} on the current server.",
                 user.nickname

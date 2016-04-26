@@ -1,7 +1,7 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::path::PathBuf;
-//use std::collections::HashMap;
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
 
@@ -10,20 +10,25 @@ use discord::model::{ChannelId, ServerId, VoiceState};
 
 
 // External Dependencies ------------------------------------------------------
+use chrono;
 use edit_distance::edit_distance;
 
 
 // Internal Dependencies ------------------------------------------------------
+mod config;
+use self::config::Config;
+
 use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
     Listener, ListenerCount, EmptyListenerCount,
-    Mixer,
+    Mixer, Greeting,
     Queue, QueueHandle, QueueEntry, EmptyQueue
 };
 
 
 // Statics --------------------------------------------------------------------
-static PLAY_EFFECT_JOIN_DELAY: usize = 300;
+static MILLIS_EFFECT_JOIN_DELAY: usize = 300;
+static SECS_USER_GREETING_DELAY: i64 = 60;
 
 
 // Server Abstraction ---------------------------------------------------------
@@ -34,13 +39,14 @@ pub struct Server {
     name: String,
     channel_count: usize,
     member_count: usize,
+    config: Config,
 
     // Voice
     last_voice_channel: Option<ChannelId>,
     voice_listener_handle: Option<QueueHandle>,
     voice_listener_count: ListenerCount,
     voice_states: Vec<(ChannelId, User)>,
-    //voice_greetings: HashMap<String, Greeting>,
+    voice_greetings: HashMap<String, Greeting>,
     voice_queue: Queue,
 
     // Effects
@@ -50,7 +56,12 @@ pub struct Server {
 
 impl Server {
 
-    pub fn new(id: ServerId, effects_directory: PathBuf) -> Server {
+    pub fn new(
+        id: ServerId,
+        effects_directory: PathBuf,
+        config_directory: PathBuf
+
+    ) -> Server {
 
         Server {
 
@@ -59,13 +70,14 @@ impl Server {
             name: "".to_string(),
             channel_count: 0,
             member_count: 0,
+            config: Config::new(id, config_directory),
 
             // Voice
             last_voice_channel: None,
             voice_listener_handle: None,
             voice_listener_count: EmptyListenerCount::create(),
             voice_states: Vec::new(),
-            //voice_greetings: HashMap::new(),
+            voice_greetings: HashMap::new(),
             voice_queue: EmptyQueue::create(),
 
             // Effects
@@ -91,7 +103,7 @@ impl Server {
 
         // Add additional delay if we need to join the channel
         if self.join_voice_channel(handle, Some(channel_id)) {
-            delay += PLAY_EFFECT_JOIN_DELAY;
+            delay += MILLIS_EFFECT_JOIN_DELAY;
         }
 
         if let Ok(mut queue) = self.voice_queue.lock() {
@@ -179,7 +191,7 @@ impl Server {
             if self.voice_states.iter().any(|&(_, ref u)| u.id == user.id) {
                 if self.update_voice_state(channel_id, voice, &user) {
                     info!("[Server] [{}] [{}] [Voice] User switched channel.", self, user);
-                    self.greet_user(channel_id, &user);
+                    self.greet_user(handle, channel_id, &user);
 
                 } else {
                     info!("[Server] [{}] [{}] [Voice] User state updated.", self, user);
@@ -187,7 +199,7 @@ impl Server {
 
             } else {
                 info!("[Server] [{}] [{}] [Voice] User joined channel.", self, user);
-                self.greet_user(channel_id, &user);
+                self.greet_user(handle, channel_id, &user);
                 self.add_voice_state(channel_id, &voice, user);
             }
 
@@ -328,8 +340,57 @@ impl Server {
 
     }
 
-    fn greet_user(&mut self, _: ChannelId, _: &User) {
+    fn greet_user(
+        &mut self,
+        handle: &mut Handle,
+        channel_id: ChannelId,
+        user: &User
+    ) {
 
+        let mut user_greeting = None;
+        if let Some(greeting) = self.get_user_greeting(user) {
+
+            let now = chrono::Local::now().num_seconds_from_unix_epoch();
+            let diff = now - greeting.last_played;
+            if diff > SECS_USER_GREETING_DELAY {
+                greeting.last_played = now;
+                user_greeting = Some((user, vec![greeting.effect.to_string()]));
+            }
+
+        }
+
+        if let Some((user, names)) = user_greeting {
+            let effects = self.map_effects(&names);
+            if !effects.is_empty() {
+                info!(
+                    "[Server] [{}] [{}] [Voice] Greeting with \"{}\".",
+                    self, user, names.join("\", \"")
+                );
+                self.play_effects(handle, channel_id, effects, true, 0);
+            }
+        }
+
+    }
+
+    fn get_user_greeting(&mut self, user: &User) -> Option<&mut Greeting> {
+
+        if !self.voice_greetings.contains_key(&user.nickname) {
+            if let Some(default) = self.get_default_greeting() {
+                Greeting::new(user.nickname.clone(), default, false);
+            }
+        }
+
+        self.voice_greetings.get_mut(&user.nickname)
+
+    }
+
+    fn get_default_greeting(&self) -> Option<String> {
+        if let Some(ref default) = self.voice_greetings.get("default") {
+            Some(default.effect.clone())
+
+        } else {
+            None
+        }
     }
 
 }
@@ -338,8 +399,22 @@ impl Server {
 // Configuration --------------------------------------------------------------
 impl Server {
 
-    pub fn reload_configuration(&mut self) {
+    pub fn load_config(&mut self) {
+
         self.effect_manager.load_effects();
+
+        if let Some((aliases, greetings)) = self.config.load() {
+            self.effect_manager.set_aliases(aliases);
+            self.voice_greetings = greetings;
+        }
+
+    }
+
+    pub fn store_config(&self) {
+        self.config.store(
+            self.effect_manager.get_aliases(),
+            &self.voice_greetings
+        );
     }
 
 }
