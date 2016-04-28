@@ -41,6 +41,9 @@ pub struct Server {
     member_count: usize,
     config: Config,
 
+    // Admins
+    admin_list: Vec<String>,
+
     // Voice
     last_voice_channel: Option<ChannelId>,
     voice_listener_handle: Option<QueueHandle>,
@@ -71,6 +74,9 @@ impl Server {
             channel_count: 0,
             member_count: 0,
             config: Config::new(id, config_directory),
+
+            // Admins
+            admin_list: Vec::new(),
 
             // Voice
             last_voice_channel: None,
@@ -162,6 +168,10 @@ impl Server {
         suggestions.sort();
         suggestions.iter().map(|&(_, s)| s).take(count).collect()
 
+    }
+
+    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), ()> {
+        self.effect_manager.download_effect(effect, url)
     }
 
 }
@@ -410,9 +420,10 @@ impl Server {
 
         self.effect_manager.load_effects();
 
-        if let Some((aliases, greetings)) = self.config.load() {
+        if let Some((aliases, greetings, admins)) = self.config.load() {
             self.effect_manager.set_aliases(aliases);
             self.voice_greetings = greetings;
+            self.admin_list = admins;
         }
 
     }
@@ -420,7 +431,8 @@ impl Server {
     pub fn store_config(&self) {
         self.config.store(
             self.effect_manager.get_aliases(),
-            &self.voice_greetings
+            &self.voice_greetings,
+            &self.admin_list
         );
     }
 
@@ -437,6 +449,7 @@ impl Server {
             self.store_config();
         }
     }
+
 }
 
 
@@ -500,6 +513,10 @@ impl Server {
 
     pub fn id(&self) -> &ServerId {
         &self.id
+    }
+
+    pub fn is_admin_user(&self, user: &User) -> bool {
+        self.admin_list.contains(&user.nickname)
     }
 
 }

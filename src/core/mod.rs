@@ -170,6 +170,7 @@ impl Bot {
                             channel_id: &channel_id,
                             author: &author,
                             content: &content.unwrap(),
+                            attachments: Vec::new(),
                             was_edited: true
                         };
 
@@ -204,6 +205,7 @@ impl Bot {
                         channel_id: &msg.channel_id,
                         author: &author,
                         content: &msg.content,
+                        attachments: msg.attachments,
                         was_edited: false
                     };
 

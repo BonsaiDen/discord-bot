@@ -1,8 +1,16 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fs;
 use std::cmp;
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 use std::ffi::OsStr;
 use std::path::PathBuf;
+
+
+// External Dependencies ------------------------------------------------------
+use hyper::Client;
+use hyper::header::Connection;
 
 
 // Filesystem Utilities -------------------------------------------------------
@@ -30,6 +38,47 @@ pub fn filter_dir<F: FnMut(String, PathBuf)>(
             }
         }
     }
+}
+
+pub fn download_file(mut directory: PathBuf, ext: &str, name: &str, url: &str) -> Result<(), ()> {
+
+    directory.push(name);
+    directory.set_extension(ext);
+
+    // TODO clean up
+
+    let client = Client::new();
+    if let Ok(mut res) = client.get(url).header(Connection::close()).send() {
+        let mut buffer = Vec::new();
+        match File::create(directory) {
+            Ok(mut f) => {
+                match res.read_to_end(&mut buffer) {
+                    Ok(_) => {
+                        info!("[Download] Failed to download file from url: {}", url);
+                        match f.write_all(&buffer) {
+                            Ok(_) => Ok(()),
+                            Err(err) => {
+                                info!("[Download] Failed to write to download to file: {}", err);
+                                Err(())
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        info!("[Download] Failed to download file from url: {}", err);
+                        Err(())
+                    }
+                }
+            }
+            Err(err) => {
+                info!("[Download] Failed to create download file: {}", err);
+                Err(())
+            }
+        }
+
+    } else {
+        Err(())
+    }
+
 }
 
 

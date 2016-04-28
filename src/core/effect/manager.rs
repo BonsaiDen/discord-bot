@@ -136,6 +136,16 @@ impl EffectManager {
 
     }
 
+    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), ()> {
+        match util::download_file(self.effects_directory.clone(), "flac", effect, url) {
+            Ok(_) => {
+                self.load_effects();
+                Ok(())
+            },
+            Err(err) => Err(err)
+        }
+    }
+
 }
 
 

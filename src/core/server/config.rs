@@ -45,7 +45,8 @@ impl Config {
 
     pub fn load(&mut self) -> Option<(
         HashMap<String, Vec<String>>,
-        HashMap<String, Greeting>
+        HashMap<String, Greeting>,
+        Vec<String>
     )> {
         if self.ensure_directory() {
             match File::open(self.config_file.clone()) {
@@ -78,38 +79,13 @@ impl Config {
     pub fn store(
         &self,
         aliases: &HashMap<String, Vec<Effect>>,
-        greetings: &HashMap<String, Greeting>
+        greetings: &HashMap<String, Greeting>,
+        admins: &Vec<String>
     ) {
         if self.ensure_directory() {
             match File::create(self.config_file.clone()) {
                 Ok(mut f) => {
-
-                    let mut toml: BTreeMap<String, toml::Value> = BTreeMap::new();
-
-                    let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
-                    for (nickname, greeting) in greetings {
-                        if greeting.permanent {
-                            table.insert(
-                                nickname.clone(),
-                                toml::Value::String(greeting.effect.clone())
-                            );
-                        }
-                    }
-                    toml.insert("greetings".to_string(), toml::Value::Table(table));
-
-                    let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
-                    for (alias, effects) in aliases {
-                        table.insert(
-                            alias.clone(),
-                            toml::Value::Array(effects.iter().map(|e| {
-                                toml::Value::String(e.name().to_string())
-
-                            }).collect())
-                        );
-                    }
-                    toml.insert("aliases".to_string(), toml::Value::Table(table));
-
-                    if let Err(err) = write!(f, "{}", toml::Value::Table(toml)) {
+                    if let Err(err) = write!(f, "{}", write_toml(aliases, greetings, admins)) {
                         info!("[Config] [{}] [Store] Failed to write configuration file: {}", self, err);
 
                     } else {
@@ -140,7 +116,8 @@ impl Config {
 // Helpers --------------------------------------------------------------------
 fn parse_toml(value: BTreeMap<String, toml::Value>) -> (
     HashMap<String, Vec<String>>,
-    HashMap<String, Greeting>
+    HashMap<String, Greeting>,
+    Vec<String>
 ) {
 
     let mut aliases = HashMap::new();
@@ -170,7 +147,60 @@ fn parse_toml(value: BTreeMap<String, toml::Value>) -> (
         }
     }
 
-    (aliases, greetings)
+    let mut admins = Vec::new();
+    if let Some(&toml::Value::Array(ref nicknames)) = value.get("admins") {
+        for nickname in nicknames {
+            if let &toml::Value::String(ref nickname) = nickname {
+                admins.push(nickname.clone());
+            }
+        }
+    }
+
+    (aliases, greetings, admins)
+
+}
+
+// toml::Value::Table(toml)
+fn write_toml(
+    aliases: &HashMap<String, Vec<Effect>>,
+    greetings: &HashMap<String, Greeting>,
+    admins: &Vec<String>
+
+) -> toml::Value {
+
+    let mut toml: BTreeMap<String, toml::Value> = BTreeMap::new();
+
+    let list = toml::Value::Array(admins.iter().map(|nickname| {
+        toml::Value::String(nickname.to_string())
+
+    }).collect());
+
+    toml.insert("admins".to_string(), list);
+
+    let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
+    for (nickname, greeting) in greetings {
+        if greeting.permanent {
+            table.insert(
+                nickname.clone(),
+                toml::Value::String(greeting.effect.clone())
+            );
+        }
+    }
+    toml.insert("greetings".to_string(), toml::Value::Table(table));
+
+    let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
+    for (alias, effects) in aliases {
+        table.insert(
+            alias.clone(),
+            toml::Value::Array(effects.iter().map(|e| {
+                toml::Value::String(e.name().to_string())
+
+            }).collect())
+        );
+    }
+    toml.insert("aliases".to_string(), toml::Value::Table(table));
+
+    toml::Value::Table(toml)
 
 }
 

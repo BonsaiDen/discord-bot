@@ -25,7 +25,15 @@ where `<sound>` can either be the *full name*, a *group prefix*, or a *wildcard*
 
 - `full name` - Simply check the `!sounds` listing.
 - `group prefix` - This is the part of a sound name before the first `_`  character (e.g. `siw` is the *group prefix* for `siw_kaffee` etc.), requesting a *group prefix* will select a random sound from the group.
-- `wildcards` - These are either `*` for any random sound or `*word*` for any sound effect which contains the specified word part.";
+- `wildcards` - These are either `*` for any random sound or `*word*` for any sound effect which contains the specified word part.
+
+**Effect File Uploads**
+
+Sound effects can be directly uploaded by admin users by sending the file to the bot in a private channel.
+
+The filename must be at least 3 characters long, the file extension must be `flac` and the file itself must be a valid flac file encoded at 48khz and 16bit.
+
+Also, a effect with the same name may not yet exist.";
 
 
 // Bot Usage Information ------------------------------------------------------
