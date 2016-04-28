@@ -31,6 +31,10 @@ impl Effect {
         self.path.to_str().unwrap_or("")
     }
 
+    pub fn name(&self) -> &str {
+        self.name.as_str()
+    }
+
 }
 
 

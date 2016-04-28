@@ -50,6 +50,7 @@ impl<'a> Message<'a> {
                 for response in responses {
                     if command.private_response() {
                         handle.send_message_to_user(&self.author.id, &response);
+
                     } else {
                         handle.send_message_to_channel(&self.channel_id, &response);
                     }

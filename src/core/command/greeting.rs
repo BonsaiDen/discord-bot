@@ -30,22 +30,24 @@ impl Greeting {
 
     fn add(&self, server: &mut Server, user: &User, greeted_user: Option<User>) -> CommandResult {
 
+        let effect = self.effect.as_ref().unwrap();
+        let nickname = self.nickname.as_ref().unwrap();
         info!(
             "[{}] [{}] [Command] [Greeting] Adding greeting \"{}\" for user {}.",
-            server, user, self.effect.as_ref().unwrap(), self.nickname.as_ref().unwrap()
+            server, user, effect, nickname
         );
 
-        if let Some(user) = greeted_user {
-            server.store_config();
+        if let Some(_) = greeted_user {
+            server.add_user_greeting(nickname, effect);
             Some(vec![format!(
                 "Added custom greeting \"{}\" for {} on the current server.",
-                self.effect.as_ref().unwrap(), user.nickname
+                effect, nickname
             )])
 
         } else {
             Some(vec![format!(
                 "User {} is not a member of the current server.",
-                self.nickname.as_ref().unwrap()
+                nickname
             )])
         }
 
@@ -53,22 +55,23 @@ impl Greeting {
 
     fn remove(&self, server: &mut Server, user: &User, greeted_user: Option<User>) -> CommandResult {
 
+        let nickname = self.nickname.as_ref().unwrap();
         info!(
             "[{}] [{}] [Command] [Greeting] Removing greeting for user {}.",
-            server, user, self.nickname.as_ref().unwrap()
+            server, user, nickname
         );
 
-        if let Some(user) = greeted_user {
-            server.store_config();
+        if let Some(_) = greeted_user {
+            server.remove_user_greeting(nickname);
             Some(vec![format!(
-                "Removed custom greeting for {} on the current server.",
-                user.nickname
+                "Removed any custom greeting for {} on the current server.",
+                nickname
             )])
 
         } else {
             Some(vec![format!(
                 "User {} is not a member of the current server.",
-                self.nickname.as_ref().unwrap()
+                nickname
             )])
         }
 

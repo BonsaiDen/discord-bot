@@ -124,6 +124,8 @@ impl Bot {
     fn handle_event(&mut self, handle: &mut Handle, event: Event) {
         match event {
 
+            // TODO handle server removal by deleting configuration
+
             Event::Resumed { .. } => {
                 for (_, server) in &mut self.servers {
                     server.initialize(handle);

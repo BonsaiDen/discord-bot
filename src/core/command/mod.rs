@@ -6,6 +6,7 @@ use super::{Handle, Server, User};
 mod not_found;
 mod not_unique;
 mod greeting;
+mod greetings;
 mod help;
 mod ip;
 mod leave;
@@ -47,9 +48,10 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "q" => Box::new(sound::Sound::new(arguments, false)),
         "sounds" => Box::new(sounds::Sounds::new()),
         "silence" => Box::new(silence::Silence::new()),
-        "leave" => Box::new(leave::Leave::new()),
-        "ip" => Box::new(ip::Ip::new()),
         "greeting" => Box::new(greeting::Greeting::new(arguments)),
+        "greetings" => Box::new(greetings::Greetings::new()),
+        "ip" => Box::new(ip::Ip::new()),
+        "leave" => Box::new(leave::Leave::new()),
         "reload" => Box::new(reload::Reload::new()),
         "help" => Box::new(help::Help::new()),
         _ => Box::new(not_found::NotFound::new(name))

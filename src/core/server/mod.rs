@@ -134,6 +134,13 @@ impl Server {
         self.effect_manager.list_effects()
     }
 
+    pub fn list_greetings(&self) -> Vec<String> {
+        self.voice_greetings.iter().map(|(_, greeting)| {
+            format!("`{}` for **{}**", greeting.effect, greeting.nickname)
+
+        }).collect()
+    }
+
     pub fn get_effect_suggestions(
         &self,
         name: &str,
@@ -417,6 +424,19 @@ impl Server {
         );
     }
 
+    pub fn add_user_greeting(&mut self, nickname: &str, greeting: &str) {
+        self.voice_greetings.insert(
+            nickname.to_string(),
+            Greeting::new(nickname.to_string(), greeting.to_string(), true)
+        );
+        self.store_config();
+    }
+
+    pub fn remove_user_greeting(&mut self, nickname: &str) {
+        if let Some(_) = self.voice_greetings.remove(nickname) {
+            self.store_config();
+        }
+    }
 }
 
 

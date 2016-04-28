@@ -1,7 +1,7 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fs;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::fmt;
 use std::path::PathBuf;
 use std::collections::{BTreeMap, HashMap};
@@ -82,11 +82,43 @@ impl Config {
     ) {
         if self.ensure_directory() {
             match File::create(self.config_file.clone()) {
-                Ok(f) => {
-                    info!("[Config] [{}] [Store]", self);
+                Ok(mut f) => {
+
+                    let mut toml: BTreeMap<String, toml::Value> = BTreeMap::new();
+
+                    let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
+                    for (nickname, greeting) in greetings {
+                        if greeting.permanent {
+                            table.insert(
+                                nickname.clone(),
+                                toml::Value::String(greeting.effect.clone())
+                            );
+                        }
+                    }
+                    toml.insert("greetings".to_string(), toml::Value::Table(table));
+
+                    let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
+                    for (alias, effects) in aliases {
+                        table.insert(
+                            alias.clone(),
+                            toml::Value::Array(effects.iter().map(|e| {
+                                toml::Value::String(e.name().to_string())
+
+                            }).collect())
+                        );
+                    }
+                    toml.insert("aliases".to_string(), toml::Value::Table(table));
+
+                    if let Err(err) = write!(f, "{}", toml::Value::Table(toml)) {
+                        info!("[Config] [{}] [Store] Failed to write configuration file: {}", self, err);
+
+                    } else {
+                        info!("[Config] [{}] [Store] Configuration stored successfully.", self);
+                    }
+
                 }
                 Err(err) => {
-                    info!("[Config] [{}] [Store] Failed to store configuration file: {}", self, err);
+                    info!("[Config] [{}] [Store] Failed to create configuration file: {}", self, err);
                 }
             }
         }

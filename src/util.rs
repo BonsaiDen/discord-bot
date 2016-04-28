@@ -64,3 +64,27 @@ pub fn list_words<'a>(
 
 }
 
+pub fn list_lines<'a>(
+    title: &str,
+    lines: Vec<String>,
+    line_size: usize
+
+) -> Vec<String> {
+
+    let total = lines.len();
+    lines.chunks(line_size).enumerate().map(|(index, lines)| {
+
+        let offset = index * line_size + 1;
+        format!(
+            "\n__{} {} - {} of {}:__\n\n - {}",
+            title,
+            offset,
+            cmp::min(offset + (line_size - 1), total),
+            total,
+            lines.join("\n - ")
+        )
+
+    }).collect()
+
+}
+
