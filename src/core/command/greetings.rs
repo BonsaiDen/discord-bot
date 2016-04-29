@@ -18,7 +18,12 @@ impl Command for Greetings {
         let mut greetings = server.list_greetings();
         greetings.sort();
 
-        Some(util::list_lines("User Greetings", greetings, 100))
+        if greetings.is_empty() {
+            Some(vec![String::from("No user greetings found for the current server.")])
+
+        } else {
+            Some(util::list_lines("User Greetings", greetings, 100))
+        }
 
     }
 

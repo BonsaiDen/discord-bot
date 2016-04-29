@@ -18,7 +18,12 @@ impl Command for Aliases {
         let mut aliases = server.list_aliases();
         aliases.sort();
 
-        Some(util::list_lines("Effect Aliases", aliases, 100))
+        if aliases.is_empty() {
+            Some(vec![String::from("No effect aliases found for the current server.")])
+
+        } else {
+            Some(util::list_lines("Effect Aliases", aliases, 100))
+        }
 
     }
 
