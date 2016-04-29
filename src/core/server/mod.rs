@@ -439,10 +439,10 @@ impl Server {
                 self.effect_manager.set_aliases(aliases);
                 self.voice_greetings = greetings;
                 self.admin_list = admins;
-                info!("[Server] [{}] [Config] [Store] Configuration loaded successfully.", self)
+                info!("[Server] [{}] [Config] [Load] Configuration loaded successfully.", self)
             }
             Err(err) => {
-                warn!("[Server] [{}] [Config] [Store] Configuration could not be loaded: {}", self, err)
+                warn!("[Server] [{}] [Config] [Load] Configuration could not be loaded: {}", self, err)
             }
         }
 

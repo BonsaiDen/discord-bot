@@ -33,10 +33,12 @@ pub struct Config {
 
 impl Config {
 
-    pub fn new(server_id: ServerId, config_directory: PathBuf) -> Config {
+    pub fn new(server_id: ServerId, mut config_directory: PathBuf) -> Config {
+
+        config_directory.push(server_id.0.to_string());
 
         let mut config_file = config_directory.clone();
-        config_file.push(server_id.0.to_string());
+        config_file.push("config");
         config_file.set_extension("toml");
 
         Config {
