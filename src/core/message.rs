@@ -191,12 +191,12 @@ fn get_upload_name(path: &Path) -> Option<String> {
 
     if let Some(filename) = path.file_stem() {
 
-        if filename.len() < 3 {
-            None
+        if let Some(name) = filename.to_str() {
+            if name.len() < 3 {
+                None
 
-        } else if let Some(ext) = path.extension() {
-            if ext == "flac" {
-                if let Some(name) = filename.to_str() {
+            } else if let Some(ext) = path.extension() {
+                if ext == "flac" {
                     if name.is_ascii() {
                         Some(name.to_string())
 
