@@ -8,21 +8,18 @@ use super::{Command, CommandResult};
 pub struct Greetings;
 
 
-// Interface ------------------------------------------------------------------
-impl Greetings {
-    pub fn new() -> Greetings {
-        Greetings
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Greetings {
 
     fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+
         info!("[{}] [{}] [Command] [Greetings] User greeting listing requested.", server, user);
-        let greetings = server.list_greetings();
+
+        let mut greetings = server.list_greetings();
+        greetings.sort();
+
         Some(util::list_lines("User Greetings", greetings, 100))
+
     }
 
     fn requires_unique_server(&self) -> bool {

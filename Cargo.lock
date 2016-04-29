@@ -3,7 +3,7 @@ name = "bot"
 version = "0.1.0"
 dependencies = [
  "chrono 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)",
- "clippy 0.0.63 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clippy 0.0.64 (registry+https://github.com/rust-lang/crates.io-index)",
  "discord 0.5.0 (git+https://github.com/SpaceManiac/discord-rs.git?rev=master)",
  "dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "edit-distance 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "clippy"
-version = "0.0.63"
+version = "0.0.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "quine-mc_cluskey 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "cookie"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "openssl 0.7.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -102,7 +102,7 @@ name = "curl-sys"
 version = "0.1.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "gcc 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "libz-sys 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-sys 0.7.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "gcc"
-version = "0.3.27"
+version = "0.3.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -206,7 +206,7 @@ name = "hyper"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "cookie 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cookie 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "httparse 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -227,7 +227,7 @@ name = "hyper"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "cookie 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cookie 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "httparse 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -269,7 +269,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "lazy_static"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -299,7 +299,7 @@ name = "libz-sys"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "gcc 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -472,8 +472,8 @@ version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "gcc 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-sys 0.7.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-sys-extras 0.7.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -496,7 +496,7 @@ name = "openssl-sys-extras"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "gcc 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-sys 0.7.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

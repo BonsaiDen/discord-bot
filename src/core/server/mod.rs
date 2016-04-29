@@ -70,7 +70,7 @@ impl Server {
 
             // General
             id: id,
-            name: "".to_string(),
+            name: "???".to_string(),
             channel_count: 0,
             member_count: 0,
             config: Config::new(id, config_directory),
@@ -141,8 +141,11 @@ impl Server {
     }
 
     pub fn list_greetings(&self) -> Vec<String> {
-        self.voice_greetings.iter().map(|(_, greeting)| {
-            format!("`{}` for **{}**", greeting.effect, greeting.nickname)
+        self.voice_greetings.values().filter(|greeting| {
+            greeting.permanent
+
+        }).map(|greeting| {
+            format!("{} **=>** `{}`", greeting.nickname, greeting.effect)
 
         }).collect()
     }
@@ -170,7 +173,7 @@ impl Server {
 
     }
 
-    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), ()> {
+    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), String> {
         self.effect_manager.download_effect(effect, url)
     }
 
@@ -420,20 +423,30 @@ impl Server {
 
         self.effect_manager.load_effects();
 
-        if let Some((aliases, greetings, admins)) = self.config.load() {
-            self.effect_manager.set_aliases(aliases);
-            self.voice_greetings = greetings;
-            self.admin_list = admins;
+        match self.config.load() {
+            Ok((aliases, greetings, admins)) => {
+                self.effect_manager.set_aliases(aliases);
+                self.voice_greetings = greetings;
+                self.admin_list = admins;
+                info!("[Server] [{}] [Config] [Store] Configuration loaded successfully.", self)
+            }
+            Err(err) => {
+                warn!("[Server] [{}] [Config] [Store] Configuration could not be loaded: {}", self, err)
+            }
         }
 
     }
 
     pub fn store_config(&self) {
-        self.config.store(
+
+        match self.config.store(
             self.effect_manager.get_aliases(),
             &self.voice_greetings,
             &self.admin_list
-        );
+        ) {
+            Ok(_) => info!("[Server] [{}] [Config] [Store] Configuration stored successfully.", self),
+            Err(err) => warn!("[Server] [{}] [Config] [Store] Configuration could not be stored: {}", self, err)
+        }
     }
 
     pub fn add_user_greeting(&mut self, nickname: &str, greeting: &str) {

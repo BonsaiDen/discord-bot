@@ -1,5 +1,5 @@
 // STD Dependencies -----------------------------------------------------------
-use std::io::Read;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::ascii::AsciiExt;
 
@@ -9,14 +9,8 @@ use discord::{ChannelRef};
 use discord::model::{Attachment, ChannelId, MessageId, ServerId};
 
 
-// External Dependencies ------------------------------------------------------
-use hyper::Client;
-use hyper::header::{Connection, Range, ByteRangeSpec};
-use flac::{ByteStream, Stream};
-use flac::metadata::StreamInfo;
-
-
 // Internal Dependencies ------------------------------------------------------
+use super::super::util;
 use super::{command, Handle, Server, User};
 
 
@@ -80,65 +74,48 @@ impl<'a> Message<'a> {
                 }
             }
 
-        } else if let Some(upload) = self.attachments.get(0) {
+        } else if !self.attachments.is_empty() {
 
-            if server.is_admin_user(self.author) {
+            if !server.is_admin_user(self.author) {
+                handle.send_message_to_user(&self.author.id, "Sorry, only admin users can upload sound effects.");
+                warn!("[{}] [{}] [Message] Ignored file upload from non-admin user.", server, self.author);
 
-                let path = Path::new(upload.filename.as_str());
-                if let Some(name) = get_upload_name(path) {
-
-                    let effect = name.to_ascii_lowercase();
-                    let effect_list = server.list_effects().iter().map(|e| {
-                        e.to_ascii_lowercase()
-
-                    }).collect::<String>();
-
-                    if effect_list.contains(&effect) {
-                        handle.send_message_to_user(&self.author.id, &format!("A effect with the name `{}` already exists.", effect));
-                        warn!("[{}] [{}] [Message] Ignored file upload with existing effect name \"{}\".", server, self.author, effect);
-
-                    } else {
-                        info!("[{}] [{}] [Message] Verfiying file format of upload \"{}\" ({})...", server, self.author, effect, upload.url);
-
-                        // TODO fetch and return / validate file size
-                        if let Some(info) = fetch_flac_info(&upload.url) {
-                            if info.sample_rate == 48000 && info.bits_per_sample == 16 {
-
-                                info!("[{}] [{}] [Message] Upload verified as flac, downloading onto server...", server, self.author);
-                                handle.send_message_to_user(&self.author.id, "Sound effect upload in progress...");
-
-                                if let Ok(_) = server.download_effect(&effect, &upload.url) {
-                                    handle.send_message_to_user(&self.author.id, &format!("The sound effect `{}` was successfully uploaded and is now available!", effect));
-                                    warn!("[{}] [{}] [Message] Flac file upload completed for \"{}\" ({}).", server, self.author, effect, upload.url);
-
-                                } else {
-                                    handle.send_message_to_user(&self.author.id, &format!("The sound effect `{}` failed to upload, please try again.", effect));
-                                    warn!("[{}] [{}] [Message] Flac file upload failed for \"{}\" ({}).", server, self.author, effect, upload.url);
-                                }
-
-                            } else {
-                                handle.send_message_to_user(&self.author.id, &format!("The uploaded flac file with {}hz and {}bits per sample, does not match the required audio format of 48000hz and 16bits.", info.sample_rate, info.bits_per_sample));
-                                warn!("[{}] [{}] [Message] Uploaded flac with {}hz and {}bits per sample, does not match the required audio format of 48000hz and 16bits.", server, self.author, info.sample_rate, info.bits_per_sample);
-                            }
-
-                        } else {
-                            handle.send_message_to_user(&self.author.id, "The uploaded file is not a valid `flac` file.");
-                            warn!("[{}] [{}] [Message] Failed to verify upload as a flac file.", server, self.author);
-                        }
-                    }
-
-                } else {
-                    handle.send_message_to_user(&self.author.id, "The uploaded file has an incorrect filename, please see `!help` for more details.");
-                    warn!("[{}] [{}] [Message] Ignored file upload with incorrect filename.", server, self.author);
+            } else if let Some(ChannelRef::Private(_)) = handle.find_channel_by_id(&self.channel_id) {
+                // TODO Need to check if channel recipient is bot?
+                for attachment in &self.attachments {
+                    self.handle_attachment(handle, server, attachment);
                 }
 
             } else {
-                handle.send_message_to_user(&self.author.id, "Sorry, only admin users can upload sound effects.");
-                warn!("[{}] [{}] [Message] Ignored file upload from non-admin user.", server, self.author);
+                warn!("[{}] [{}] [Message] Ignored file upload from public channel.", server, self.author);
             }
 
         }
 
+    }
+
+    fn handle_attachment(&self, handle: &mut Handle, server: &mut Server, attachment: &Attachment) {
+        match verify_upload(&server, attachment) {
+            Ok((effect, url)) => {
+
+                info!("[{}] [{}] [Message] Upload verified as flac firl with correct format, now downloading onto server...", server, self.author);
+                handle.send_message_to_user(&self.author.id, "Sound effect upload in progress...");
+
+                if let Err(err) = server.download_effect(&effect, &url) {
+                    handle.send_message_to_user(&self.author.id, &format!("The sound effect `{}` failed to upload, please try again.", effect));
+                    warn!("[{}] [{}] [Message] Sound effect upload failed for \"{}\" ({}): {}.", server, self.author, effect, url, err);
+
+                } else {
+                    handle.send_message_to_user(&self.author.id, &format!("The sound effect `{}` was successfully uploaded and is now available!", effect));
+                    info!("[{}] [{}] [Message] Sound effect upload completed for \"{}\" ({}).", server, self.author, effect, url);
+                }
+
+            }
+            Err(err) => {
+                handle.send_message_to_user(&self.author.id, &err);
+                warn!("[{}] [{}] [Message] {}", server, self.author, err);
+            }
+        }
     }
 
     fn log(&self, handle: &mut Handle, server: &mut Server) {
@@ -187,61 +164,48 @@ impl<'a> Message<'a> {
 
 
 // Helpers --------------------------------------------------------------------
-fn get_upload_name(path: &Path) -> Option<String> {
+fn verify_upload<'a>(server: &Server, upload: &'a Attachment) -> Result<(String, &'a str), String> {
 
-    if let Some(filename) = path.file_stem() {
+    let path = Path::new(upload.filename.as_str());
+    if let Some(name) = verify_flac_name(path) {
 
-        if let Some(name) = filename.to_str() {
-            if name.len() < 3 {
-                None
+        let effect_list = server.list_effects().iter().map(|e| {
+            e.to_ascii_lowercase()
 
-            } else if let Some(ext) = path.extension() {
-                if ext == "flac" {
-                    if name.is_ascii() {
-                        Some(name.to_string())
+        }).collect::<String>();
 
-                    } else {
-                        None
-                    }
+        let effect = name.to_ascii_lowercase();
+        if effect_list.contains(&effect) {
+            Err(format!("A effect with the name `{}` already exists.", effect))
 
-                } else {
-                    None
-                }
+        } else if let Ok((length, info)) = util::retrieve_flac_info(&upload.url) {
+            if length > 2048 * 1024 {
+                Err(format!("The uploaded flac file size of {} bytes may not exceed 2 MiB.", length))
+
+            } else if info.sample_rate != 48000 || info.bits_per_sample != 16 {
+                Err(format!("The uploaded flac file with {}hz and {}bits per sample, does not match the required audio format of 48000hz and 16bits.", info.sample_rate, info.bits_per_sample))
 
             } else {
-                None
+                Ok((effect, &upload.url))
             }
 
         } else {
-            None
+            Err("The uploaded file is not a valid `flac` file.".to_string())
         }
 
     } else {
-        None
+        Err("The uploaded file has an incorrect filename, please see `!help` for more details.".to_string())
     }
 
 }
 
-fn fetch_flac_info(url: &str) -> Option<StreamInfo> {
+fn verify_flac_name(path: &Path) -> Option<String> {
 
-    let client = Client::new();
+    let name = path.file_stem().unwrap_or_else(|| OsStr::new("")).to_str().unwrap_or("");
+    let ext = path.extension().unwrap_or_else(|| OsStr::new(""));
 
-    if let Ok(mut res) = client.get(url).header(
-        Range::Bytes(vec![ByteRangeSpec::FromTo(0, 256)])
-
-    ).header(Connection::close()).send() {
-        let mut header = Vec::new();
-        if let Ok(_) = res.read_to_end(&mut header) {
-            if let Ok(stream) = Stream::<ByteStream>::from_buffer(&header[..]) {
-                Some(stream.info())
-
-            } else {
-                None
-            }
-
-        } else {
-            None
-        }
+    if name.is_ascii() && name.len() >= 3 && ext == "flac" {
+        Some(name.to_string())
 
     } else {
         None

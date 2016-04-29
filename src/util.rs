@@ -10,7 +10,9 @@ use std::path::PathBuf;
 
 // External Dependencies ------------------------------------------------------
 use hyper::Client;
-use hyper::header::Connection;
+use hyper::header::{Connection, Range, ByteRangeSpec, ContentLength};
+use flac::{ByteStream, Stream};
+use flac::metadata::StreamInfo;
 
 
 // Filesystem Utilities -------------------------------------------------------
@@ -40,50 +42,65 @@ pub fn filter_dir<F: FnMut(String, PathBuf)>(
     }
 }
 
-pub fn download_file(mut directory: PathBuf, ext: &str, name: &str, url: &str) -> Result<(), ()> {
+pub fn download_file(
+    mut directory: PathBuf,
+    name: &str,
+    ext: &str,
+    url: &str
+
+) -> Result<(), String> {
 
     directory.push(name);
     directory.set_extension(ext);
 
-    // TODO clean up
+    let client = Client::new();
+    client.get(url)
+        .header(Connection::close())
+        .send()
+        .map_err(|err| err.to_string())
+        .and_then(|mut resp| {
+            let mut buffer = Vec::<u8>::new();
+            resp.read_to_end(&mut buffer)
+                .map_err(|err| err.to_string())
+                .map(|_| buffer)
+        })
+        .and_then(|buffer| {
+            File::create(directory)
+                .map_err(|err| err.to_string())
+                .and_then(|mut file| {
+                    file.write_all(&buffer)
+                        .map_err(|err| err.to_string())
+                })
+        })
+
+}
+
+pub fn retrieve_flac_info(url: &str) -> Result<(u64, StreamInfo), String> {
 
     let client = Client::new();
-    if let Ok(mut res) = client.get(url).header(Connection::close()).send() {
-        let mut buffer = Vec::new();
-        match File::create(directory) {
-            Ok(mut f) => {
-                match res.read_to_end(&mut buffer) {
-                    Ok(_) => {
-                        info!("[Download] Failed to download file from url: {}", url);
-                        match f.write_all(&buffer) {
-                            Ok(_) => Ok(()),
-                            Err(err) => {
-                                info!("[Download] Failed to write to download to file: {}", err);
-                                Err(())
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        info!("[Download] Failed to download file from url: {}", err);
-                        Err(())
-                    }
-                }
-            }
-            Err(err) => {
-                info!("[Download] Failed to create download file: {}", err);
-                Err(())
-            }
-        }
-
-    } else {
-        Err(())
-    }
+    client.get(url)
+        .header(Range::Bytes(vec![ByteRangeSpec::FromTo(0, 256)]))
+        .header(Connection::close())
+        .send()
+        .map_err(|err| err.to_string())
+        .and_then(|mut resp| {
+            let length = resp.headers.get::<ContentLength>().map_or(0, |l| l.0);
+            let mut header = Vec::new();
+            resp.read_to_end(&mut header)
+                .map_err(|err| err.to_string())
+                .map(|_| (length, header))
+        })
+        .and_then(|(length, header)| {
+            Stream::<ByteStream>::from_buffer(&header[..])
+                .map_err(|_| "Failed to parse flac header.".to_string())
+                .map(|stream| (length, stream.info()))
+        })
 
 }
 
 
 // Listing Utilities ----------------------------------------------------------
-pub fn list_words<'a>(
+pub fn list_words(
     title: &str,
     words: Vec<&str>,
     block_size: usize,
@@ -113,7 +130,7 @@ pub fn list_words<'a>(
 
 }
 
-pub fn list_lines<'a>(
+pub fn list_lines(
     title: &str,
     lines: Vec<String>,
     line_size: usize

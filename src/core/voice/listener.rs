@@ -123,8 +123,10 @@ impl AudioReceiver for Listener {
             self.peak_sender.send(Some(peak)).ok();
         }
 
-        // TODO use bigger sliding window?
-        self.silence_threshold = cmp::max((self.silence_threshold + peak) / 2, 2000);
+        self.silence_threshold = cmp::max(
+            (self.silence_threshold + peak) / 2,
+            2000
+        );
 
     }
 

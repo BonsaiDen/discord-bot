@@ -8,14 +8,6 @@ use super::{Command, CommandResult};
 pub struct Sounds;
 
 
-// Interface ------------------------------------------------------------------
-impl Sounds {
-    pub fn new() -> Sounds {
-        Sounds
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Sounds {
 

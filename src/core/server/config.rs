@@ -20,6 +20,10 @@ use super::super::Effect;
 use super::super::voice::Greeting;
 
 
+// Type Aliases ---------------------------------------------------------------
+pub type ConfigData = (HashMap<String, Vec<String>>, HashMap<String, Greeting>, Vec<String>);
+
+
 // Server Config Abstraction --------------------------------------------------
 pub struct Config {
     server_id: ServerId,
@@ -43,90 +47,73 @@ impl Config {
 
     }
 
-    pub fn load(&mut self) -> Option<(
-        HashMap<String, Vec<String>>,
-        HashMap<String, Greeting>,
-        Vec<String>
-    )> {
-        if self.ensure_directory() {
-            match File::open(self.config_file.clone()) {
-                Ok(mut file) => {
+    pub fn load(&mut self) -> Result<ConfigData, String> {
+        self.create_config_dir()
+            .and_then(|_| {
+                File::open(self.config_file.clone())
+                    .map_err(|err| err.to_string())
+                    .and_then(|mut file| {
+                        let mut buffer = String::new();
+                        file.read_to_string(&mut buffer)
+                            .map_err(|err| err.to_string())
+                            .map(|_| buffer)
 
-                    let mut toml = String::new();
-                    file.read_to_string(&mut toml).ok();
+                    })
+            })
+            .and_then(|buffer| {
+                toml::Parser::new(&buffer)
+                    .parse()
+                    .map_or_else(|| {
+                        Err("Failed to parse configuration toml.".to_string())
 
-                    if let Some(value) = toml::Parser::new(&toml).parse() {
-                        info!("[Config] [{}] [Load] Configuration loaded successfully.", self);
-                        Some(parse_toml(value))
-
-                    } else {
-                        info!("[Config] [{}] [Load] Configuration file could not be parsed.", self);
-                        None
-                    }
-
-                }
-                Err(err) => {
-                    info!("[Config] [{}] [Load] Failed to load configuration file: {}", self, err);
-                    None
-                }
-            }
-
-        } else {
-            None
-        }
+                    }, |value|{
+                        Ok(decode_toml(value))
+                    })
+            })
     }
 
     pub fn store(
         &self,
         aliases: &HashMap<String, Vec<Effect>>,
         greetings: &HashMap<String, Greeting>,
-        admins: &Vec<String>
-    ) {
-        if self.ensure_directory() {
-            match File::create(self.config_file.clone()) {
-                Ok(mut f) => {
-                    if let Err(err) = write!(f, "{}", write_toml(aliases, greetings, admins)) {
-                        info!("[Config] [{}] [Store] Failed to write configuration file: {}", self, err);
+        admins: &[String]
 
-                    } else {
-                        info!("[Config] [{}] [Store] Configuration stored successfully.", self);
-                    }
+    ) -> Result<(), String> {
+        self.create_config_dir()
+            .and_then(|_| {
+                File::create(self.config_file.clone())
+                    .map_err(|err| err.to_string())
+                    .and_then(|mut file| {
+                        write!(
+                            file,
+                            "{}",
+                            encode_toml(aliases, greetings, admins)
 
-                }
-                Err(err) => {
-                    info!("[Config] [{}] [Store] Failed to create configuration file: {}", self, err);
-                }
-            }
-        }
+                        ).map_err(|err| err.to_string())
+                    })
+            })
     }
 
-    fn ensure_directory(&self) -> bool {
-        if let Err(err) = fs::create_dir_all(self.config_directory.clone()) {
-            info!("[Config] [{}] Failed to create configuration directory: {}", self, err);
-            false
+    fn create_config_dir(&self) -> Result<(), String> {
+        fs::create_dir_all(
+            self.config_directory.clone()
 
-        } else {
-            true
-        }
+        ).map_err(|err| err.to_string())
     }
 
 }
 
 
 // Helpers --------------------------------------------------------------------
-fn parse_toml(value: BTreeMap<String, toml::Value>) -> (
-    HashMap<String, Vec<String>>,
-    HashMap<String, Greeting>,
-    Vec<String>
-) {
+fn decode_toml(value: BTreeMap<String, toml::Value>) -> ConfigData {
 
     let mut aliases = HashMap::new();
     if let Some(&toml::Value::Table(ref table)) = value.get("aliases") {
         for (alias, names) in table {
-            if let &toml::Value::Array(ref names) = names {
+            if let toml::Value::Array(ref names) = *names {
                 let mut effects: Vec<String> = Vec::new();
                 for name in names {
-                    if let &toml::Value::String(ref name) = name {
+                    if let toml::Value::String(ref name) = *name {
                         effects.push(name.clone());
                     }
                 }
@@ -138,7 +125,7 @@ fn parse_toml(value: BTreeMap<String, toml::Value>) -> (
     let mut greetings = HashMap::new();
     if let Some(&toml::Value::Table(ref table)) = value.get("greetings") {
         for (nickname, effect) in table {
-            if let &toml::Value::String(ref effect) = effect {
+            if let toml::Value::String(ref effect) = *effect {
                 greetings.insert(
                     nickname.clone(),
                     Greeting::new(nickname.clone(), effect.clone(), true)
@@ -150,7 +137,7 @@ fn parse_toml(value: BTreeMap<String, toml::Value>) -> (
     let mut admins = Vec::new();
     if let Some(&toml::Value::Array(ref nicknames)) = value.get("admins") {
         for nickname in nicknames {
-            if let &toml::Value::String(ref nickname) = nickname {
+            if let toml::Value::String(ref nickname) = *nickname {
                 admins.push(nickname.clone());
             }
         }
@@ -161,10 +148,10 @@ fn parse_toml(value: BTreeMap<String, toml::Value>) -> (
 }
 
 // toml::Value::Table(toml)
-fn write_toml(
+fn encode_toml(
     aliases: &HashMap<String, Vec<Effect>>,
     greetings: &HashMap<String, Greeting>,
-    admins: &Vec<String>
+    admins: &[String]
 
 ) -> toml::Value {
 

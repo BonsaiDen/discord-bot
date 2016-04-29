@@ -365,10 +365,10 @@ impl Bot {
 
         // Insert new channels to map
         for (channel_id, server_id, channel_name) in channels_to_map {
-            if !self.channel_map.contains_key(&channel_id) {
+            self.channel_map.entry(channel_id).or_insert_with(|| {
                 info!("[State] Mapped channel {}({}) -> {}", channel_name, channel_id.0, server_id.0);
-                self.channel_map.insert(channel_id, server_id);
-            }
+                server_id
+            });
         }
 
         // Insert new users to map

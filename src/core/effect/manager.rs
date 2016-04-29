@@ -45,7 +45,7 @@ impl EffectManager {
 
         for (alias, names) in aliases {
 
-            // TODO support * names
+            // TODO support * names in mappings
             let mapped: Vec<Effect> = names.iter().filter(|name| {
                 self.effects.contains_key(*name)
 
@@ -136,14 +136,12 @@ impl EffectManager {
 
     }
 
-    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), ()> {
-        match util::download_file(self.effects_directory.clone(), "flac", effect, url) {
-            Ok(_) => {
-                self.load_effects();
-                Ok(())
-            },
-            Err(err) => Err(err)
-        }
+    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), String> {
+        util::download_file(
+            self.effects_directory.clone(),
+            effect, "flac", url
+
+        ).map_err(|err| err.to_string()).and_then(|_| Ok(self.load_effects()))
     }
 
 }

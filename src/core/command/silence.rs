@@ -7,14 +7,6 @@ use super::{Command, CommandResult};
 pub struct Silence;
 
 
-// Interface ------------------------------------------------------------------
-impl Silence {
-    pub fn new() -> Silence {
-        Silence
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Silence {
 

@@ -46,14 +46,14 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
     match name {
         "s" => Box::new(sound::Sound::new(arguments, true)),
         "q" => Box::new(sound::Sound::new(arguments, false)),
-        "sounds" => Box::new(sounds::Sounds::new()),
-        "silence" => Box::new(silence::Silence::new()),
+        "sounds" => Box::new(sounds::Sounds),
+        "silence" => Box::new(silence::Silence),
         "greeting" => Box::new(greeting::Greeting::new(arguments)),
-        "greetings" => Box::new(greetings::Greetings::new()),
-        "ip" => Box::new(ip::Ip::new()),
-        "leave" => Box::new(leave::Leave::new()),
-        "reload" => Box::new(reload::Reload::new()),
-        "help" => Box::new(help::Help::new()),
+        "greetings" => Box::new(greetings::Greetings),
+        "ip" => Box::new(ip::Ip),
+        "leave" => Box::new(leave::Leave),
+        "reload" => Box::new(reload::Reload),
+        "help" => Box::new(help::Help),
         _ => Box::new(not_found::NotFound::new(name))
     }
 

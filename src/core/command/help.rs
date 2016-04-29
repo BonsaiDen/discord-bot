@@ -40,14 +40,6 @@ Also, a effect with the same name may not yet exist.";
 pub struct Help;
 
 
-// Interface ------------------------------------------------------------------
-impl Help {
-    pub fn new() -> Help {
-        Help
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Help {
 

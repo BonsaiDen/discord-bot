@@ -7,14 +7,6 @@ use super::{Command, CommandResult};
 pub struct Leave;
 
 
-// Interface ------------------------------------------------------------------
-impl Leave {
-    pub fn new() -> Leave {
-        Leave
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Leave {
 

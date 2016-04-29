@@ -16,14 +16,6 @@ use super::{Command, CommandResult};
 pub struct Ip;
 
 
-// Interface ------------------------------------------------------------------
-impl Ip {
-    pub fn new() -> Ip {
-        Ip
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Ip {
 

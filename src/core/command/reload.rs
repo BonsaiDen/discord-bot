@@ -7,14 +7,6 @@ use super::{Command, CommandResult};
 pub struct Reload;
 
 
-// Interface ------------------------------------------------------------------
-impl Reload {
-    pub fn new() -> Reload {
-        Reload
-    }
-}
-
-
 // Command Implementation -----------------------------------------------------
 impl Command for Reload {
 

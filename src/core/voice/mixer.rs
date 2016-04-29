@@ -73,8 +73,8 @@ impl Mixer {
 
         // Clear buffer
         let samples = buffer.len();
-        for i in 0..samples {
-            buffer[i] = 0;
+        for item in buffer.iter_mut().take(samples) {
+            *item = 0;
         }
 
         // Mix Samples from all active sources into the buffer
@@ -84,34 +84,28 @@ impl Mixer {
             if let Some(source) = list.get_active_source() {
 
                 let channels = source.channels();
+                let channel_offset = 3 - channels;
                 if let Some(written) = source.read_frame(
                     &mut self.source_buffer[..960 * channels]
                 ) {
 
-                    // Mix Stereo
-                    if channels == 2 {
-                        mixed = cmp::max(written, mixed);
-                        for i in 0..written {
-                            let s = buffer[i] as f32 + self.source_buffer[i] as f32;
-                            buffer[i] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
-                        }
+                    mixed = cmp::max(written * channel_offset, mixed);
 
-                    // Mix Mono
-                    } else {
-                        mixed = cmp::max(written * 2, mixed);
-                        for e in 0..written {
+                    for e in 0..written {
 
-                            let i = e * 2;
+                        // Double interval when mixing mono
+                        let i = e * channel_offset;
 
-                            // Left Sample
-                            let s = buffer[i] as f32 + self.source_buffer[e] as f32;
-                            buffer[i] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
+                        // Left / Mono Sample
+                        let s = buffer[i] as f32 + self.source_buffer[e] as f32;
+                        buffer[i] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
 
-                            // Right Sample
+                        // Right Sample
+                        if channels == 1 {
                             let s = buffer[i + 1] as f32 + self.source_buffer[e] as f32;
                             buffer[i + 1] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
-
                         }
+
                     }
 
                 }
