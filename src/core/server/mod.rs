@@ -140,6 +140,17 @@ impl Server {
         self.effect_manager.list_effects()
     }
 
+    pub fn list_aliases(&self) -> Vec<String> {
+        self.effect_manager.get_aliases().iter().map(|(name, effects)| {
+            let names = effects.iter().map(|e| {
+                e.name()
+
+            }).collect::<Vec<&str>>().join("`, `");
+            format!("{} **=>** `{}`", name, names)
+
+        }).collect()
+    }
+
     pub fn list_greetings(&self) -> Vec<String> {
         self.voice_greetings.values().filter(|greeting| {
             greeting.permanent
