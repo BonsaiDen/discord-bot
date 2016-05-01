@@ -21,7 +21,7 @@ use self::config::Config;
 use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
     Listener, ListenerCount, EmptyListenerCount,
-    Mixer, Greeting,
+    Mixer, Greeting, MixerCount, EmptyMixerCount,
     Queue, QueueHandle, QueueEntry, EmptyQueue
 };
 
@@ -46,6 +46,7 @@ pub struct Server {
 
     // Voice
     last_voice_channel: Option<ChannelId>,
+    voice_mixer_count: MixerCount,
     voice_listener_handle: Option<QueueHandle>,
     voice_listener_count: ListenerCount,
     voice_states: Vec<(ChannelId, User)>,
@@ -80,6 +81,7 @@ impl Server {
 
             // Voice
             last_voice_channel: None,
+            voice_mixer_count: EmptyMixerCount::create(),
             voice_listener_handle: None,
             voice_listener_count: EmptyListenerCount::create(),
             voice_states: Vec::new(),
@@ -241,15 +243,13 @@ impl Server {
 
         // Only do this as long as we are connected, otherwise we'll be leaking
         // voice threads
-        if self.voice_listener_handle.is_some() {
-            self.update_voice_count(handle);
-        }
+        self.update_voice_count(handle);
 
     }
 
     fn update_voice_count(&mut self, handle: &mut Handle) {
 
-        if let Some(channel_id) = handle.get_server_voice(self.id).current_channel() {
+        if let Some(channel_id) = self.last_voice_channel {
 
             // TODO clean up
 
@@ -280,13 +280,14 @@ impl Server {
 
         if let Some(target_id) = channel_id.or(self.last_voice_channel) {
 
-            if self.last_voice_channel.is_none() || self.voice_listener_handle.is_none() {
+            let mixer_count = self.voice_mixer_count.load(Ordering::Relaxed);
+            if mixer_count == 0 {
                 info!("[Server] [{}] [Voice] Joining channel.", self);
                 self.init_voice_connection(handle, target_id);
                 true
 
             } else if channel_id.is_none() {
-                if self.voice_listener_handle.is_none() {
+                if mixer_count == 0 {
                     info!("[Server] [{}] [Voice] Re-joining channel.", self);
                     self.init_voice_connection(handle, target_id);
                     true
@@ -349,6 +350,7 @@ impl Server {
             }
 
             None => {
+
                 info!("[Server] [{}] [Voice] Creating new handle.", self);
 
                 let mut listener = Listener::new(
@@ -360,7 +362,10 @@ impl Server {
 
                 voice_connection.set_receiver(Box::new(listener));
                 voice_connection.play(
-                    Box::new(Mixer::new(self.voice_queue.clone()))
+                    Box::new(Mixer::new(
+                        self.voice_queue.clone(),
+                        self.voice_mixer_count.clone()
+                    ))
                 );
 
             }
@@ -397,7 +402,7 @@ impl Server {
                     "[Server] [{}] [{}] [Voice] Greeting with \"{}\".",
                     self, user, names.join("\", \"")
                 );
-                self.play_effects(handle, channel_id, effects, true, 0);
+                self.play_effects(handle, channel_id, effects, true, 300);
             }
         }
 
@@ -407,7 +412,10 @@ impl Server {
 
         if !self.voice_greetings.contains_key(&user.nickname) {
             if let Some(default) = self.get_default_greeting() {
-                Greeting::new(user.nickname.clone(), default, false);
+                self.voice_greetings.insert(
+                    user.nickname.clone(),
+                    Greeting::new(user.nickname.clone(), default, false)
+                );
             }
         }
 

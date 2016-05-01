@@ -3,8 +3,7 @@ use std::cmp;
 use std::thread;
 use std::time::Duration;
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Sender};
 
 

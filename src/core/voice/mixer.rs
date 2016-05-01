@@ -1,6 +1,8 @@
 // STD Dependencies -----------------------------------------------------------
 use std::cmp;
 use std::collections::VecDeque;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 
 // Statics --------------------------------------------------------------------
@@ -16,9 +18,22 @@ use super::queue::{Queue, QueueEntry};
 use super::source::SourceList;
 
 
+// Types ----------------------------------------------------------------------
+pub type MixerCount = Arc<AtomicUsize>;
+
+pub struct EmptyMixerCount;
+
+impl EmptyMixerCount {
+    pub fn create() -> MixerCount {
+        Arc::new(AtomicUsize::new(0))
+    }
+}
+
+
 // Voice Audio Mixer ----------------------------------------------------------
 pub struct Mixer {
     queue: Queue,
+    mixer_count: MixerCount,
     source_buffer: [i16; 960 * 2],
     active_lists: Vec<SourceList>,
     waiting_lists: VecDeque<SourceList>
@@ -26,9 +41,11 @@ pub struct Mixer {
 
 impl Mixer {
 
-    pub fn new(queue: Queue) -> Mixer {
+    pub fn new(queue: Queue, mixer_count: MixerCount) -> Mixer {
+        mixer_count.fetch_add(1, Ordering::SeqCst);
         Mixer {
             queue: queue,
+            mixer_count: mixer_count,
             active_lists: Vec::new(),
             waiting_lists: VecDeque::new(),
             source_buffer: [0; 960 * 2]
@@ -123,6 +140,12 @@ impl Mixer {
 
     }
 
+}
+
+impl Drop for Mixer {
+    fn drop(&mut self) {
+        self.mixer_count.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 
