@@ -1,9 +1,11 @@
 // Discord Dependencies -------------------------------------------------------
 use discord::{ChannelRef, Connection, Discord, State, Error};
 use discord::model::{
-    Event, ChannelId, UserId, ServerId, LiveServer, PrivateChannel
+    Event, ChannelId, UserId, ServerId, RoleId,
+    LiveServer, PrivateChannel, PermissionOverwrite
 };
 use discord::voice::VoiceConnection;
+use discord::model::permissions::Permissions;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -131,6 +133,36 @@ impl Handle {
 
     }
 
+    pub fn get_channel_permissions(&self, channel_id: &ChannelId) -> Permissions {
+
+        if let Some(ChannelRef::Public(_, channel)) = self.find_channel_by_id(&channel_id) {
+
+            let user_id = self.user_id();
+            let user_roles = self.get_user_role_ids_for_server(&channel.server_id, &user_id);
+
+            let mut allowed_perms = Permissions::empty();
+            let mut denied_perms = Permissions::empty();
+            for overwrite in &channel.permission_overwrites {
+                match *overwrite {
+                    PermissionOverwrite::Role { id, allow, deny} => if user_roles.contains(&id) {
+                        allowed_perms.insert(allow);
+                        denied_perms.remove(deny);
+                    },
+                    PermissionOverwrite::Member { id, allow, deny} if id == user_id => {
+                        allowed_perms.insert(allow);
+                        denied_perms.remove(deny);
+                    },
+                    _ => {}
+                }
+            }
+            allowed_perms - denied_perms
+
+        } else {
+            Permissions::empty()
+        }
+
+    }
+
     pub fn find_user_by_id(&self, user_id: &UserId) -> Option<User> {
 
         for srv in self.state.servers().iter() {
@@ -156,6 +188,20 @@ impl Handle {
         }
 
         None
+
+    }
+
+    pub fn get_user_role_ids_for_server(&self, server_id: &ServerId, user_id: &UserId) -> Vec<RoleId> {
+
+        for srv in self.state.servers().iter() {
+            if srv.id == *server_id {
+                if let Some(member) = srv.members.iter().find(|m| m.user.id == *user_id) {
+                    return member.roles.clone();
+                }
+            }
+        }
+
+        Vec::new()
 
     }
 

@@ -7,6 +7,7 @@ use std::sync::atomic::Ordering;
 
 // Discord Dependencies -------------------------------------------------------
 use discord::model::{ChannelId, ServerId, VoiceState};
+use discord::model::permissions::{VOICE_CONNECT, VOICE_SPEAK};
 
 
 // External Dependencies ------------------------------------------------------
@@ -29,6 +30,15 @@ use super::voice::{
 // Statics --------------------------------------------------------------------
 static MILLIS_EFFECT_JOIN_DELAY: usize = 300;
 static SECS_USER_GREETING_DELAY: i64 = 60;
+
+
+// Enums ----------------------------------------------------------------------
+#[derive(PartialEq)]
+enum VoiceJoinResult {
+    Joining,
+    AlreadyPresent,
+    Ignored
+}
 
 
 // Server Abstraction ---------------------------------------------------------
@@ -109,20 +119,24 @@ impl Server {
         mut delay: usize
     ) {
 
-        // Add additional delay if we need to join the channel
-        if self.join_voice_channel(handle, Some(channel_id)) {
-            delay += MILLIS_EFFECT_JOIN_DELAY;
-        }
+        let state = self.join_voice_channel(handle, Some(channel_id));
+        if state != VoiceJoinResult::Ignored {
 
-        if let Ok(mut queue) = self.voice_queue.lock() {
-            if immediate {
-                info!("[Server] [{}] [Voice] {} effect(s) added for immediate playback in {}ms.", self, effects.len(), delay);
-                queue.push_back(QueueEntry::EffectList(effects, delay));
-
-            } else {
-                info!("[Server] [{}] [Voice] {} effect(s) added for queued playback in {}ms.", self, effects.len(), delay);
-                queue.push_back(QueueEntry::QueuedEffectList(effects, delay));
+            if state == VoiceJoinResult::Joining {
+                delay += MILLIS_EFFECT_JOIN_DELAY;
             }
+
+            if let Ok(mut queue) = self.voice_queue.lock() {
+                if immediate {
+                    info!("[Server] [{}] [Voice] {} effect(s) added for immediate playback in {}ms.", self, effects.len(), delay);
+                    queue.push_back(QueueEntry::EffectList(effects, delay));
+
+                } else {
+                    info!("[Server] [{}] [Voice] {} effect(s) added for queued playback in {}ms.", self, effects.len(), delay);
+                    queue.push_back(QueueEntry::QueuedEffectList(effects, delay));
+                }
+            }
+
         }
 
     }
@@ -247,6 +261,11 @@ impl Server {
 
     }
 
+    pub fn leave_voice_channel(&mut self, handle: &mut Handle) {
+        handle.disconnect_server_voice(self.id);
+        self.last_voice_channel = None;
+    }
+
     fn update_voice_count(&mut self, handle: &mut Handle) {
 
         if let Some(channel_id) = self.last_voice_channel {
@@ -276,46 +295,47 @@ impl Server {
 
     }
 
-    pub fn join_voice_channel(&mut self, handle: &mut Handle, channel_id: Option<ChannelId>) -> bool {
+    fn join_voice_channel(&mut self, handle: &mut Handle, channel_id: Option<ChannelId>) -> VoiceJoinResult {
 
         if let Some(target_id) = channel_id.or(self.last_voice_channel) {
 
+            let permissions = handle.get_channel_permissions(&target_id);
             let mixer_count = self.voice_mixer_count.load(Ordering::Relaxed);
-            if mixer_count == 0 {
+
+            if !permissions.contains(VOICE_CONNECT | VOICE_SPEAK) {
+                info!("[Server] [{}] [Voice] Ignoring channel with insufficient permissions.", self);
+                VoiceJoinResult::Ignored
+
+            } else if mixer_count == 0 {
                 info!("[Server] [{}] [Voice] Joining channel.", self);
                 self.init_voice_connection(handle, target_id);
-                true
+                VoiceJoinResult::Joining
 
             } else if channel_id.is_none() {
                 if mixer_count == 0 {
                     info!("[Server] [{}] [Voice] Re-joining channel.", self);
                     self.init_voice_connection(handle, target_id);
-                    true
+                    VoiceJoinResult::Joining
 
                 } else {
                     info!("[Server] [{}] [Voice] Already in channel.", self);
-                    false
+                    VoiceJoinResult::AlreadyPresent
                 }
 
             } else if channel_id == self.last_voice_channel {
                 info!("[Server] [{}] [Voice] Already in channel.", self);
-                false
+                VoiceJoinResult::AlreadyPresent
 
             } else {
                 info!("[Server] [{}] [Voice] Switching channel.", self);
                 self.init_voice_connection(handle, target_id);
-                true
+                VoiceJoinResult::Joining
             }
 
         } else {
-            false
+            VoiceJoinResult::Ignored
         }
 
-    }
-
-    pub fn leave_voice_channel(&mut self, handle: &mut Handle) {
-        handle.disconnect_server_voice(self.id);
-        self.last_voice_channel = None;
     }
 
     fn update_voice_state(&mut self, channel_id: ChannelId, voice: VoiceState, user: &User) -> bool {
@@ -382,6 +402,8 @@ impl Server {
         channel_id: ChannelId,
         user: &User
     ) {
+
+        // TODO ignore muted / deafed users?
 
         let mut user_greeting = None;
         if let Some(greeting) = self.get_user_greeting(user) {

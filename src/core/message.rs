@@ -5,7 +5,7 @@ use std::ascii::AsciiExt;
 
 
 // Discord Dependencies -------------------------------------------------------
-use discord::{ChannelRef};
+use discord::ChannelRef;
 use discord::model::{Attachment, ChannelId, MessageId, ServerId};
 
 
