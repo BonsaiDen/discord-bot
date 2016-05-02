@@ -92,6 +92,13 @@ impl EffectManager {
         ).map_err(|err| err.to_string()).and_then(|_| Ok(self.load_effects()))
     }
 
+    pub fn delete_effect(&mut self, effect: &str) -> Result<(), String> {
+        util::delete_file(
+            self.effects_directory.clone(),
+            effect, "flac"
+        )
+    }
+
 }
 
 

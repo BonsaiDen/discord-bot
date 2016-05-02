@@ -210,6 +210,10 @@ impl Server {
         self.effect_manager.download_effect(effect, url)
     }
 
+    pub fn delete_effect(&mut self, effect: &str) -> Result<(), String> {
+        self.effect_manager.delete_effect(effect)
+    }
+
 }
 
 

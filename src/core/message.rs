@@ -51,7 +51,8 @@ impl<'a> Message<'a> {
             let command = command::from_args(
                 &name[1..],
                 split.collect(),
-                unique_server
+                unique_server,
+                server.is_admin_user(self.author)
             );
 
             if let Some(responses) = command.execute(handle, server, self.author) {

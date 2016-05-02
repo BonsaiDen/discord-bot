@@ -3,16 +3,16 @@ use super::super::{Handle, Server, User};
 use super::{Command, CommandResult};
 
 
-// Command NotUnique Message ---------------------------------------------------
-pub struct NotUnique {
+// Command NotAdmin Message ---------------------------------------------------
+pub struct NotAdmin {
     name: String
 }
 
 
 // Interface ------------------------------------------------------------------
-impl NotUnique {
-    pub fn new(name: &str) -> NotUnique {
-        NotUnique {
+impl NotAdmin {
+    pub fn new(name: &str) -> NotAdmin {
+        NotAdmin {
             name: name.to_string()
         }
     }
@@ -20,15 +20,14 @@ impl NotUnique {
 
 
 // Command Implementation -----------------------------------------------------
-impl Command for NotUnique {
+impl Command for NotAdmin {
 
     fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
-        info!("[{}] [{}] [Command] [NotUnique] No unique target for command \"{}\".", server, user, self.name);
+        info!("[{}] [{}] [Command] [NotAdmin] Admin is required for command \"{}\".", server, user, self.name);
 
         Some(vec![format!(
-            "The command `{}` requires a unique server as its target, but you're a member of at least two different servers.
-             Please re-issue the command from one of the public channels of the server you want to run it for.",
+            "Sorry, but the command `{}` requires admin rights.",
             self.name
         )])
 
