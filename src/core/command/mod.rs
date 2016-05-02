@@ -7,6 +7,7 @@ mod not_found;
 mod not_unique;
 mod greeting;
 mod greetings;
+mod alias;
 mod aliases;
 mod help;
 mod ip;
@@ -51,6 +52,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "silence" => Box::new(silence::Silence),
         "greeting" => Box::new(greeting::Greeting::new(arguments)),
         "greetings" => Box::new(greetings::Greetings),
+        "alias" => Box::new(alias::Alias::new(arguments)),
         "aliases" => Box::new(aliases::Aliases),
         "ip" => Box::new(ip::Ip),
         "leave" => Box::new(leave::Leave),

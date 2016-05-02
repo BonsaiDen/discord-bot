@@ -16,7 +16,6 @@ use toml;
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::super::Effect;
 use super::super::voice::Greeting;
 
 
@@ -76,7 +75,7 @@ impl Config {
 
     pub fn store(
         &self,
-        aliases: &HashMap<String, Vec<Effect>>,
+        aliases: &HashMap<String, Vec<String>>,
         greetings: &HashMap<String, Greeting>,
         admins: &[String]
 
@@ -151,7 +150,7 @@ fn decode_toml(value: BTreeMap<String, toml::Value>) -> ConfigData {
 
 // toml::Value::Table(toml)
 fn encode_toml(
-    aliases: &HashMap<String, Vec<Effect>>,
+    aliases: &HashMap<String, Vec<String>>,
     greetings: &HashMap<String, Greeting>,
     admins: &[String]
 
@@ -182,7 +181,7 @@ fn encode_toml(
         table.insert(
             alias.clone(),
             toml::Value::Array(effects.iter().map(|e| {
-                toml::Value::String(e.name().to_string())
+                toml::Value::String(e.to_string())
 
             }).collect())
         );

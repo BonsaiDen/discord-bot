@@ -20,7 +20,7 @@ pub struct EffectManager {
     effects_directory: PathBuf,
 
     // Aliases
-    aliases: HashMap<String, Vec<Effect>>
+    aliases: HashMap<String, Vec<String>>
 
 }
 
@@ -39,32 +39,33 @@ impl EffectManager {
         }
     }
 
+}
+
+
+// Aliases --------------------------------------------------------------------
+impl EffectManager {
+
     pub fn set_aliases(&mut self, aliases: HashMap<String, Vec<String>>) {
-
-        self.aliases.clear();
-
-        for (alias, names) in aliases {
-
-            // TODO support * names in mappings
-            let mapped: Vec<Effect> = names.iter().filter(|name| {
-                self.effects.contains_key(*name)
-
-            }).map(|name| {
-                self.effects.get(name).unwrap().clone()
-
-            }).flat_map(|s| s).collect();
-
-            if !mapped.is_empty() {
-                self.aliases.insert(alias, mapped);
-            }
-
-        }
-
+        self.aliases = aliases;
     }
 
-    pub fn get_aliases(&self) -> &HashMap<String, Vec<Effect>> {
+    pub fn get_aliases(&self) -> &HashMap<String, Vec<String>> {
         &self.aliases
     }
+
+    pub fn add_alias(&mut self, name: &str, effects: Vec<String>) {
+        self.aliases.insert(name.to_string(), effects);
+    }
+
+    pub fn remove_alias(&mut self, name: &str) -> Option<Vec<String>> {
+        self.aliases.remove(name)
+    }
+
+}
+
+
+// Effects --------------------------------------------------------------------
+impl EffectManager {
 
     pub fn load_effects(&mut self) {
 
@@ -83,18 +84,31 @@ impl EffectManager {
         }).collect()
     }
 
-    pub fn map_from_patterns(&self, names: &[String]) -> Vec<Effect> {
+    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), String> {
+        util::download_file(
+            self.effects_directory.clone(),
+            effect, "flac", url
 
-        let effects: Vec<Effect> = names.iter()
+        ).map_err(|err| err.to_string()).and_then(|_| Ok(self.load_effects()))
+    }
+
+}
+
+
+// Mapping --------------------------------------------------------------------
+impl EffectManager {
+
+    pub fn map_from_patterns(&self, patterns: &[String]) -> Vec<Effect> {
+
+        let effects: Vec<Effect> = patterns.iter()
              .map(|name| self.map_from_pattern(name))
              .filter(|e| e.is_some())
              .map(|e|e.unwrap())
              .flat_map(|s| s).collect();
 
-        // TODO improve effects name listing
         info!(
             "[EffectManager] Mapped \"{}\" to \"{}\"",
-            names.join("\", \""),
+            patterns.join("\", \""),
             effects.iter().map(|e| {
                 e.name.as_str()
 
@@ -123,8 +137,8 @@ impl EffectManager {
             if let Some(effect) = self.effects.get(*name) {
                 Some(effect.clone())
 
-            } else if let Some(effect) = self.aliases.get(*name) {
-                Some(effect.clone())
+            } else if let Some(aliases) = self.aliases.get(*name) {
+                Some(self.map_from_patterns(aliases))
 
             } else {
                 None
@@ -136,13 +150,6 @@ impl EffectManager {
 
     }
 
-    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), String> {
-        util::download_file(
-            self.effects_directory.clone(),
-            effect, "flac", url
-
-        ).map_err(|err| err.to_string()).and_then(|_| Ok(self.load_effects()))
-    }
 
 }
 

@@ -156,10 +156,14 @@ impl Server {
         self.effect_manager.list_effects()
     }
 
+    pub fn get_aliases(&self) -> &HashMap<String, Vec<String>> {
+        self.effect_manager.get_aliases()
+    }
+
     pub fn list_aliases(&self) -> Vec<String> {
         self.effect_manager.get_aliases().iter().map(|(name, effects)| {
             let names = effects.iter().map(|e| {
-                e.name()
+                e.as_str()
 
             }).collect::<Vec<&str>>().join("`, `");
             format!("{} **=>** `{}`", name, names)
@@ -270,21 +274,23 @@ impl Server {
 
         if let Some(channel_id) = self.last_voice_channel {
 
-            // TODO clean up
-
             // Update Active Listener Count
-            let active_listener_count = self.voice_states.iter().filter(|&&(ref id, ref user)| {
-                *id == channel_id && !user.mute && !user.deaf
+            let active_listener_count = self.voice_states
+                .iter()
+                .filter(|&&(ref id, ref user)| {
+                    *id == channel_id && !user.mute && !user.deaf
 
-            }).count();
+                }).count();
 
             self.voice_listener_count.store(active_listener_count, Ordering::Relaxed);
 
             // Check channel user count and leave if empty
-            let channel_user_count = self.voice_states.iter().filter(|&&(ref id, _)| {
-                *id == channel_id
+            let channel_user_count = self.voice_states
+                .iter()
+                .filter(|&&(ref id, _)| {
+                    *id == channel_id
 
-            }).count();
+                }).count();
 
             if channel_user_count == 0 {
                 info!("[Server] [{}] [Voice] Leaving empty channel.", self);
@@ -500,6 +506,17 @@ impl Server {
 
     pub fn remove_user_greeting(&mut self, nickname: &str) {
         if let Some(_) = self.voice_greetings.remove(nickname) {
+            self.store_config();
+        }
+    }
+
+    pub fn add_effect_alias(&mut self, name: &str, effects: Vec<String>) {
+        self.effect_manager.add_alias(name, effects);
+        self.store_config();
+    }
+
+    pub fn remove_effect_alias(&mut self, name: &str) {
+        if let Some(_) = self.effect_manager.remove_alias(name) {
             self.store_config();
         }
     }
