@@ -38,14 +38,14 @@ impl Command for DeleteSound {
         } else {
 
             let name = self.name.as_ref().unwrap();
-            if server.get_aliases().contains_key(name) {
+            if server.list_effects().contains(&name.as_str()) {
 
                 info!(
                     "[{}] [{}] [Command] [DeleteSound] Deleting sound effect \"{}\".",
                     server, user, name
                 );
 
-                if let Err(err) = server.delete_effect(name) {
+                if let Err(err) = server.delete_effect(name.as_str()) {
                     info!(
                         "[{}] [{}] [Command] [DeleteSound] Failed to delete sound effect \"{}\": {}.",
                         server, user, name, err
@@ -81,7 +81,7 @@ impl Command for DeleteSound {
     }
 
     fn private_response(&self)-> bool {
-        true
+        false
     }
 
 }

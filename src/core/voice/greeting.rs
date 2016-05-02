@@ -1,7 +1,3 @@
-// External Dependencies ------------------------------------------------------
-use chrono;
-
-
 // Voice Greeting Abstraction -------------------------------------------------
 pub struct Greeting {
     pub nickname: String,
@@ -15,7 +11,7 @@ impl Greeting {
         Greeting {
             nickname: nickname,
             effect: effect,
-            last_played: chrono::Local::now().num_seconds_from_unix_epoch(),
+            last_played: 0,
             permanent: permanent
         }
     }
