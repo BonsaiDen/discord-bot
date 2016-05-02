@@ -17,7 +17,7 @@ use edit_distance::edit_distance;
 
 // Internal Dependencies ------------------------------------------------------
 mod config;
-use self::config::Config;
+use self::config::{ConfigHandler, ConfigRef};
 
 use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
@@ -49,10 +49,11 @@ pub struct Server {
     name: String,
     channel_count: usize,
     member_count: usize,
-    config: Config,
+    config: ConfigHandler,
 
-    // Admins
-    admin_list: Vec<String>,
+    // Users
+    users_admins: Vec<String>,
+    users_uploaders: Vec<String>,
 
     // Voice
     last_voice_channel: Option<ChannelId>,
@@ -84,10 +85,11 @@ impl Server {
             name: "???".to_string(),
             channel_count: 0,
             member_count: 0,
-            config: Config::new(id, config_directory),
+            config: ConfigHandler::new(id, config_directory),
 
             // Admins
-            admin_list: Vec::new(),
+            users_admins: Vec::new(),
+            users_uploaders: Vec::new(),
 
             // Voice
             last_voice_channel: None,
@@ -466,36 +468,6 @@ impl Server {
 // Configuration --------------------------------------------------------------
 impl Server {
 
-    pub fn load_config(&mut self) {
-
-        self.effect_manager.load_effects();
-
-        match self.config.load() {
-            Ok((aliases, greetings, admins)) => {
-                self.effect_manager.set_aliases(aliases);
-                self.voice_greetings = greetings;
-                self.admin_list = admins;
-                info!("[Server] [{}] [Config] [Load] Configuration loaded successfully.", self)
-            }
-            Err(err) => {
-                warn!("[Server] [{}] [Config] [Load] Configuration could not be loaded: {}", self, err)
-            }
-        }
-
-    }
-
-    pub fn store_config(&self) {
-
-        match self.config.store(
-            self.effect_manager.get_aliases(),
-            &self.voice_greetings,
-            &self.admin_list
-        ) {
-            Ok(_) => info!("[Server] [{}] [Config] [Store] Configuration stored successfully.", self),
-            Err(err) => warn!("[Server] [{}] [Config] [Store] Configuration could not be stored: {}", self, err)
-        }
-    }
-
     pub fn add_user_greeting(&mut self, nickname: &str, greeting: &str) {
         self.voice_greetings.insert(
             nickname.to_string(),
@@ -518,6 +490,41 @@ impl Server {
     pub fn remove_effect_alias(&mut self, name: &str) {
         if let Some(_) = self.effect_manager.remove_alias(name) {
             self.store_config();
+        }
+    }
+
+    pub fn load_config(&mut self) {
+
+        self.effect_manager.load_effects();
+
+        match self.config.load() {
+            Ok(config) => {
+                self.effect_manager.set_aliases(config.aliases);
+                self.voice_greetings = config.greetings;
+                self.users_admins = config.admins;
+                self.users_uploaders = config.uploaders;
+                info!("[Server] [{}] [Config] [Load] Configuration loaded successfully.", self)
+            }
+            Err(err) => {
+                warn!("[Server] [{}] [Config] [Load] Configuration could not be loaded: {}", self, err)
+            }
+        }
+
+    }
+
+    pub fn store_config(&self) {
+        match self.config.store(self.get_config()) {
+            Ok(_) => info!("[Server] [{}] [Config] [Store] Configuration stored successfully.", self),
+            Err(err) => warn!("[Server] [{}] [Config] [Store] Configuration could not be stored: {}", self, err)
+        }
+    }
+
+    fn get_config<'a>(&'a self) -> ConfigRef<'a> {
+        ConfigRef {
+            aliases: self.effect_manager.get_aliases(),
+            greetings: &self.voice_greetings,
+            uploaders: &self.users_uploaders,
+            admins: &self.users_admins
         }
     }
 
@@ -587,7 +594,11 @@ impl Server {
     }
 
     pub fn is_admin_user(&self, user: &User) -> bool {
-        self.admin_list.contains(&user.nickname)
+        self.users_admins.contains(&user.nickname)
+    }
+
+    pub fn is_upload_user(&self, user: &User) -> bool {
+        self.users_uploaders.contains(&user.nickname)
     }
 
 }

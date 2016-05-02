@@ -76,9 +76,9 @@ impl<'a> Message<'a> {
 
         } else if !self.attachments.is_empty() {
 
-            if !server.is_admin_user(self.author) {
-                handle.send_message_to_user(&self.author.id, "Sorry, only admin users can upload sound effects.");
-                warn!("[{}] [{}] [Message] Ignored file upload from non-admin user.", server, self.author);
+            if !server.is_upload_user(self.author) {
+                handle.send_message_to_user(&self.author.id, "Sorry, only whitelisted users can upload sound effects.");
+                warn!("[{}] [{}] [Message] Ignored file upload from non-whitelisted user.", server, self.author);
 
             } else if let Some(ChannelRef::Private(_)) = handle.find_channel_by_id(&self.channel_id) {
                 // TODO Need to check if channel recipient is bot?
