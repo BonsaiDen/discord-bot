@@ -125,6 +125,11 @@ impl Server {
         if state != VoiceJoinResult::Ignored {
 
             if state == VoiceJoinResult::Joining {
+
+                if let Ok(mut queue) = self.voice_queue.lock() {
+                    queue.clear();
+                }
+
                 delay += MILLIS_EFFECT_JOIN_DELAY;
             }
 

@@ -94,9 +94,12 @@ impl EffectManager {
 
     pub fn delete_effect(&mut self, effect: &str) -> Result<(), String> {
         util::delete_file(
-            self.effects_directory.clone(),
-            effect, "flac"
-        )
+            self.effects_directory.clone(), effect, "flac"
+
+        ).and_then(|_| {
+            self.effects.remove(&effect.to_string());
+            Ok(())
+        })
     }
 
 }
