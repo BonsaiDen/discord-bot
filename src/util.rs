@@ -45,13 +45,13 @@ pub fn filter_dir<F: FnMut(String, PathBuf)>(
 pub fn download_file(
     mut directory: PathBuf,
     name: &str,
+    user_ident: &str,
     ext: &str,
     url: &str
 
 ) -> Result<(), String> {
 
-    directory.push(name);
-    directory.set_extension(ext);
+    directory.push(&format!("{}.{}.{}", name, user_ident, ext));
 
     let client = Client::new();
     client.get(url)

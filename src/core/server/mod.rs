@@ -211,8 +211,8 @@ impl Server {
 
     }
 
-    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), String> {
-        self.effect_manager.download_effect(effect, url)
+    pub fn download_effect(&mut self, effect: &str, user_ident: &str, url: &str) -> Result<(), String> {
+        self.effect_manager.download_effect(effect, user_ident, url)
     }
 
     pub fn delete_effect(&mut self, effect: &str) -> Result<(), String> {

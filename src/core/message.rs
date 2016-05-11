@@ -102,7 +102,9 @@ impl<'a> Message<'a> {
                 info!("[{}] [{}] [Message] Upload verified as flac firl with correct format, now downloading onto server...", server, self.author);
                 handle.send_message_to_user(&self.author.id, "Sound effect upload in progress...");
 
-                if let Err(err) = server.download_effect(&effect, &url) {
+                let user_ident = self.author.nickname.replace(".", "_").replace("#", "_").replace("/", "_");
+
+                if let Err(err) = server.download_effect(&effect, &user_ident, &url) {
                     handle.send_message_to_user(&self.author.id, &format!("The sound effect `{}` failed to upload, please try again.", effect));
                     warn!("[{}] [{}] [Message] Sound effect upload failed for \"{}\" ({}): {}.", server, self.author, effect, url, err);
 
@@ -175,7 +177,7 @@ fn verify_upload<'a>(server: &Server, upload: &'a Attachment) -> Result<(String,
 
         }).collect::<String>();
 
-        let effect = name.to_ascii_lowercase();
+        let effect = name.to_ascii_lowercase().replace(".", "_");
         if effect_list.contains(&effect) {
             Err(format!("A effect with the name `{}` already exists.", effect))
 

@@ -72,22 +72,23 @@ impl EffectManager {
         self.effects.clear();
 
         util::filter_dir(self.effects_directory.clone(), "flac", |name, path| {
-            self.effects.insert(name.clone(), vec![Effect::new(name, path)]);
+            let mut split = name.split('.');
+            let name = split.next().unwrap().to_string();
+            self.effects.insert(name.clone(), vec![
+                Effect::new(name, path)
+            ]);
         });
 
     }
 
     pub fn list_effects(&self) -> Vec<&str> {
-        self.effects.keys().map(|effect| {
-            effect.as_str()
-
-        }).collect()
+        self.effects.keys().map(|effect| effect.as_str()).collect()
     }
 
-    pub fn download_effect(&mut self, effect: &str, url: &str) -> Result<(), String> {
+    pub fn download_effect(&mut self, effect: &str, user_ident: &str, url: &str) -> Result<(), String> {
         util::download_file(
             self.effects_directory.clone(),
-            effect, "flac", url
+            effect, user_ident, "flac", url
 
         ).map_err(|err| err.to_string()).and_then(|_| Ok(self.load_effects()))
     }
