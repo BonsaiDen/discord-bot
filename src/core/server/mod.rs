@@ -119,7 +119,8 @@ impl Server {
         effects: Vec<Effect>,
         immediate: bool,
         mut delay: usize
-    ) {
+
+    ) -> bool {
 
         let state = self.join_voice_channel(handle, Some(channel_id));
         if state != VoiceJoinResult::Ignored {
@@ -142,8 +143,15 @@ impl Server {
                     info!("[Server] [{}] [Voice] {} effect(s) added for queued playback in {}ms.", self, effects.len(), delay);
                     queue.push_back(QueueEntry::QueuedEffectList(effects, delay));
                 }
+
+                true
+
+            } else {
+                false
             }
 
+        } else {
+            false
         }
 
     }
@@ -420,18 +428,14 @@ impl Server {
         user: &User
     ) {
 
-        // TODO ignore muted / deafed users?
-
         let mut user_greeting = None;
-        if let Some(greeting) = self.get_user_greeting(user) {
+        let now = chrono::Local::now().num_seconds_from_unix_epoch();
 
-            let now = chrono::Local::now().num_seconds_from_unix_epoch();
+        if let Some(greeting) = self.get_user_greeting(user) {
             let diff = now - greeting.last_played;
             if diff > SECS_USER_GREETING_DELAY {
-                greeting.last_played = now;
                 user_greeting = Some((user, vec![greeting.effect.to_string()]));
             }
-
         }
 
         if let Some((user, names)) = user_greeting {
@@ -441,7 +445,11 @@ impl Server {
                     "[Server] [{}] [{}] [Voice] Greeting with \"{}\".",
                     self, user, names.join("\", \"")
                 );
-                self.play_effects(handle, channel_id, effects, true, 300);
+                if self.play_effects(handle, channel_id, effects, true, 300) {
+                    if let Some(greeting) = self.get_user_greeting(user) {
+                        greeting.last_played = now;
+                    }
+                }
             }
         }
 
