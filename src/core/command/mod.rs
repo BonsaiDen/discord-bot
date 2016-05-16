@@ -14,6 +14,7 @@ mod greetings;
 mod help;
 mod ip;
 mod leave;
+mod record;
 mod reload;
 mod silence;
 mod sound;
@@ -63,6 +64,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "aliases" => Box::new(aliases::Aliases),
         "ip" => Box::new(ip::Ip),
         "leave" => Box::new(leave::Leave),
+        "record" => Box::new(record::Record::new(arguments)),
         "reload" => Box::new(reload::Reload),
         "help" => Box::new(help::Help),
         _ => Box::new(not_found::NotFound::new(name))

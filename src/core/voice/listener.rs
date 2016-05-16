@@ -3,7 +3,7 @@ use std::cmp;
 use std::thread;
 use std::time::Duration;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Sender};
 
 
@@ -27,6 +27,16 @@ impl EmptyListenerCount {
     }
 }
 
+pub type RecordingState = Arc<AtomicBool>;
+
+pub struct DefaultRecordingState;
+
+impl DefaultRecordingState {
+    pub fn create() -> RecordingState {
+        Arc::new(AtomicBool::new(false))
+    }
+}
+
 
 // Voice Audio Listener -------------------------------------------------------
 pub struct Listener {
@@ -38,7 +48,12 @@ pub struct Listener {
 
 impl Listener {
 
-    pub fn new(_: Queue, listener_count: ListenerCount) -> Listener {
+    pub fn new(
+        _: Queue,
+        listener_count: ListenerCount,
+        recording_state: RecordingState
+
+    ) -> Listener {
 
         let (peak_sender, peak_receive) = channel::<(Option<u32>)>();
         let (status_sender, status_receive) = channel::<(QueueEntry)>();

@@ -21,7 +21,9 @@ use self::config::{ConfigHandler, ConfigRef};
 
 use super::{Handle, User, Effect, EffectManager};
 use super::voice::{
-    Listener, ListenerCount, EmptyListenerCount,
+    Listener,
+    ListenerCount, EmptyListenerCount,
+    RecordingState, DefaultRecordingState,
     Mixer, Greeting, MixerCount, EmptyMixerCount,
     Queue, QueueHandle, QueueEntry, EmptyQueue
 };
@@ -63,6 +65,7 @@ pub struct Server {
     voice_states: Vec<(ChannelId, User)>,
     voice_greetings: HashMap<String, Greeting>,
     voice_queue: Queue,
+    voice_recording_state: RecordingState,
 
     // Effects
     effect_manager: EffectManager
@@ -99,6 +102,7 @@ impl Server {
             voice_states: Vec::new(),
             voice_greetings: HashMap::new(),
             voice_queue: EmptyQueue::create(),
+            voice_recording_state: DefaultRecordingState::create(),
 
             // Effects
             effect_manager: EffectManager::new(effects_directory)
@@ -161,6 +165,29 @@ impl Server {
             queue.clear();
             queue.push_back(QueueEntry::Reset);
         }
+    }
+
+    pub fn start_recording(&mut self) -> bool {
+        let recording = self.voice_recording_state.load(Ordering::Relaxed);
+        if recording {
+            false
+
+        } else {
+            self.voice_recording_state.store(true, Ordering::Relaxed);
+            true
+        }
+    }
+
+    pub fn stop_recording(&mut self) -> bool {
+        let recording = self.voice_recording_state.load(Ordering::Relaxed);
+        if recording {
+            self.voice_recording_state.store(false, Ordering::Relaxed);
+            true
+
+        } else {
+            false
+        }
+
     }
 
     pub fn map_effects(&mut self, list: &[String]) -> Vec<Effect> {
@@ -251,6 +278,7 @@ impl Server {
 
             } else if self.voice_listener_handle.is_some() {
                 info!("[Server] [{}] [Voice] Left channel.", self);
+                // TODO unset RecordingState
                 self.voice_listener_handle = None;
 
             } else {
@@ -400,7 +428,8 @@ impl Server {
 
                 let mut listener = Listener::new(
                     self.voice_queue.clone(),
-                    self.voice_listener_count.clone()
+                    self.voice_listener_count.clone(),
+                    self.voice_recording_state.clone()
                 );
 
                 self.voice_listener_handle = listener.take_handle();
@@ -427,6 +456,8 @@ impl Server {
         channel_id: ChannelId,
         user: &User
     ) {
+
+        // TODO ignore when RecordingState is active
 
         let mut user_greeting = None;
         let now = chrono::Local::now().num_seconds_from_unix_epoch();
