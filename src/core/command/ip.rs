@@ -19,7 +19,7 @@ pub struct Ip;
 // Command Implementation -----------------------------------------------------
 impl Command for Ip {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [IP] Performing IP lookup...", server, user);
         let ip = get_ip();
         Some(vec![

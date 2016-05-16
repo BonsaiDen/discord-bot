@@ -45,7 +45,7 @@ pub struct Help;
 // Command Implementation -----------------------------------------------------
 impl Command for Help {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Help] Usage information requested.", server, user);
         Some(vec![HELP_TEXT.to_string()])
     }

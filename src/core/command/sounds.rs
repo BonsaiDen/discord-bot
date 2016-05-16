@@ -11,7 +11,7 @@ pub struct Sounds;
 // Command Implementation -----------------------------------------------------
 impl Command for Sounds {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Sounds] Sound listing requested.", server, user);
         let mut effects = server.list_effects();
         effects.sort();

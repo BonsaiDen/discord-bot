@@ -10,7 +10,7 @@ pub struct Leave;
 // Command Implementation -----------------------------------------------------
 impl Command for Leave {
 
-    fn execute(&self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Leave] Voice leave requested.", server, user);
         server.leave_voice_channel(handle);
         Some(vec![

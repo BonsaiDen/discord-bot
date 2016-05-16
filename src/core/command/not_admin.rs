@@ -22,7 +22,7 @@ impl NotAdmin {
 // Command Implementation -----------------------------------------------------
 impl Command for NotAdmin {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         info!("[{}] [{}] [Command] [NotAdmin] Admin is required for command \"{}\".", server, user, self.name);
 

@@ -10,7 +10,7 @@ pub struct Reload;
 // Command Implementation -----------------------------------------------------
 impl Command for Reload {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Reload] Server configuration reloaded.", server, user);
         server.load_config();
         Some(vec![

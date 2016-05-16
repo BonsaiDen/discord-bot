@@ -11,7 +11,7 @@ pub struct Greetings;
 // Command Implementation -----------------------------------------------------
 impl Command for Greetings {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         info!("[{}] [{}] [Command] [Greetings] User greeting listing requested.", server, user);
 

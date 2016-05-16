@@ -48,7 +48,7 @@ impl<'a> Message<'a> {
 
             let mut split = self.content.split(' ');
             let name = split.next().unwrap_or("!");
-            let command = command::from_args(
+            let mut command = command::from_args(
                 &name[1..],
                 split.collect(),
                 unique_server,

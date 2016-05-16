@@ -167,15 +167,21 @@ impl Server {
         }
     }
 
-    pub fn start_recording(&mut self) -> bool {
+    pub fn start_recording(&mut self, handle: &mut Handle, channel_id: ChannelId) -> bool {
         let recording = self.voice_recording_state.load(Ordering::Relaxed);
         if recording {
             false
 
         } else {
-            info!("[Server] [{}] [Voice] Audio recording started.", self);
-            self.voice_recording_state.store(true, Ordering::Relaxed);
-            true
+            let state = self.join_voice_channel(handle, Some(channel_id));
+            if state != VoiceJoinResult::Ignored {
+                info!("[Server] [{}] [Voice] Audio recording started.", self);
+                self.voice_recording_state.store(true, Ordering::Relaxed);
+                true
+
+            } else {
+                false
+            }
         }
     }
 
@@ -352,6 +358,7 @@ impl Server {
 
     fn join_voice_channel(&mut self, handle: &mut Handle, channel_id: Option<ChannelId>) -> VoiceJoinResult {
 
+        // TODO prevent switching channels when audio recording is active
         if let Some(target_id) = channel_id.or(self.last_voice_channel) {
 
             let permissions = handle.get_channel_permissions(&target_id);
@@ -459,7 +466,7 @@ impl Server {
         user: &User
     ) {
 
-        if self.voice_recording_state.load(Ordering::Relaxed) == true {
+        if self.voice_recording_state.load(Ordering::Relaxed) {
             info!(
                 "[Server] [{}] [{}] [Voice] Not greeting user, since audio recording is currently active.",
                 self, user

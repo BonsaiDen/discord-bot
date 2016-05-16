@@ -76,7 +76,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
 // Traits ---------------------------------------------------------------------
 pub trait Command {
 
-    fn execute(&self, &mut Handle, &mut Server, &User) -> CommandResult;
+    fn execute(&mut self, &mut Handle, &mut Server, &User) -> CommandResult;
 
     fn requires_admin_user(&self) -> bool {
         false

@@ -83,7 +83,7 @@ impl Greeting {
 // Command Implementation -----------------------------------------------------
 impl Command for Greeting {
 
-    fn execute(&self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         if self.mode.is_none() || self.nickname.is_none() {
             Greeting::usage()

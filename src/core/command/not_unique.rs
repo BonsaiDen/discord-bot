@@ -22,7 +22,7 @@ impl NotUnique {
 // Command Implementation -----------------------------------------------------
 impl Command for NotUnique {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         info!("[{}] [{}] [Command] [NotUnique] No unique target for command \"{}\".", server, user, self.name);
 

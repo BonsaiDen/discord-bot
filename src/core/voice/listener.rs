@@ -41,8 +41,10 @@ impl DefaultRecordingState {
 // Voice Audio Listener -------------------------------------------------------
 pub struct Listener {
     timer_thread: Option<thread::JoinHandle<()>>,
-    peak_sender: Sender<Option<u32>>,
+    recording_state: RecordingState,
     queue_handle: Option<QueueHandle>,
+    peak_sender: Sender<Option<u32>>,
+    record_sender: Sender<Vec<i16>>,
     silence_threshold: u32
 }
 
@@ -55,11 +57,14 @@ impl Listener {
 
     ) -> Listener {
 
+        let (record_sender, record_receive) = channel::<(Vec<i16>)>();
         let (peak_sender, peak_receive) = channel::<(Option<u32>)>();
         let (status_sender, status_receive) = channel::<(QueueEntry)>();
-        let delay = Duration::from_millis(1000);
+        let listener_recording_state = recording_state.clone();
+        let delay = Duration::from_millis(100);
         let timer = thread::spawn(move || {
 
+            let mut recording = false;
             let mut silent_for_seconds: usize = 0;
             'outer: loop {
 
@@ -89,6 +94,27 @@ impl Listener {
                     }
                 }
 
+                // Recording
+                let currently_recording = recording_state.load(Ordering::Relaxed);
+                if currently_recording {
+
+                    // Recording was started
+                    if !recording {
+                        info!("[Listener] Recording started.");
+                    }
+
+                    while let Ok(data) = record_receive.try_recv() {
+                        info!("[Listener] Writing recording data ({} bytes).", data.len());
+                    }
+
+                // Recording was stopped
+                } else if recording {
+                    info!("[Listener] Recording stopped.");
+                }
+
+                recording = currently_recording;
+
+                // Silence Detection
                 if silent_for_seconds > 60 {
                     info!("[Listener] Silence for 60 seconds detected.");
                     silent_for_seconds = 0;
@@ -102,9 +128,11 @@ impl Listener {
 
         Listener {
             timer_thread: Some(timer),
-            peak_sender: peak_sender,
+            recording_state: listener_recording_state,
             queue_handle: Some(status_sender),
-            silence_threshold: 0
+            peak_sender: peak_sender,
+            record_sender: record_sender,
+            silence_threshold: 0,
         }
 
     }
@@ -135,6 +163,10 @@ impl AudioReceiver for Listener {
         let peak = (*data.iter().max_by_key(|s| (**s as i32).abs()).unwrap_or(&0) as i32).abs() as u32;
         if peak > self.silence_threshold * 2 {
             self.peak_sender.send(Some(peak)).ok();
+        }
+
+        if self.recording_state.load(Ordering::Relaxed) {
+            self.record_sender.send(data.to_vec()).ok();
         }
 
         self.silence_threshold = cmp::max(

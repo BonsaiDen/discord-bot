@@ -82,7 +82,7 @@ impl Alias {
 // Command Implementation -----------------------------------------------------
 impl Command for Alias {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         if self.mode.is_none() || self.name.is_none() {
             Alias::usage()

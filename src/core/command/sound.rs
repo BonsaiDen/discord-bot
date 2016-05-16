@@ -24,7 +24,7 @@ impl Sound {
 // Command Implementation -----------------------------------------------------
 impl Command for Sound {
 
-    fn execute(&self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         info!(
             "[{}] [{}] [Command] [Sound] Playback requested for {} sounds(s) (immediate={}).",

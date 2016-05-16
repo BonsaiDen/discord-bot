@@ -11,7 +11,7 @@ pub struct Aliases;
 // Command Implementation -----------------------------------------------------
 impl Command for Aliases {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         info!("[{}] [{}] [Command] [Aliases] Effect alias listing requested.", server, user);
 

@@ -10,7 +10,7 @@ pub struct Silence;
 // Command Implementation -----------------------------------------------------
 impl Command for Silence {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Silence] Silence requested.", server, user);
         server.request_silence();
         Some(vec![

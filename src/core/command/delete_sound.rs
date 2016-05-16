@@ -30,7 +30,7 @@ impl DeleteSound {
 // Command Implementation -----------------------------------------------------
 impl Command for DeleteSound {
 
-    fn execute(&self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
+    fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         if self.name.is_none() {
             DeleteSound::usage()
