@@ -173,6 +173,7 @@ impl Server {
             false
 
         } else {
+            info!("[Server] [{}] [Voice] Audio recording started.", self);
             self.voice_recording_state.store(true, Ordering::Relaxed);
             true
         }
@@ -181,6 +182,7 @@ impl Server {
     pub fn stop_recording(&mut self) -> bool {
         let recording = self.voice_recording_state.load(Ordering::Relaxed);
         if recording {
+            info!("[Server] [{}] [Voice] Audio recording stopped.", self);
             self.voice_recording_state.store(false, Ordering::Relaxed);
             true
 
@@ -278,7 +280,7 @@ impl Server {
 
             } else if self.voice_listener_handle.is_some() {
                 info!("[Server] [{}] [Voice] Left channel.", self);
-                // TODO unset RecordingState
+                self.stop_recording();
                 self.voice_listener_handle = None;
 
             } else {
@@ -457,7 +459,13 @@ impl Server {
         user: &User
     ) {
 
-        // TODO ignore when RecordingState is active
+        if self.voice_recording_state.load(Ordering::Relaxed) == true {
+            info!(
+                "[Server] [{}] [{}] [Voice] Not greeting user, since audio recording is currently active.",
+                self, user
+            );
+            return;
+        }
 
         let mut user_greeting = None;
         let now = chrono::Local::now().num_seconds_from_unix_epoch();
