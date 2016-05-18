@@ -3,7 +3,9 @@ mod greeting;
 mod listener;
 mod mixer;
 mod queue;
+mod recorder;
 mod source;
+mod util;
 
 
 // Re-Exports -----------------------------------------------------------------

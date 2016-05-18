@@ -12,6 +12,8 @@ dotenv = "*"
 log = "*"
 chrono = "*"
 clippy = { version = "*", optional = true }
+hound = "*"
+clock_ticks = "*"
 hyper = "0.8.1"
 edit-distance = "^1.0.0"
 toml = "0.1"

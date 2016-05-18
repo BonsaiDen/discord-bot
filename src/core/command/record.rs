@@ -50,7 +50,7 @@ impl Record {
             info!("[{}] [{}] [Command] [Record] Audio recording stopped.", server, user);
             self.private_response = false;
             Some(vec![
-                format!("{} has started stopped audio in this channel.", user.nickname)
+                format!("{} has stopped recording audio in this channel.", user.nickname)
             ])
 
         } else {

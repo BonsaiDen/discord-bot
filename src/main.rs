@@ -12,6 +12,8 @@ extern crate flac;
 extern crate hyper;
 extern crate toml;
 extern crate edit_distance;
+extern crate hound;
+extern crate clock_ticks;
 
 
 // STD Dependencies -----------------------------------------------------------
