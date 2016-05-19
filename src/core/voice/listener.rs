@@ -189,8 +189,14 @@ fn listen(
         if currently_recording {
 
             if !recording {
+
                 info!("[Listener] Recording started.");
-                recorder.start("recording.wav");
+                recorder.start("recording.ogg");
+
+                while let Ok(_) = record_receive.try_recv() {
+                    // TODO Clear out any left over voice packets
+                }
+
             }
 
             while let Ok(packet) = record_receive.try_recv() {
@@ -202,7 +208,14 @@ fn listen(
         // Recording was stopped
         } else if recording {
             info!("[Listener] Recording stopped.");
+
+            while let Ok(packet) = record_receive.try_recv() {
+                recorder.receive_packet(packet);
+            }
+
+            recorder.mix();
             recorder.stop();
+
         }
 
         recording = currently_recording;

@@ -7,11 +7,11 @@ use std::collections::HashMap;
 
 // External Dependencies ------------------------------------------------------
 use clock_ticks;
-use hound;
 
 
 // Internal Dependencies ------------------------------------------------------
 use super::util::{compress, seq_is_more_recent};
+use super::encoder::OggVorbisEncoder;
 
 
 // Types ----------------------------------------------------------------------
@@ -23,7 +23,8 @@ type File = std::io::BufWriter<std::fs::File>;
 pub struct Recorder {
     last_receive: u64,
     packet_buffer: Vec<SamplePacket>,
-    writer: Option<hound::WavWriter<File>>
+    writer: Option<OggVorbisEncoder>,
+    period: usize
 }
 
 impl Recorder {
@@ -32,17 +33,17 @@ impl Recorder {
         Recorder {
             last_receive: clock_ticks::precise_time_ms(),
             packet_buffer: Vec::new(),
-            writer: None
+            writer: None,
+            period: 0
         }
     }
 
     pub fn start(&mut self, filename: &str) {
-        let spec = hound::WavSpec {
-            channels: 1,
-            sample_rate: 48000,
-            bits_per_sample: 16
-        };
-        self.writer = Some(hound::WavWriter::create(filename, spec).unwrap());
+        if let Ok(mut encoder) = OggVorbisEncoder::new(filename) {
+            encoder.init_vbr(1, 48000, 0.2);
+            self.last_receive = clock_ticks::precise_time_ms();
+            self.writer = Some(encoder);
+        }
     }
 
     pub fn receive_packet(&mut self, packet: SamplePacket) {
@@ -55,9 +56,9 @@ impl Recorder {
 
     pub fn stop(&mut self) {
         self.mix_buffer(true);
-        if let Some(writer) = self.writer.take() {
-            writer.finalize().unwrap();
-        }
+        self.writer.take().unwrap();
+        // TODO we're not closing this out here as currently causes segfaults
+        //writer.close();
     }
 
     fn mix_buffer(&mut self, flush: bool) {
@@ -65,7 +66,13 @@ impl Recorder {
         if let Some(mut writer) = self.writer.as_mut() {
 
             let len = self.packet_buffer.len();
-            if len >= 64 || flush {
+
+            // Write periodically to avoid rendering very long periods of silence
+            self.period += 1;
+
+            if len >= 32 || flush || self.period > 8 {
+
+                self.period = 0;
 
                 // Sort buffer by timestamp
                 self.packet_buffer.sort_by(|a, b| a.1.cmp(&b.1));
@@ -95,7 +102,7 @@ impl Recorder {
 
 // Helpers --------------------------------------------------------------------
 fn mix_packets(
-    mut writer: &mut hound::WavWriter<File>,
+    mut writer: &mut OggVorbisEncoder,
     packets: Vec<SamplePacket>,
     last_receive: u64
 
@@ -125,12 +132,14 @@ fn mix_packets(
     }
 
     // Calculate silence between two packet slices
-    let silence = cmp::max((min_receive as i64 - last_receive as i64) - 20, 0);
+    let silence_samples = (cmp::max((min_receive as i64 - last_receive as i64) - 20, 0) * 48) as usize;
 
     // Sample mixing
     let max_sample_value: f32 = i16::max_value() as f32;
     let mut max_sample_index = 0;
-    let mut buffer: Vec<i16> = Vec::new();
+
+    // Create buffer with initial silence
+    let mut buffer: Vec<i16> = iter::repeat(0).take(silence_samples).collect();
 
     for (_, (min, p_min_receive, mut packets)) in sources.into_iter() {
 
@@ -162,7 +171,7 @@ fn mix_packets(
             }
 
             // Calculate final offset into mixing buffer
-            let sample_index = sample_offset + receive_offset * 48;
+            let sample_index = silence_samples + sample_offset + receive_offset * 48;
 
             // Extend mixing buffer if required
             let required_samples = sample_index + samples.len();
@@ -182,14 +191,10 @@ fn mix_packets(
 
     }
 
-    // Write silence samples
-    for _ in 0..(silence * 48) {
-        writer.write_sample(0).ok();
-    }
-
     // Write sample buffer
-    for s in &buffer[0..max_sample_index] {
-        writer.write_sample(*s).ok();
+    //max_sample_index = max_sample_index - (max_sample_index % 8);
+    if max_sample_index > 0 {
+        writer.write(&buffer[0..max_sample_index]);
     }
 
     max_receive
