@@ -1,7 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std;
 use std::ptr;
-use std::cmp;
 use std::mem;
 use std::fs::File;
 use std::io::Write;
@@ -35,7 +34,7 @@ use vorbis_sys::{
 };
 
 use vorbisenc_sys::{
-    vorbis_encode_init,
+    //vorbis_encode_init,
     vorbis_encode_init_vbr
 };
 
@@ -75,22 +74,22 @@ impl OggVorbisEncoder {
         }
     }
 
-    pub fn init(&mut self, channels: usize, sample_rate: u32, max_bitrate: Option<u32>, nominal_bitrate: u32, min_bitrate: Option<u32>) {
-        self.vorbis.init(
-            channels,
-            sample_rate as i64,
-            max_bitrate.map_or(-1, |b| b as i64),
-            nominal_bitrate as i64,
-            min_bitrate.map_or(-1, |b| b as i64)
-        );
-        self.ogg.init(&mut self.vorbis);
-        self.ogg.write_header(&mut self.file);
-    }
+    // pub fn init(&mut self, channels: usize, sample_rate: u32, max_bitrate: Option<u32>, nominal_bitrate: u32, min_bitrate: Option<u32>) {
+    //     self.vorbis.init(
+    //         channels,
+    //         sample_rate as i64,
+    //         max_bitrate.map_or(-1, |b| b as i64),
+    //         nominal_bitrate as i64,
+    //         min_bitrate.map_or(-1, |b| b as i64)
+    //     );
+    //     self.ogg.init(&mut self.vorbis);
+    //     self.ogg.write_flush(&mut self.file);
+    // }
 
     pub fn init_vbr(&mut self, channels: usize, sample_rate: u32, quality: f32) {
         self.vorbis.init_vbr(channels, sample_rate as i64, quality);
         self.ogg.init(&mut self.vorbis);
-        self.ogg.write_header(&mut self.file);
+        self.ogg.write_flush(&mut self.file);
     }
 
     pub fn write(&mut self, samples: &[i16]) {
@@ -99,8 +98,7 @@ impl OggVorbisEncoder {
     }
 
     pub fn close(&mut self) {
-        self.vorbis.close();
-        self.ogg.write(&mut self.file, &mut self.vorbis);
+        self.ogg.write_flush(&mut self.file);
     }
 
 }
@@ -135,13 +133,13 @@ impl VorbisState {
         }
     }
 
-    fn init(&mut self, channels: usize, sample_rate: i64, max_bitrate: i64, nominal_bitrate: i64, min_bitrate: i64) {
-        self.pre_init(channels);
-        unsafe {
-            vorbis_encode_init(&mut self.vi, channels as i64, sample_rate, max_bitrate, nominal_bitrate, min_bitrate);
-        }
-        self.post_init();
-    }
+    // fn init(&mut self, channels: usize, sample_rate: i64, max_bitrate: i64, nominal_bitrate: i64, min_bitrate: i64) {
+    //     self.pre_init(channels);
+    //     unsafe {
+    //         vorbis_encode_init(&mut self.vi, channels as i64, sample_rate, max_bitrate, nominal_bitrate, min_bitrate);
+    //     }
+    //     self.post_init();
+    // }
 
     fn init_vbr(&mut self, channels: usize, sample_rate: i64, quality: f32) {
         self.pre_init(channels);
@@ -187,12 +185,12 @@ impl VorbisState {
 
     }
 
-    fn close(&mut self) {
-        self.vd.vi = &mut self.vi;
-        unsafe {
-            vorbis_analysis_wrote(&mut self.vd, 0);
-        }
-    }
+    //fn close(&mut self) {
+    //    self.vd.vi = &mut self.vi;
+    //    unsafe {
+    //        vorbis_analysis_wrote(&mut self.vd, 0);
+    //    }
+    //}
 
     fn destroy(&mut self) {
         unsafe {
@@ -231,7 +229,8 @@ impl VorbisState {
 struct OggState {
     os: ogg_stream_state,
     og: ogg_page,
-    op: ogg_packet
+    op: ogg_packet,
+    eos: bool
 }
 
 impl OggState {
@@ -240,7 +239,8 @@ impl OggState {
         OggState {
             os: unsafe { mem::zeroed() },
             og: unsafe { mem::zeroed() },
-            op: unsafe { mem::zeroed() }
+            op: unsafe { mem::zeroed() },
+            eos: false
         }
     }
 
@@ -273,7 +273,8 @@ impl OggState {
     fn write(&mut self, file: &mut File, vorbis: &mut VorbisState) -> bool {
 
         let null = ptr::null_mut();
-        while unsafe { vorbis_analysis_blockout(&mut vorbis.vd, &mut vorbis.vb) } == 1 {
+        let null_packet = ptr::null_mut();
+        while unsafe { vorbis_analysis_blockout(&mut vorbis.vd, &mut vorbis.vb) == 1 } {
 
             // Analysis, assume we want to use bitrate management
             unsafe {
@@ -281,16 +282,17 @@ impl OggState {
                 vorbis_bitrate_addblock(&mut vorbis.vb);
             }
 
-            while unsafe { vorbis_bitrate_flushpacket(&mut vorbis.vd, &mut self.op) } != 0 {
+            while unsafe { vorbis_bitrate_flushpacket(&mut vorbis.vd, &mut self.op) != 0 } {
 
                 // weld packet into the bitstream
-                unsafe {
-                    ogg_stream_packetin(&mut self.os, &mut self.op);
+                // TODO check if op.packet is valid
+                if self.op.packet != null_packet {
+                    unsafe {
+                        ogg_stream_packetin(&mut self.os, &mut self.op);
+                    }
                 }
 
-                if self.write_page(file) {
-                    return true
-                }
+                self.write_page(file)
 
             }
 
@@ -300,8 +302,9 @@ impl OggState {
 
     }
 
-    fn write_page(&mut self, file: &mut File) -> bool {
-        loop {
+    fn write_page(&mut self, file: &mut File) {
+
+        while !self.eos {
 
             let result = unsafe {
                 ogg_stream_pageout(&mut self.os, &mut self.og)
@@ -315,19 +318,18 @@ impl OggState {
                 let body: &[u8] = unsafe { std::slice::from_raw_parts(self.og.body, self.og.body_len as usize) };
                 file.write_all(header).ok();
                 file.write_all(body).ok();
-            }
 
-            if unsafe { ogg_page_eos(&mut self.og) } != 0 {
-                return true;
+                if unsafe { ogg_page_eos(&mut self.og) } != 0 {
+                    self.eos = true;
+                }
+
             }
 
         }
 
-        false
-
     }
 
-    fn write_header(&mut self, file: &mut File) {
+    fn write_flush(&mut self, file: &mut File) {
         loop {
 
             let result = unsafe {

@@ -55,10 +55,13 @@ impl Recorder {
     }
 
     pub fn stop(&mut self) {
+
         self.mix_buffer(true);
-        self.writer.take().unwrap();
-        // TODO we're not closing this out here as currently causes segfaults
-        //writer.close();
+
+        if let Some(mut writer) = self.writer.take() {
+            writer.close();
+        }
+
     }
 
     fn mix_buffer(&mut self, flush: bool) {
@@ -192,7 +195,6 @@ fn mix_packets(
     }
 
     // Write sample buffer
-    //max_sample_index = max_sample_index - (max_sample_index % 8);
     if max_sample_index > 0 {
         writer.write(&buffer[0..max_sample_index]);
     }

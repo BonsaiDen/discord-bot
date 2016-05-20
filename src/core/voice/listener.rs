@@ -193,9 +193,11 @@ fn listen(
                 info!("[Listener] Recording started.");
                 recorder.start("recording.ogg");
 
+                let mut skipped = 0;
                 while let Ok(_) = record_receive.try_recv() {
-                    // TODO Clear out any left over voice packets
+                    skipped += 1;
                 }
+                info!("[Listener] Skipped {} previous packets.", skipped);
 
             }
 
