@@ -94,13 +94,28 @@ impl EffectManager {
     }
 
     pub fn delete_effect(&mut self, effect: &str) -> Result<(), String> {
-        util::delete_file(
-            self.effects_directory.clone(), effect, "flac"
 
-        ).and_then(|_| {
-            self.effects.remove(&effect.to_string());
-            Ok(())
-        })
+        let mut filepath = None;
+        util::filter_dir(self.effects_directory.clone(), "flac", |name, path| {
+
+            let mut split = name.split('.');
+            let name = split.next().unwrap().to_string();
+            if name == effect {
+                filepath = Some(path);
+            }
+
+        });
+
+        if let Some(path) = filepath {
+            util::delete_file(path).and_then(|_| {
+                self.effects.remove(&effect.to_string());
+                Ok(())
+            })
+
+        } else {
+            Err("No matching effect file found.".to_string())
+        }
+
     }
 
 }
