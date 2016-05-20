@@ -52,10 +52,14 @@ impl Recorder {
         self.packet_buffer.push(packet);
     }
 
-    pub fn mix(&mut self) {
+    pub fn mix(&mut self) -> bool {
         if self.mix_buffer(false) > self.max_size && self.max_size > 0 {
             warn!("[Recorder] Stopped, exceeded maximum filesize of {} bytes.", self.max_size);
             self.stop();
+            false
+
+        } else {
+            true
         }
     }
 

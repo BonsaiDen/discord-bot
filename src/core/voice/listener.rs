@@ -1,6 +1,8 @@
 // STD Dependencies -----------------------------------------------------------
 use std::cmp;
+use std::env;
 use std::thread;
+use std::path::PathBuf;
 use std::time::Duration;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
@@ -19,6 +21,7 @@ use clock_ticks;
 // Internal Dependencies ------------------------------------------------------
 use super::queue::{Queue, QueueEntry, QueueHandle};
 use super::recorder::{Recorder, SamplePacket};
+use super::super::effect::Effect;
 
 
 // Types ----------------------------------------------------------------------
@@ -56,20 +59,20 @@ pub struct Listener {
 impl Listener {
 
     pub fn new(
-        _: Queue,
+        audio_queue: Queue,
         listener_count: ListenerCount,
         recording_state: RecordingState
 
     ) -> Listener {
 
         let listener_recording_state = recording_state.clone();
-
         let (record_sender, record_receive) = channel::<(SamplePacket)>();
         let (peak_sender, peak_receive) = channel::<(Option<u32>)>();
         let (status_sender, status_receive) = channel::<(QueueEntry)>();
 
         let timer = thread::spawn(move || {
             listen(
+                audio_queue,
                 listener_count,
                 recording_state,
                 peak_receive,
@@ -143,12 +146,18 @@ impl AudioReceiver for Listener {
 
 // Audio Listening ------------------------------------------------------------
 fn listen(
+    mut audio_queue: Queue,
     listener_count: ListenerCount,
     recording_state: RecordingState,
     peak_receive: Receiver<Option<u32>>,
     status_receive: Receiver<QueueEntry>,
     record_receive: Receiver<SamplePacket>
 ) {
+
+
+    let recording_started = PathBuf::from(env::var("RECORDING_STARTED_EFFECT").unwrap_or("".into()));
+    let recording_stopped = PathBuf::from(env::var("RECORDING_STOPPED_EFFECT").unwrap_or("".into()));
+    let recording_limit = PathBuf::from(env::var("RECORDING_LIMIT_EFFECT").unwrap_or("".into()));
 
     let delay = Duration::from_millis(100);
     let mut silent_for_seconds: usize = 0;
@@ -192,11 +201,13 @@ fn listen(
 
                 info!("[Listener] Recording started.");
                 recorder.start("recording.ogg");
+                play_effect(&mut audio_queue, recording_started.clone());
 
                 let mut skipped = 0;
                 while let Ok(_) = record_receive.try_recv() {
                     skipped += 1;
                 }
+
                 info!("[Listener] Skipped {} previous packets.", skipped);
 
             }
@@ -205,12 +216,16 @@ fn listen(
                 recorder.receive_packet(packet);
             }
 
-            recorder.mix();
+            // Mix and check for file size limit
+            if recorder.mix() == false {
+                play_effect(&mut audio_queue, recording_limit.clone());
+            }
 
         // Recording was stopped
         } else if recording {
 
             info!("[Listener] Recording stopped.");
+            play_effect(&mut audio_queue, recording_stopped.clone());
 
             while let Ok(packet) = record_receive.try_recv() {
                 recorder.receive_packet(packet);
@@ -234,5 +249,14 @@ fn listen(
 
     }
 
+}
+
+fn play_effect(audio_queue: &mut Queue, path: PathBuf) {
+    if let Ok(mut queue) = audio_queue.lock() {
+        queue.push_front(QueueEntry::EffectList(vec![
+            Effect::new("effect_name".to_string(), path)
+
+        ], 0));
+    }
 }
 
