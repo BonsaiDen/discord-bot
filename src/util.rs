@@ -75,15 +75,8 @@ pub fn download_file(
 
 }
 
-pub fn delete_file(
-    mut directory: PathBuf,
-    name: &str,
-    ext: &str,
-
-) -> Result<(), String> {
-    directory.push(name);
-    directory.set_extension(ext);
-    fs::remove_file(directory).map_err(|err| err.to_string())
+pub fn delete_file(path: PathBuf) -> Result<(), String> {
+    fs::remove_file(path).map_err(|err| err.to_string())
 }
 
 pub fn retrieve_flac_info(url: &str) -> Result<(u64, StreamInfo), String> {
