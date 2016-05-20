@@ -24,17 +24,19 @@ pub struct Recorder {
     last_receive: u64,
     packet_buffer: Vec<SamplePacket>,
     writer: Option<OggVorbisEncoder>,
-    period: usize
+    period: usize,
+    max_size: usize
 }
 
 impl Recorder {
 
-    pub fn new() -> Recorder {
+    pub fn new(max_size: usize) -> Recorder {
         Recorder {
             last_receive: clock_ticks::precise_time_ms(),
             packet_buffer: Vec::new(),
             writer: None,
-            period: 0
+            period: 0,
+            max_size: max_size
         }
     }
 
@@ -51,7 +53,10 @@ impl Recorder {
     }
 
     pub fn mix(&mut self) {
-        self.mix_buffer(false);
+        if self.mix_buffer(false) > self.max_size && self.max_size > 0 {
+            warn!("[Recorder] Stopped, exceeded maximum filesize of {} bytes.", self.max_size);
+            self.stop();
+        }
     }
 
     pub fn stop(&mut self) {
@@ -64,7 +69,7 @@ impl Recorder {
 
     }
 
-    fn mix_buffer(&mut self, flush: bool) {
+    fn mix_buffer(&mut self, flush: bool) -> usize {
 
         if let Some(mut writer) = self.writer.as_mut() {
 
@@ -96,6 +101,10 @@ impl Recorder {
 
             }
 
+            writer.len()
+
+        } else {
+            0
         }
 
     }

@@ -154,7 +154,7 @@ fn listen(
     let mut silent_for_seconds: usize = 0;
 
     let mut recording = false;
-    let mut recorder = Recorder::new();
+    let mut recorder = Recorder::new(0);
 
     'outer: loop {
 
@@ -209,6 +209,7 @@ fn listen(
 
         // Recording was stopped
         } else if recording {
+
             info!("[Listener] Recording stopped.");
 
             while let Ok(packet) = record_receive.try_recv() {

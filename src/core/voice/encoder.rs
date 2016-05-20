@@ -58,7 +58,8 @@ use ogg_sys::{
 pub struct OggVorbisEncoder {
     file: File,
     ogg: OggState,
-    vorbis: VorbisState
+    vorbis: VorbisState,
+    file_size: usize
 }
 
 impl OggVorbisEncoder {
@@ -68,7 +69,8 @@ impl OggVorbisEncoder {
             Ok(file) => Ok(OggVorbisEncoder {
                 file: file,
                 ogg: OggState::new(),
-                vorbis: VorbisState::new()
+                vorbis: VorbisState::new(),
+                file_size: 0
             }),
             Err(e) => Err(e)
         }
@@ -89,16 +91,20 @@ impl OggVorbisEncoder {
     pub fn init_vbr(&mut self, channels: usize, sample_rate: u32, quality: f32) {
         self.vorbis.init_vbr(channels, sample_rate as i64, quality);
         self.ogg.init(&mut self.vorbis);
-        self.ogg.write_flush(&mut self.file);
+        self.file_size += self.ogg.write_flush(&mut self.file);
     }
 
     pub fn write(&mut self, samples: &[i16]) {
         self.vorbis.write_samples(samples);
-        self.ogg.write(&mut self.file, &mut self.vorbis);
+        self.file_size += self.ogg.write(&mut self.file, &mut self.vorbis);
     }
 
     pub fn close(&mut self) {
-        self.ogg.write_flush(&mut self.file);
+        self.file_size += self.ogg.write_flush(&mut self.file);
+    }
+
+    pub fn len(&self) -> usize {
+        self.file_size
     }
 
 }
@@ -270,10 +276,12 @@ impl OggState {
 
     }
 
-    fn write(&mut self, file: &mut File, vorbis: &mut VorbisState) -> bool {
+    fn write(&mut self, file: &mut File, vorbis: &mut VorbisState) -> usize {
 
         let null = ptr::null_mut();
         let null_packet = ptr::null_mut();
+
+        let mut bytes_written = 0;
         while unsafe { vorbis_analysis_blockout(&mut vorbis.vd, &mut vorbis.vb) == 1 } {
 
             // Analysis, assume we want to use bitrate management
@@ -292,17 +300,19 @@ impl OggState {
                     }
                 }
 
-                self.write_page(file)
+                bytes_written += self.write_page(file)
 
             }
 
         }
 
-        false
+        bytes_written
 
     }
 
-    fn write_page(&mut self, file: &mut File) {
+    fn write_page(&mut self, file: &mut File) -> usize {
+
+        let mut bytes_written = 0;
 
         while !self.eos {
 
@@ -318,6 +328,8 @@ impl OggState {
                 let body: &[u8] = unsafe { std::slice::from_raw_parts(self.og.body, self.og.body_len as usize) };
                 file.write_all(header).ok();
                 file.write_all(body).ok();
+                bytes_written += self.og.header_len as usize;
+                bytes_written += self.og.body_len as usize;
 
                 if unsafe { ogg_page_eos(&mut self.og) } != 0 {
                     self.eos = true;
@@ -327,9 +339,13 @@ impl OggState {
 
         }
 
+        bytes_written
+
     }
 
-    fn write_flush(&mut self, file: &mut File) {
+    fn write_flush(&mut self, file: &mut File) -> usize {
+
+        let mut bytes_written = 0;
         loop {
 
             let result = unsafe {
@@ -344,8 +360,13 @@ impl OggState {
                 let body: &[u8] = unsafe { std::slice::from_raw_parts(self.og.body, self.og.body_len as usize) };
                 file.write_all(header).ok();
                 file.write_all(body).ok();
+                bytes_written += self.og.header_len as usize;
+                bytes_written += self.og.body_len as usize;
             }
         }
+
+        bytes_written
+
     }
 
     fn destroy(&mut self) {
