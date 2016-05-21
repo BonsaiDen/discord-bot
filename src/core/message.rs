@@ -175,7 +175,7 @@ fn verify_upload<'a>(server: &Server, upload: &'a Attachment) -> Result<(String,
         let effect_list = server.list_effects().iter().map(|e| {
             e.to_ascii_lowercase()
 
-        }).collect::<String>();
+        }).collect::<Vec<String>>();
 
         let effect = name.to_ascii_lowercase().replace(".", "_");
         if effect_list.contains(&effect) {
