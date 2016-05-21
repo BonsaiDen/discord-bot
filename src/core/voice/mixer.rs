@@ -84,6 +84,13 @@ impl Mixer {
                 }
             }
 
+        // Still support silencing
+        } else if let Some(&QueueEntry::Reset) = {
+            self.queue.lock().unwrap().front()
+        } {
+            self.queue.lock().unwrap().pop_front();
+            self.active_lists.clear();
+            self.waiting_lists.clear();
         }
 
         // Maximum possible sample value

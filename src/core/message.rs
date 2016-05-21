@@ -207,7 +207,7 @@ fn verify_flac_name(path: &Path) -> Option<String> {
     let name = path.file_stem().unwrap_or_else(|| OsStr::new("")).to_str().unwrap_or("");
     let ext = path.extension().unwrap_or_else(|| OsStr::new(""));
 
-    if name.is_ascii() && name.len() >= 3 && ext == "flac" {
+    if name.is_ascii() && name.len() >= 2 && ext == "flac" {
         Some(name.to_string())
 
     } else {
