@@ -167,33 +167,41 @@ impl Server {
         }
     }
 
-    pub fn start_recording(&mut self, handle: &mut Handle, channel_id: ChannelId) -> bool {
-        let recording = self.voice_recording_state.load(Ordering::Relaxed);
-        if recording {
-            false
+    pub fn start_recording(&mut self, handle: &mut Handle, channel_id: ChannelId) -> Option<String> {
+
+        if let Some(filename) = self.recording_file() {
+            warn!("[Server] [{}] [Voice] Audio is already being recorded ({}).", self, filename);
+            None
 
         } else {
             let state = self.join_voice_channel(handle, Some(channel_id));
             if state != VoiceJoinResult::Ignored {
-                info!("[Server] [{}] [Voice] Audio recording started.", self);
-                self.voice_recording_state.store(true, Ordering::Relaxed);
-                true
+
+                let dt = chrono::Local::now();
+                let filename = format!("{}.ogg", dt.format("%a %b %e %T %Y"));
+
+                info!("[Server] [{}] [Voice] Audio recording started ({}).", self, filename);
+
+                let mut w = self.voice_recording_state.write().unwrap();
+                *w = Some(filename.clone());
+
+                Some(filename)
 
             } else {
-                false
+                None
             }
         }
     }
 
-    pub fn stop_recording(&mut self) -> bool {
-        let recording = self.voice_recording_state.load(Ordering::Relaxed);
-        if recording {
-            info!("[Server] [{}] [Voice] Audio recording stopped.", self);
-            self.voice_recording_state.store(false, Ordering::Relaxed);
-            true
+    pub fn stop_recording(&mut self) -> Option<String> {
+        if let Some(filename) = self.recording_file() {
+            info!("[Server] [{}] [Voice] Audio recording stopped ({}).", self, filename);
+            let mut w = self.voice_recording_state.write().unwrap();
+            *w = None;
+            Some(filename.clone())
 
         } else {
-            false
+            None
         }
 
     }
@@ -260,6 +268,15 @@ impl Server {
 
     pub fn delete_effect(&mut self, effect: &str) -> Result<(), String> {
         self.effect_manager.delete_effect(effect)
+    }
+
+    fn recording_file(&self) -> Option<String> {
+        if let Some(ref filename) = *self.voice_recording_state.read().unwrap() {
+            Some(filename.clone())
+
+        } else {
+            None
+        }
     }
 
 }
@@ -466,10 +483,10 @@ impl Server {
         user: &User
     ) {
 
-        if self.voice_recording_state.load(Ordering::Relaxed) {
+        if let Some(filename) = self.recording_file() {
             info!(
-                "[Server] [{}] [{}] [Voice] Not greeting user, since audio recording is currently active.",
-                self, user
+                "[Server] [{}] [{}] [Voice] Not greeting user, since audio recording is currently active ({}).",
+                self, user, filename
             );
             return;
         }

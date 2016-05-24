@@ -22,11 +22,11 @@ impl Record {
     fn start(&mut self, handle: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
 
         if let Some(channel_id) = handle.find_voice_channel_id_for_user(&user.id) {
-            if server.start_recording(handle, channel_id) {
-                info!("[{}] [{}] [Command] [Record] Audio recording started.", server, user);
+            if let Some(filename) = server.start_recording(handle, channel_id) {
+                info!("[{}] [{}] [Command] [Record] Audio recording started ({}).", server, user, filename);
                 self.private_response = false;
                 Some(vec![
-                    format!("{} has started recording audio in this channel.", user.nickname)
+                    format!("{} has started recording audio in this channel ({}).", user.nickname, filename)
                 ])
 
             } else {
@@ -46,11 +46,11 @@ impl Record {
     }
 
     fn stop(&mut self, server: &mut Server, user: &User) -> CommandResult {
-        if server.stop_recording() {
-            info!("[{}] [{}] [Command] [Record] Audio recording stopped.", server, user);
+        if let Some(filename) = server.stop_recording() {
+            info!("[{}] [{}] [Command] [Record] Audio recording stopped ({}).", server, user, filename);
             self.private_response = false;
             Some(vec![
-                format!("{} has stopped recording audio in this channel.", user.nickname)
+                format!("{} has stopped recording audio in this channel ({}).", user.nickname, filename)
             ])
 
         } else {

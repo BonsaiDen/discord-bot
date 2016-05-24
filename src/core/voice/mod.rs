@@ -1,5 +1,4 @@
 // Modules --------------------------------------------------------------------
-mod encoder;
 mod greeting;
 mod listener;
 mod mixer;

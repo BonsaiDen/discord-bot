@@ -14,10 +14,7 @@ extern crate toml;
 extern crate edit_distance;
 extern crate hound;
 extern crate clock_ticks;
-extern crate vorbis_sys;
-extern crate vorbisfile_sys;
-extern crate vorbisenc_sys;
-extern crate ogg_sys;
+extern crate vorbis_enc;
 
 
 // STD Dependencies -----------------------------------------------------------

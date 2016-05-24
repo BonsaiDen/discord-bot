@@ -11,7 +11,7 @@ use clock_ticks;
 
 // Internal Dependencies ------------------------------------------------------
 use super::util::{compress, seq_is_more_recent};
-use super::encoder::OggVorbisEncoder;
+use vorbis_enc::OggVorbisEncoder;
 
 
 // Types ----------------------------------------------------------------------
@@ -40,11 +40,17 @@ impl Recorder {
         }
     }
 
-    pub fn start(&mut self, filename: &str) {
+    pub fn start(&mut self, filename: &str) -> bool {
         if let Ok(mut encoder) = OggVorbisEncoder::new(filename) {
-            encoder.init_vbr(1, 48000, 0.2);
+
+            encoder.initialize_with_vbr(1, 48000, 0.2).ok();
             self.last_receive = clock_ticks::precise_time_ms();
             self.writer = Some(encoder);
+
+            true
+
+        } else {
+            false
         }
     }
 
@@ -68,7 +74,7 @@ impl Recorder {
         self.mix_buffer(true);
 
         if let Some(mut writer) = self.writer.take() {
-            writer.close();
+            writer.close().ok();
         }
 
     }
@@ -209,7 +215,7 @@ fn mix_packets(
 
     // Write sample buffer
     if max_sample_index > 0 {
-        writer.write(&buffer[0..max_sample_index]);
+        writer.write_samples(&buffer[0..max_sample_index]).ok();
     }
 
     max_receive

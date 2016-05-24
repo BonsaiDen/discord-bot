@@ -13,12 +13,9 @@ dependencies = [
  "hyper 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "oauth2 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "ogg-sys 0.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
- "vorbis-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "vorbisenc-sys 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "vorbisfile-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vorbis-enc 0.1.0 (git+https://github.com/BonsaiDen/vorbis-enc.git?rev=master)",
 ]
 
 [[package]]
@@ -804,6 +801,18 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "vorbis-enc"
+version = "0.1.0"
+source = "git+https://github.com/BonsaiDen/vorbis-enc.git?rev=master#3cd531bf2303819387acc4aeac1813c2f9365397"
+dependencies = [
+ "ogg-sys 0.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vorbis-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vorbisenc-sys 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vorbisfile-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

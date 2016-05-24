@@ -4,8 +4,8 @@ use std::env;
 use std::thread;
 use std::path::PathBuf;
 use std::time::Duration;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
+use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Sender, Receiver};
 
 
@@ -35,13 +35,13 @@ impl EmptyListenerCount {
     }
 }
 
-pub type RecordingState = Arc<AtomicBool>;
+pub type RecordingState = Arc<RwLock<Option<String>>>;
 
 pub struct DefaultRecordingState;
 
 impl DefaultRecordingState {
     pub fn create() -> RecordingState {
-        Arc::new(AtomicBool::new(false))
+        Arc::new(RwLock::new(None))
     }
 }
 
@@ -120,7 +120,7 @@ impl AudioReceiver for Listener {
             self.peak_sender.send(Some(peak)).ok();
         }
 
-        if self.recording_state.load(Ordering::Relaxed) {
+        if self.recording_state.read().unwrap().is_some() {
             let ms = clock_ticks::precise_time_ms();
             self.record_sender.send((
                 seq,
@@ -154,15 +154,15 @@ fn listen(
     record_receive: Receiver<SamplePacket>
 ) {
 
-
     let recording_started = PathBuf::from(env::var("RECORDING_STARTED_EFFECT").unwrap_or("".into()));
     let recording_stopped = PathBuf::from(env::var("RECORDING_STOPPED_EFFECT").unwrap_or("".into()));
     let recording_limit = PathBuf::from(env::var("RECORDING_LIMIT_EFFECT").unwrap_or("".into()));
+    let recording_directory = PathBuf::from(env::var("RECORDING_DIRECTORY").unwrap_or("".into()));
 
     let delay = Duration::from_millis(100);
     let mut silent_for_seconds: usize = 0;
 
-    let mut recording = false;
+    let mut is_recording = false;
     let mut recorder = Recorder::new(0);
 
     'outer: loop {
@@ -194,35 +194,55 @@ fn listen(
         }
 
         // Recording
-        let currently_recording = recording_state.load(Ordering::Relaxed);
-        if currently_recording {
+        if let Some(ref filename) = *recording_state.read().unwrap() {
 
-            if !recording {
+            // Start recording when value toggles
+            if !is_recording {
 
-                info!("[Listener] Recording started.");
-                recorder.start("recording.ogg");
-                play_effect(&mut audio_queue, recording_started.clone());
+                let mut file = recording_directory.clone();
+                file.push(filename.clone());
 
-                let mut skipped = 0;
-                while let Ok(_) = record_receive.try_recv() {
-                    skipped += 1;
+                if recorder.start(file.to_str().unwrap()) {
+
+                    info!("[Listener] Recording started ({}).", filename);
+
+                    play_effect(&mut audio_queue, recording_started.clone());
+
+                    let mut skipped = 0;
+                    while let Ok(_) = record_receive.try_recv() {
+                        skipped += 1;
+                    }
+
+                    info!("[Listener] Skipped {} previous packets.", skipped);
+                    is_recording = true;
+
+                } else {
+                    info!("[Listener] Recording failed ({}).", filename);
+                    let mut w = recording_state.write().unwrap();
+                    is_recording = false;
+                    *w = None;
                 }
 
-                info!("[Listener] Skipped {} previous packets.", skipped);
-
             }
 
-            while let Ok(packet) = record_receive.try_recv() {
-                recorder.receive_packet(packet);
-            }
+            // Record samples
+            if is_recording {
 
-            // Mix and check for file size limit
-            if recorder.mix() == false {
-                play_effect(&mut audio_queue, recording_limit.clone());
+                while let Ok(packet) = record_receive.try_recv() {
+                    recorder.receive_packet(packet);
+                }
+
+                // Mix and check for file size limit
+                if recorder.mix() == false {
+                    play_effect(&mut audio_queue, recording_limit.clone());
+                    info!("[Listener] Recording stopped, filesize limit reached ({}).", filename);
+                    is_recording = false;
+                }
+
             }
 
         // Recording was stopped
-        } else if recording {
+        } else if is_recording {
 
             info!("[Listener] Recording stopped.");
             play_effect(&mut audio_queue, recording_stopped.clone());
@@ -234,9 +254,9 @@ fn listen(
             recorder.mix();
             recorder.stop();
 
-        }
+            is_recording = false
 
-        recording = currently_recording;
+        }
 
         // Silence Detection
         // TODO fix silence detection
