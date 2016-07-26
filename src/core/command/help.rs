@@ -10,6 +10,8 @@ static HELP_TEXT: &'static str = "
 - `!s <sound>` - Plays the requested sound immediately. See below for details on what `<sound>` can be.
 - `!q <sound>` - Queues up the requested sound to be played once all other currently playing / queued sounds have finished.
 - `!sounds` - Sends a listing of all available sound effects in a private channel.
+- `!delete <effect>` - Deletes the specified sound effect.
+- `!rename <old_effect> <new_effect>` - Renames the specified sound effect.
 - `!silence` - Immediately stops all playing sounds and removes all other queued effects.
 - `!greeting <add|remove> <nickname> [<effect>]` - Adds or remove a custom greeting for a user.
 - `!greetings` - Sends a listing of all existing custom user greetings in a private channel.

@@ -9,6 +9,7 @@ mod not_unique;
 mod alias;
 mod aliases;
 mod delete_sound;
+mod rename_sound;
 mod greeting;
 mod greetings;
 mod help;
@@ -56,7 +57,8 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
         "s" => Box::new(sound::Sound::new(arguments, true)),
         "q" => Box::new(sound::Sound::new(arguments, false)),
         "sounds" => Box::new(sounds::Sounds),
-        "delete_sound" => Box::new(delete_sound::DeleteSound::new(arguments)),
+        "delete" => Box::new(delete_sound::DeleteSound::new(arguments)),
+        "rename" => Box::new(rename_sound::RenameSound::new(arguments)),
         "silence" => Box::new(silence::Silence),
         "greeting" => Box::new(greeting::Greeting::new(arguments)),
         "greetings" => Box::new(greetings::Greetings),

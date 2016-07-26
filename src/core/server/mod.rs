@@ -262,6 +262,10 @@ impl Server {
         self.effect_manager.delete_effect(effect)
     }
 
+    pub fn rename_effect(&mut self, old_name: &str, new_name: &str) -> Result<(), String> {
+        self.effect_manager.rename_effect(old_name, new_name)
+    }
+
 }
 
 

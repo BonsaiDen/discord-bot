@@ -79,6 +79,10 @@ pub fn delete_file(path: PathBuf) -> Result<(), String> {
     fs::remove_file(path).map_err(|err| err.to_string())
 }
 
+pub fn rename_file(from: PathBuf, to: PathBuf) -> Result<(), String> {
+    fs::rename(from, to).map_err(|err| err.to_string())
+}
+
 pub fn retrieve_flac_info(url: &str) -> Result<(u64, StreamInfo), String> {
 
     let client = Client::new();

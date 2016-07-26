@@ -118,6 +118,40 @@ impl EffectManager {
 
     }
 
+    pub fn rename_effect(&mut self, effect: &str, to: &str) -> Result<(), String> {
+
+        let mut filepath = None;
+        let mut new_filepath = PathBuf::new();
+        util::filter_dir(self.effects_directory.clone(), "flac", |name, path| {
+
+            let mut split = name.split('.');
+            let name = split.next().unwrap().to_string();
+            if name == effect {
+                filepath = Some(path.clone());
+                new_filepath = path;
+                new_filepath.set_file_name(format!(
+                    "{}.{}",
+                    to,
+                    split.collect::<Vec<&str>>().join(".")
+                ));
+                new_filepath.set_extension("flac");
+            }
+
+        });
+
+        if let Some(path) = filepath {
+            util::rename_file(path, new_filepath).and_then(|_| {
+                self.load_effects();
+                Ok(())
+            })
+
+        } else {
+            Err("No matching effect file found.".to_string())
+        }
+
+    }
+
+
 }
 
 
