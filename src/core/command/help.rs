@@ -4,7 +4,7 @@ use super::{Command, CommandResult};
 
 
 // Statics --------------------------------------------------------------------
-static HELP_TEXT: &'static str = "
+static HELP_TEXT_ONE: &'static str = "
 **The following commands are currently available:**
 
 - `!s <sound>` - Plays the requested sound immediately. See below for details on what `<sound>` can be.
@@ -21,8 +21,9 @@ static HELP_TEXT: &'static str = "
 - `!ip` - Posts the bot's the public IP onto the current channel.
 - `!reload` - Reloads the sound list from the on disk flac files.
 - `!help` - Displays this help text.
+";
 
-**Sound Effects**
+static HELP_TEXT_TWO: &'static str = "**Sound Effects**
 
 Sound effects can be played by requesting them via the `!s <sound>` command,
 where `<sound>` can either be the *full name*, a *group prefix*, or a *wildcard*.
@@ -49,7 +50,10 @@ impl Command for Help {
 
     fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
         info!("[{}] [{}] [Command] [Help] Usage information requested.", server, user);
-        Some(vec![HELP_TEXT.to_string()])
+        Some(vec![
+            HELP_TEXT_ONE.to_string(),
+            HELP_TEXT_TWO.to_string()
+        ])
     }
 
     fn requires_unique_server(&self) -> bool {
