@@ -158,10 +158,10 @@ impl EffectManager {
 // Mapping --------------------------------------------------------------------
 impl EffectManager {
 
-    pub fn map_from_patterns(&self, patterns: &[String]) -> Vec<Effect> {
+    pub fn map_from_patterns(&self, patterns: &[String], all: bool) -> Vec<Effect> {
 
         let effects: Vec<Effect> = patterns.iter()
-             .map(|name| self.map_from_pattern(name))
+             .map(|name| self.map_from_pattern(name,  all))
              .filter(|e| e.is_some())
              .map(|e|e.unwrap())
              .flat_map(|s| s).collect();
@@ -179,7 +179,7 @@ impl EffectManager {
 
     }
 
-    fn map_from_pattern(&self, pattern: &str) -> Option<Vec<Effect>> {
+    fn map_from_pattern(&self, pattern: &str, all: bool) -> Option<Vec<Effect>> {
 
         let mut matching: Vec<&str> = self.effects.keys().map(|n| {
             n.as_str()
@@ -193,12 +193,21 @@ impl EffectManager {
 
         matching.extend(matching_aliases);
 
-        if let Some(name) = thread_rng().choose(&matching[..]) {
+        if all {
+            let mut effects = Vec::new();
+            for m in matching {
+                if let Some(e) = self.effects.get(m) {
+                    effects.append(&mut e.clone())
+                }
+            }
+            Some(effects)
+
+        } else if let Some(name) = thread_rng().choose(&matching[..]) {
             if let Some(effect) = self.effects.get(*name) {
                 Some(effect.clone())
 
             } else if let Some(aliases) = self.aliases.get(*name) {
-                Some(self.map_from_patterns(aliases))
+                Some(self.map_from_patterns(aliases, false))
 
             } else {
                 None
@@ -209,7 +218,6 @@ impl EffectManager {
         }
 
     }
-
 
 }
 

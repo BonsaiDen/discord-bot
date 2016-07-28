@@ -38,7 +38,7 @@ impl Command for Sound {
 
         } else if let Some(channel_id) = handle.find_voice_channel_id_for_user(&user.id) {
 
-            let effects = server.map_effects(&self.effect_names);
+            let effects = server.map_effects(&self.effect_names, false);
             if effects.is_empty() {
 
                 let suggestions = server.get_effect_suggestions(

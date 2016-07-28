@@ -5,17 +5,50 @@ use super::{Command, CommandResult};
 
 
 // Sound Listing --------------------------------------------------------------
-pub struct Sounds;
+pub struct Sounds {
+    patterns: Vec<String>
+}
+
+impl Sounds {
+    pub fn new(args: Vec<&str>) -> Sounds {
+        Sounds {
+            patterns: args.iter().map(|a| a.to_string()).collect()
+        }
+    }
+}
 
 
 // Command Implementation -----------------------------------------------------
 impl Command for Sounds {
 
     fn execute(&mut self, _: &mut Handle, server: &mut Server, user: &User) -> CommandResult {
-        info!("[{}] [{}] [Command] [Sounds] Sound listing requested.", server, user);
-        let mut effects = server.list_effects();
-        effects.sort();
-        Some(util::list_words("Sound Effects", effects, 100, 4))
+
+        if self.patterns.is_empty() {
+            info!("[{}] [{}] [Command] [Sounds] Sound listing requested.", server, user);
+            let mut effects = server.list_effects();
+            effects.sort();
+            Some(util::list_words("Sound Effects", effects, 100, 4))
+
+        } else {
+
+            info!(
+                "[{}] [{}] [Command] [Sounds] Sound listing for pattern \"{}\" requested.",
+                server, user, self.patterns.join("\", \"")
+            );
+
+            let effects = server.map_effects(&self.patterns[..], true);
+            let mut effects: Vec<&str> = effects.iter().map(|effect| {
+                effect.get_name()
+
+            }).collect();
+
+            effects.sort();
+
+            let title = format!("Sound Effect matching \"{}\"", self.patterns.join("\", \""));
+            Some(util::list_words(title.as_str(), effects, 100, 4))
+
+        }
+
     }
 
     fn requires_unique_server(&self) -> bool {

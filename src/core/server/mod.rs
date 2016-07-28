@@ -198,8 +198,8 @@ impl Server {
 
     }
 
-    pub fn map_effects(&mut self, list: &[String]) -> Vec<Effect> {
-        self.effect_manager.map_from_patterns(list)
+    pub fn map_effects(&mut self, list: &[String], all: bool) -> Vec<Effect> {
+        self.effect_manager.map_from_patterns(list, all)
     }
 
     pub fn list_effects(&self) -> Vec<&str> {
@@ -489,7 +489,7 @@ impl Server {
         }
 
         if let Some((user, names)) = user_greeting {
-            let effects = self.map_effects(&names);
+            let effects = self.map_effects(&names, false);
             if !effects.is_empty() {
                 info!(
                     "[Server] [{}] [{}] [Voice] Greeting with \"{}\".",

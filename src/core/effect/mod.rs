@@ -27,6 +27,10 @@ impl Effect {
         }
     }
 
+    pub fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
+
     pub fn to_path_str(&self) -> &str {
         self.path.to_str().unwrap_or("")
     }

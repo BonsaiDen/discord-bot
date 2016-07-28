@@ -56,7 +56,7 @@ fn match_from_args(name: &str, arguments: Vec<&str>) -> Box<Command> {
     match name {
         "s" => Box::new(sound::Sound::new(arguments, true)),
         "q" => Box::new(sound::Sound::new(arguments, false)),
-        "sounds" => Box::new(sounds::Sounds),
+        "sounds" => Box::new(sounds::Sounds::new(arguments)),
         "delete" => Box::new(delete_sound::DeleteSound::new(arguments)),
         "rename" => Box::new(rename_sound::RenameSound::new(arguments)),
         "silence" => Box::new(silence::Silence),
