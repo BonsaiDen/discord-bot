@@ -154,6 +154,13 @@ impl<'a> Message<'a> {
 
             }
 
+            Some(ChannelRef::Group(_)) => info!(
+                "[{}] [{}] [Message] [Group Channel]: {}",
+                server,
+                self.author.nickname,
+                self.content
+            ),
+
             None => info!(
                 "[{}] [{}] [Message] [Unknown Channel]: {}",
                 server,

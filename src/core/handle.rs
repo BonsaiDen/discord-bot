@@ -2,7 +2,7 @@
 use discord::{ChannelRef, Connection, Discord, State, Error};
 use discord::model::{
     Event, ChannelId, UserId, ServerId, RoleId,
-    LiveServer, PrivateChannel, PermissionOverwrite
+    LiveServer, PrivateChannel, PermissionOverwriteType
 };
 use discord::voice::VoiceConnection;
 use discord::model::permissions::Permissions;
@@ -92,11 +92,11 @@ impl Handle {
 impl Handle {
 
     pub fn get_server_voice(&mut self, server_id: ServerId) -> &mut VoiceConnection {
-        self.connection.voice(server_id)
+        self.connection.voice(Some(server_id))
     }
 
     pub fn disconnect_server_voice(&mut self, server_id: ServerId){
-        self.connection.drop_voice(server_id);
+        self.connection.drop_voice(Some(server_id));
     }
 
 }
@@ -143,14 +143,14 @@ impl Handle {
             let mut allowed_perms = Permissions::empty();
             let mut denied_perms = Permissions::empty();
             for overwrite in &channel.permission_overwrites {
-                match *overwrite {
-                    PermissionOverwrite::Role { id, allow, deny} => if user_roles.contains(&id) {
-                        allowed_perms.insert(allow);
-                        denied_perms.remove(deny);
+                match overwrite.kind {
+                    PermissionOverwriteType::Role(id) => if user_roles.contains(&id) {
+                        allowed_perms.insert(overwrite.allow);
+                        denied_perms.remove(overwrite.deny);
                     },
-                    PermissionOverwrite::Member { id, allow, deny} if id == user_id => {
-                        allowed_perms.insert(allow);
-                        denied_perms.remove(deny);
+                    PermissionOverwriteType::Member(id) if id == user_id => {
+                        allowed_perms.insert(overwrite.allow);
+                        denied_perms.remove(overwrite.deny);
                     },
                     _ => {}
                 }

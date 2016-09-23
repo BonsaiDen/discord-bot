@@ -133,7 +133,7 @@ impl Bot {
             }
 
             Event::VoiceServerUpdate { server_id, .. } => {
-                if let Some(server) = self.get_server(&server_id) {
+                if let Some(server) = self.get_server(&server_id.unwrap()) {
                     server.initialize(handle);
                 }
             }
@@ -228,7 +228,7 @@ impl Bot {
                     if user.is_bot && user.id != handle.user_id() {
                         info!("[Event] Ignored voice update from bot.");
 
-                    } else if let Some(server) = self.get_server(&server_id) {
+                    } else if let Some(server) = self.get_server(&server_id.unwrap()) {
                         server.update_voice(handle, voice_state, user);
 
                     } else {

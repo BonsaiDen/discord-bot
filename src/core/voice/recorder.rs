@@ -40,7 +40,8 @@ impl Recorder {
         let spec = hound::WavSpec {
             channels: 1,
             sample_rate: 48000,
-            bits_per_sample: 16
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int
         };
         self.writer = Some(hound::WavWriter::create(filename, spec).unwrap());
     }
