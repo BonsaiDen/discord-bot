@@ -1,9 +1,9 @@
 [root]
-name = "foobot"
+name = "discord-bot"
 version = "0.1.0"
 dependencies = [
  "chrono 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
- "clippy 0.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clippy 0.0.95 (registry+https://github.com/rust-lang/crates.io-index)",
  "clock_ticks 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "discord 0.6.0 (git+https://github.com/SpaceManiac/discord-rs.git?rev=master)",
  "dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -53,15 +53,15 @@ dependencies = [
 
 [[package]]
 name = "clippy"
-version = "0.0.92"
+version = "0.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "clippy_lints 0.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clippy_lints 0.0.95 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "clippy_lints"
-version = "0.0.92"
+version = "0.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -769,8 +769,8 @@ dependencies = [
 "checksum byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0fc10e8cc6b2580fda3f36eb6dc5316657f812a3df879a44a66fc9f0fdbc4855"
 "checksum cfg-if 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "de1e760d7b6535af4241fca8bd8adf68e2e7edacc6b29f5d399050c5e48cf88c"
 "checksum chrono 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)" = "9213f7cd7c27e95c2b57c49f0e69b1ea65b27138da84a170133fd21b07659c00"
-"checksum clippy 0.0.92 (registry+https://github.com/rust-lang/crates.io-index)" = "8f9ba1b0dfe92b4885f97961aaebf9f3f7c7cb4f22c84b4778bf819542bfb123"
-"checksum clippy_lints 0.0.92 (registry+https://github.com/rust-lang/crates.io-index)" = "5bcaf701be682100ee15f3ca11b405127168e5f902bd2ce0bf3dfeeea2359bf4"
+"checksum clippy 0.0.95 (registry+https://github.com/rust-lang/crates.io-index)" = "326a296da2adbb719fcc2301f3b44a148261f72a46dbda89930ead9c90d584b2"
+"checksum clippy_lints 0.0.95 (registry+https://github.com/rust-lang/crates.io-index)" = "921bb7c49a9a58f6bd097fbbb9f729426e0f05372fe5b81a0a053f6b2d98dc5b"
 "checksum clock_ticks 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "da9bd98fefcf1904a3f80ead86d366d9373c34db7b8a8e48c1fdcaac4787800d"
 "checksum cookie 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "0e3d6405328b6edb412158b3b7710e2634e23f3614b9bb1c412df7952489a626"
 "checksum discord 0.6.0 (git+https://github.com/SpaceManiac/discord-rs.git?rev=master)" = "<none>"
