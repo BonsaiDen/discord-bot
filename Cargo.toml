@@ -1,0 +1,20 @@
+[package]
+name = "Bot"
+version = "0.1.0"
+authors = ["Ivo Wetzel <ivo.wetzel@googlemail.com>"]
+
+[dependencies]
+discord = { git = "https://github.com/SpaceManiac/discord-rs.git", rev = "master" }
+flac = { git = "https://github.com/bonsaiden/flac.git", rev = "master" }
+clock_ticks = "*"
+dotenv = "*"
+chrono = "*"
+hyper = "0.8.1"
+toml = "0.1"
+rand = "*"
+log = "*"
+clippy = { version = "*", optional = true }
+
+[features]
+lint = ["clippy"]
+
