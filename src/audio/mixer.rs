@@ -119,12 +119,10 @@ impl Mixer {
 
     fn mix(&mut self, buffer: &mut [i16]) -> usize {
         if self.delay == 0 {
-            println!("mixing...");
             self.update_sources();
             self.mix_sources(buffer)
 
         } else {
-            println!("Delaying playback...");
             self.delay -= 20;
             0
         }
@@ -199,7 +197,6 @@ impl AudioSource for Mixer {
     }
 
     fn read_frame(&mut self, buffer: &mut [i16]) -> Option<usize> {
-        println!("read audio frame");
         Some(self.mix(buffer))
     }
 

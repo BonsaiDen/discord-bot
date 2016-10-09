@@ -166,25 +166,25 @@ impl Server {
         // Check voice channel permissions
         let permissions = self.get_bot_permissions(channel_id);
         if !permissions.contains(VOICE_CONNECT | VOICE_SPEAK) {
-            info!("{} no permissions to join voice channel", self);
+            info!("{} No permissions to join voice channel", self);
             return;
         }
 
         // Check if already pending
         if self.voice_status == ServerVoiceStatus::Pending {
-            info!("{} already joining a voice channel", self);
+            info!("{} Already joining a voice channel", self);
             return;
 
         // Check if already in the target channel
         } else if let Some(current_channel_id) = self.voice_channel_id {
             if *channel_id == current_channel_id {
-                info!("{} already in target voice channel", self);
+                info!("{} Already in target voice channel", self);
                 return;
             }
         }
 
         if let Some(channel) = self.channels.get(channel_id) {
-            info!("{} {} joining voice", self, channel);
+            info!("{} {} Joining voice", self, channel);
         }
 
         let mixer_queue = self.mixer_queue.clone();
@@ -198,11 +198,7 @@ impl Server {
 
     pub fn update_voice(&mut self, _: &mut EventQueue) {
         if self.voice_status == ServerVoiceStatus::Joined {
-            info!("{} ============ voice endpoint updated", self);
-            // TODO this doesn't work since we're marked as joined BEFORE
-            // this event is raised we need to have some delay check here
-            //self.leave_voice(queue);
-            // TODO re-join voice channel after region switch or re-connect
+            info!("{} Voice endpoint updated", self);
         }
     }
 
@@ -210,7 +206,7 @@ impl Server {
         if let Some(channel_id) = self.voice_channel_id {
 
             if let Some(channel) = self.channels.get(&channel_id) {
-                info!("{} {} leaving voice", self, channel);
+                info!("{} {} Leaving voice", self, channel);
             }
 
             queue.disconnect_server_voice(self.id);
@@ -220,7 +216,7 @@ impl Server {
 
     fn joined_voice(&mut self, channel_id: ChannelId) {
         if self.voice_status == ServerVoiceStatus::Pending {
-            info!("{} ============ Joined voice channel", self);
+            info!("{} Joined voice channel", self);
             self.voice_status = ServerVoiceStatus::Joined;
             self.voice_channel_id = Some(channel_id);
         }
@@ -228,7 +224,7 @@ impl Server {
 
     fn left_voice(&mut self) {
         if self.voice_status == ServerVoiceStatus::Joined {
-            info!("{} ============ Left voice channel", self);
+            info!("{} Left voice channel", self);
             self.voice_status = ServerVoiceStatus::Left;
             self.voice_channel_id = None;
         }
