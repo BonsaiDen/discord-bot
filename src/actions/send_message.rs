@@ -29,7 +29,7 @@ impl SendPrivateMessage {
 }
 
 impl Action for SendPrivateMessage {
-    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &EventQueue) -> ActionGroup {
+    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         info!("{} Sending...", self);
         queue.send_message_to_user(&self.user_id, self.content.clone());
         vec![]
@@ -63,7 +63,7 @@ impl SendPublicMessage {
 }
 
 impl Action for SendPublicMessage {
-    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &EventQueue) -> ActionGroup {
+    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         info!("{} Sending...", self);
         queue.send_message_to_channel(&self.channel_id, self.content.clone());
         vec![]

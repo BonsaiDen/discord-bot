@@ -26,7 +26,7 @@ impl ListAllEffects {
 }
 
 impl Action for ListAllEffects {
-    fn run(&self, bot: &mut Bot, config: &BotConfig, _: &EventQueue) -> ActionGroup {
+    fn run(&self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
@@ -66,7 +66,7 @@ impl ListPatternEffects {
 }
 
 impl Action for ListPatternEffects {
-    fn run(&self, bot: &mut Bot, config: &BotConfig, _: &EventQueue) -> ActionGroup {
+    fn run(&self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 

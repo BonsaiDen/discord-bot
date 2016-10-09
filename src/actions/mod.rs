@@ -37,6 +37,6 @@ pub use self::reload_server_configuration::ReloadServerConfiguration;
 pub type ActionGroup = Vec<Box<Action>>;
 
 pub trait Action: fmt::Display {
-    fn run(&self, &mut Bot, &BotConfig, &EventQueue) -> ActionGroup;
+    fn run(&self, &mut Bot, &BotConfig, &mut EventQueue) -> ActionGroup;
 }
 

@@ -70,7 +70,6 @@ impl Bot {
     fn run(mut self, token: String, config: BotConfig) {
 
         let mut queue = EventQueue::new(token);
-        queue.connect();
 
         'main: loop {
 
@@ -81,7 +80,7 @@ impl Bot {
                     Event::Disconnected => {
                         break 'main;
                     },
-                    Event::Received(event) => self.discord_event(event, &config, &queue),
+                    Event::Received(event) => self.discord_event(event, &config, &mut queue),
                     _ => self.event(event)
                 };
 
@@ -91,7 +90,7 @@ impl Bot {
 
                     let mut next_actions = Vec::new();
                     for action in actions.drain(0..) {
-                        next_actions.extend(action.run(&mut self, &config, &queue));
+                        next_actions.extend(action.run(&mut self, &config, &mut queue));
                     }
 
                     actions.extend(next_actions);
@@ -123,7 +122,7 @@ impl Bot {
         &mut self,
         event: DiscordEvent,
         config: &BotConfig,
-        queue: &EventQueue
+        queue: &mut EventQueue
 
     ) -> ActionGroup {
         match event {

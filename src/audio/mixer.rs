@@ -14,6 +14,7 @@ use ::effects::Effect;
 
 // Statics --------------------------------------------------------------------
 static MAX_PARALLEL_SOURCES: usize = 2;
+static MIXER_DELAY_MILLIS: u64 = 300;
 
 
 // Mixer Queue  ---------------------------------------------------------------
@@ -41,7 +42,8 @@ pub struct Mixer {
     command_queue: MixerQueue,
     audio_buffer: [i16; 960 * 2],
     active_sources: Vec<MixerSource>,
-    queued_sources: VecDeque<MixerSource>
+    queued_sources: VecDeque<MixerSource>,
+    delay: u64
 }
 
 
@@ -54,7 +56,8 @@ impl Mixer {
             command_queue: command_queue.clone(),
             audio_buffer: [0; 960 * 2],
             active_sources: Vec::new(),
-            queued_sources: VecDeque::new()
+            queued_sources: VecDeque::new(),
+            delay: MIXER_DELAY_MILLIS
         };
 
         info!("{} Created", mixer);
@@ -96,7 +99,6 @@ impl Mixer {
                 }
             }
 
-        // Always check for clearing command
         } else if let Some(&MixerCommand::ClearQueue) = {
             self.command_queue.lock().unwrap().front()
         } {
@@ -109,7 +111,14 @@ impl Mixer {
     }
 
     fn mix(&mut self, _: &mut [i16]) -> usize {
-        0
+        if self.delay == 0 {
+            0
+
+        } else {
+            self.delay -= 20;
+            0
+        }
+
     }
 
 }

@@ -57,7 +57,8 @@ impl Command {
     ) -> ActionGroup {
 
         let command: Box<CommandImplementation> = match self.name.as_str() {
-            "s" => Box::new(play_effect::PlayEffectCommand),
+            "s" => Box::new(play_effect::PlayEffectCommand::instant()),
+            "q" => Box::new(play_effect::PlayEffectCommand::queued()),
             "delete" => Box::new(delete_effect::DeleteEffectCommand),
             "rename" => Box::new(rename_effect::RenameEffectCommand),
             "sounds" => Box::new(sounds::SoundsCommand),

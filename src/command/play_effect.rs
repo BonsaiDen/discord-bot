@@ -8,7 +8,25 @@ use ::actions::{ActionGroup, DeleteMessage, PlayEffects, SendPublicMessage};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct PlayEffectCommand;
+pub struct PlayEffectCommand {
+    queued: bool
+}
+
+impl PlayEffectCommand {
+
+    pub fn instant() -> PlayEffectCommand {
+        PlayEffectCommand {
+            queued: false
+        }
+    }
+
+    pub fn queued() -> PlayEffectCommand {
+        PlayEffectCommand {
+            queued: true
+        }
+    }
+
+}
 
 impl CommandImplementation for PlayEffectCommand {
 
@@ -28,12 +46,23 @@ impl CommandImplementation for PlayEffectCommand {
                 DeleteMessage::new(command.message),
                 SendPublicMessage::new(
                     &command.message,
-                    "Usage: `!s <effect_name>`".to_string()
+                    format!("Usage: `!{} <effect_name>`", if self.queued {
+                        "q"
+
+                    } else {
+                        "s"
+                    })
                 )
             ]
 
         } else {
-            let effects = server.map_effects(&command.arguments[..], false, config);
+
+            let effects = server.map_effects(
+                &command.arguments[..],
+                false,
+                config
+            );
+
             if effects.is_empty() {
                 vec![
                     DeleteMessage::new(command.message),
@@ -50,7 +79,7 @@ impl CommandImplementation for PlayEffectCommand {
                         command.message.server_id,
                         channel_id,
                         effects,
-                        false
+                        self.queued
                     )
                 ]
 
@@ -63,6 +92,7 @@ impl CommandImplementation for PlayEffectCommand {
                     )
                 ]
             }
+
         }
 
     }

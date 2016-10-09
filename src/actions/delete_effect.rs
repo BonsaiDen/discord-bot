@@ -27,7 +27,7 @@ impl DeleteEffect {
 }
 
 impl Action for DeleteEffect {
-    fn run(&self, bot: &mut Bot, _: &BotConfig, _: &EventQueue) -> ActionGroup {
+    fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 

@@ -65,7 +65,7 @@ impl Server {
     pub fn from_possible_server(
         server: PossibleServer<LiveServer>,
         bot_config: &BotConfig,
-        queue: &EventQueue
+        queue: &mut EventQueue
 
     ) -> Server {
         let server = match server {
@@ -155,7 +155,7 @@ impl Server {
     fn join_voice(
         &mut self,
         channel_id: &ChannelId,
-        queue: &EventQueue
+        queue: &mut EventQueue
     ) {
 
         // Check voice channel permissions
@@ -170,14 +170,11 @@ impl Server {
             info!("{} already joining a voice channel", self);
             return;
 
-        } else {
-            self.voice_status = ServerVoiceStatus::Pending;
-        }
-
-        // When already in a voice channel, clear the audio mixer
-        if self.voice_channel_id.is_some() {
-            if let Ok(mut queue) = self.mixer_queue.lock() {
-                queue.push_front(MixerCommand::ClearQueue);
+        // Check if already in the target channel
+        } else if let Some(current_channel_id) = self.voice_channel_id {
+            if *channel_id == current_channel_id {
+                info!("{} already in target voice channel", self);
+                return;
             }
         }
 
@@ -185,25 +182,26 @@ impl Server {
             info!("{} {} joining voice", self, channel);
         }
 
-        // TODO use a global delay on the mixer in order to handle greeting
-        // playback delay when joining the channel initially
-
         let mixer_queue = self.mixer_queue.clone();
         queue.connect_server_voice(self.id, *channel_id, move |conn| {
             conn.play(Box::new(Mixer::new(mixer_queue)));
         });
 
+        self.voice_status = ServerVoiceStatus::Pending;
+
     }
 
-    pub fn update_voice(&mut self, queue: &EventQueue) {
+    pub fn update_voice(&mut self, _: &mut EventQueue) {
         if self.voice_status == ServerVoiceStatus::Joined {
             info!("{} voice endpoint updated", self);
-            self.leave_voice(queue);
-            // TODO re-join voice channel after switch
+            // TODO this doesn't work since we're marked as joined BEFORE
+            // this event is raised we need to have some delay check here
+            //self.leave_voice(queue);
+            // TODO re-join voice channel after region switch or re-connect
         }
     }
 
-    pub fn leave_voice(&mut self, queue: &EventQueue) {
+    pub fn leave_voice(&mut self, queue: &mut EventQueue) {
         if let Some(channel_id) = self.voice_channel_id {
 
             if let Some(channel) = self.channels.get(&channel_id) {
@@ -215,14 +213,20 @@ impl Server {
         }
     }
 
-    fn joined_voice(&mut self) {
-        info!("{} Joined voice channel", self);
-        self.voice_status = ServerVoiceStatus::Joined;
+    fn joined_voice(&mut self, channel_id: ChannelId) {
+        if self.voice_status == ServerVoiceStatus::Pending {
+            info!("{} Joined voice channel", self);
+            self.voice_status = ServerVoiceStatus::Joined;
+            self.voice_channel_id = Some(channel_id);
+        }
     }
 
     fn left_voice(&mut self) {
-        info!("{} Left voice channel", self);
-        self.voice_status = ServerVoiceStatus::Left;
+        if self.voice_status == ServerVoiceStatus::Joined {
+            info!("{} Left voice channel", self);
+            self.voice_status = ServerVoiceStatus::Left;
+            self.voice_channel_id = None;
+        }
     }
 
 }
@@ -265,8 +269,8 @@ impl Server {
         &mut self,
         channel_id: &ChannelId,
         effects: &[Effect],
-        _: bool,
-        queue: &EventQueue
+        queued: bool,
+        queue: &mut EventQueue
     ) {
 
         let has_channel = if let Some(channel) = self.channels.get(channel_id) {
@@ -278,14 +282,26 @@ impl Server {
         };
 
         if has_channel {
+
             self.join_voice(channel_id, queue);
-            // TODO put effect playback command into mixer queue
+
+            if let Ok(mut queue) = self.mixer_queue.lock() {
+                if queued {
+                    queue.push_back(MixerCommand::QueueEffects(effects.to_vec()));
+
+                } else {
+                    queue.push_back(MixerCommand::PlayEffects(effects.to_vec()));
+                }
+            }
+
         }
 
     }
 
     pub fn silence_active_effects(&mut self) {
-        // TODO put silence command into mixer queue
+        if let Ok(mut queue) = self.mixer_queue.lock() {
+            queue.push_back(MixerCommand::ClearQueue);
+        }
     }
 
     pub fn has_effect(&self, effect_name: &str) -> bool {
@@ -373,7 +389,7 @@ impl Server {
     pub fn update_member_voice_state(
         &mut self,
         voice_state: DiscordVoiceState,
-        queue: &EventQueue
+        queue: &mut EventQueue
     ) {
 
         let server = format!("{}", self);
@@ -400,7 +416,6 @@ impl Server {
                         if let Some(channel) = self.channels.get_mut(&channel_id) {
                             channel.remove_voice_member(&member.id);
                             info!("{} {} user {} left ", server, channel, member);
-                            // TODO check if channel is current voice channel
                         }
                     }
 
@@ -432,17 +447,15 @@ impl Server {
             if self.voice_channel_id.is_some() {
                 if voice_state.channel_id.is_some() {
                     self.left_voice();
-                    self.joined_voice();
+                    self.joined_voice(voice_state.channel_id.unwrap());
 
                 } else {
                     self.left_voice();
                 }
 
             } else if voice_state.channel_id.is_some() {
-                self.joined_voice();
+                self.joined_voice(voice_state.channel_id.unwrap());
             }
-
-            self.voice_channel_id = voice_state.channel_id;
 
         // Check if current server voice channel has become empty
         } else if let Some(channel_id) = self.voice_channel_id {

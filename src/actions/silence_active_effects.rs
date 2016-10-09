@@ -23,7 +23,7 @@ impl SilenceActiveEffects {
 }
 
 impl Action for SilenceActiveEffects {
-    fn run(&self, bot: &mut Bot, _: &BotConfig, _: &EventQueue) -> ActionGroup {
+    fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.message.server_id) {
             info!("{} Silencing effect mixer...", self);
             server.silence_active_effects()

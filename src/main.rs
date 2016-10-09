@@ -50,7 +50,7 @@ fn main() {
 
     let token = env::var("DISCORD_BOT_TOKEN").unwrap_or("".into());
     let config = bot::BotConfig {
-        bot_nickname: env::var("DISCORD_BOT_USER").unwrap_or("".into()),
+        bot_nickname: env::var("DISCORD_BOT_NICKNAME").unwrap_or("".into()),
         server_whitelist: env::var("SERVER_WHITELIST").ok().and_then(|servers| {
             Some(servers.split(',').map(|id| {
                 ServerId(id.parse().unwrap_or(0))
