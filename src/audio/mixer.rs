@@ -20,7 +20,7 @@ use ::effects::Effect;
 
 // Statics --------------------------------------------------------------------
 static MAX_PARALLEL_SOURCES: usize = 2;
-static MIXER_DELAY_MILLIS: u64 = 300;
+static MIXER_DELAY_MILLIS: u64 = 400;
 
 
 // Mixer Queue  ---------------------------------------------------------------

@@ -32,9 +32,25 @@ pub struct BotConfig {
     pub server_whitelist: Vec<ServerId>,
     pub config_path: PathBuf,
     pub effect_playback_separation_ms: u64,
+    pub greeting_separation_ms: u64,
     pub flac_max_size: u64,
     pub flac_sample_rate: u32,
     pub flac_bits_per_sample: u8
+}
+
+impl Default for BotConfig {
+    fn default() -> BotConfig {
+        BotConfig {
+            bot_nickname: "".to_string(),
+            server_whitelist: Vec::new(),
+            config_path: PathBuf::from(""),
+            effect_playback_separation_ms: 0,
+            greeting_separation_ms: 0,
+            flac_max_size: 0,
+            flac_sample_rate: 0,
+            flac_bits_per_sample: 0
+        }
+    }
 }
 
 
@@ -224,15 +240,16 @@ impl Bot {
             DiscordEvent::VoiceStateUpdate(server_id, voice_state) => {
                 if let Some(server_id) = server_id {
                     if let Some(server) = self.servers.get_mut(&server_id) {
-                        server.update_member_voice_state(
+                        return server.update_member_voice_state(
                             voice_state,
-                            queue
-                        );
+                            queue,
+                            config
+                        )
                     }
                 }
             },
 
-            _ => info!("[Bot] DiscordEvent: {:?}", event)
+            _ => { /* ignore all other events*/ }
 
         }
 

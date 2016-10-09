@@ -1,5 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
+use std::collections::HashMap;
 
 
 // Discord Dependencies -------------------------------------------------------
@@ -8,6 +9,10 @@ use discord::model::{
     Member as DiscordMember,
     User as DiscordUser
 };
+
+
+// External Dependencies ------------------------------------------------------
+use clock_ticks;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -27,6 +32,7 @@ pub struct Member {
     pub is_admin: bool,
     pub is_uploader: bool,
     pub voice_channel_id: Option<ChannelId>,
+    pub last_voice_leave: HashMap<ChannelId, u64>,
     pub mute: bool,
     pub deaf: bool
 }
@@ -68,9 +74,35 @@ impl Member {
             is_admin: false,
             is_uploader: false,
             voice_channel_id: None,
+            last_voice_leave: HashMap::new(),
             mute: false,
             deaf: false
         }
+    }
+
+    pub fn should_be_greeted(
+        &mut self,
+        bot_config: &BotConfig
+
+    ) -> bool {
+        if self.voice_channel_id.is_some() {
+            let last_leave = self.last_voice_leave
+                                 .entry(self.voice_channel_id.unwrap())
+                                 .or_insert(0);
+
+            clock_ticks::precise_time_ms() - *last_leave
+                > bot_config.greeting_separation_ms
+
+        } else {
+            false
+        }
+    }
+
+    pub fn left_channel(&mut self, channel_id: &ChannelId) {
+        self.last_voice_leave.insert(
+            *channel_id,
+            clock_ticks::precise_time_ms()
+        );
     }
 
 }

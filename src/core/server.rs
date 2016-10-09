@@ -25,6 +25,7 @@ use discord::model::permissions::{VOICE_CONNECT, VOICE_SPEAK};
 
 // External Dependencies ------------------------------------------------------
 use toml;
+use clock_ticks;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -34,6 +35,7 @@ use ::core::event::EventQueue;
 use ::core::member::Member;
 use ::core::channel::Channel;
 use ::effects::{Effect, EffectRegistry};
+use ::actions::{ActionGroup, PlayEffects};
 
 
 // Server Abstraction ---------------------------------------------------------
@@ -44,6 +46,7 @@ pub struct Server {
 
     region: String,
     config: ServerConfig,
+    startup_time: u64,
 
     effects: EffectRegistry,
     voice_channel_id: Option<ChannelId>,
@@ -80,6 +83,7 @@ impl Server {
                     id: server_id,
                     name: "".to_string(),
                     region: "".to_string(),
+                    startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&server_id, bot_config),
                     effects: EffectRegistry::new(),
                     voice_channel_id: None,
@@ -97,6 +101,7 @@ impl Server {
                     id: live_server.id,
                     name: live_server.name,
                     region: live_server.region,
+                    startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&live_server.id, bot_config),
                     effects: EffectRegistry::new(),
                     voice_channel_id: None,
@@ -118,7 +123,11 @@ impl Server {
                 }
 
                 for voice_state in live_server.voice_states.into_iter() {
-                    server.update_member_voice_state(voice_state, queue);
+                    server.update_member_voice_state(
+                        voice_state,
+                        queue,
+                        bot_config
+                    );
                 }
 
                 server
@@ -263,9 +272,24 @@ impl Server {
 // Greetings Interface --------------------------------------------------------
 impl Server {
 
+    pub fn get_greeting(
+        &self,
+        member_id: &UserId,
+        bot_config: &BotConfig
 
-    pub fn has_greeting(&self, nickname: &str) -> bool {
-        self.config.greetings.contains_key(nickname)
+    ) -> Option<Vec<Effect>> {
+        if let Some(member) = self.members.get(member_id) {
+            if let Some(effect_name) = self.config.greetings.get(&member.nickname) {
+                let patterns = vec![effect_name.to_string()];
+                Some(self.map_effects(&patterns[..], false, bot_config))
+
+            } else {
+                None
+            }
+
+        } else {
+            None
+        }
     }
 
     //pub fn add_alias(&mut self, nickname: String, effect_names: Vec<String>) {
@@ -283,6 +307,41 @@ impl Server {
             (nickname, effect)
 
         }).collect()
+    }
+
+    fn greet_member(
+        &mut self,
+        voice_state: &DiscordVoiceState,
+        bot_config: &BotConfig
+
+    ) -> ActionGroup {
+
+        let greeting_effects = self.get_greeting(
+            &voice_state.user_id,
+            bot_config
+        );
+
+        if clock_ticks::precise_time_ms() - self.startup_time < 1000 {
+            info!("{} Ignored greeting for already connected member", self);
+
+        } else if let Some(member) = self.members.get_mut(&voice_state.user_id) {
+            if member.should_be_greeted(bot_config) {
+                if let Some(effects) = greeting_effects {
+                    return vec![PlayEffects::new(
+                        self.id,
+                        member.voice_channel_id.unwrap(),
+                        effects,
+                        false
+                    )];
+
+                } else {
+                    // TODO map and play default effect
+                }
+            }
+        }
+
+        vec![]
+
     }
 
 }
@@ -377,6 +436,12 @@ impl Server {
 
 
 // Member Interface -----------------------------------------------------------
+enum VoiceStateResult {
+    UpdateServerVoice,
+    UpdateMemberVoice(bool),
+    Ignore
+}
+
 impl Server {
 
     pub fn get_member(&self, member_id: &UserId) -> Option<&Member> {
@@ -415,76 +480,44 @@ impl Server {
     pub fn update_member_voice_state(
         &mut self,
         voice_state: DiscordVoiceState,
-        queue: &mut EventQueue
-    ) {
+        queue: &mut EventQueue,
+        bot_config: &BotConfig
 
-        let server = format!("{}", self);
+    ) -> ActionGroup {
 
-        let bot_voice_update = if let Some(member) = self.members.get_mut(&voice_state.user_id) {
+        let actions = match self.apply_voice_state(&voice_state) {
 
-            // Handle active bot user
-            if member.is_active_bot {
-                true
+            VoiceStateResult::UpdateServerVoice => {
 
-            // Ignore all other bots
-            } else if member.is_bot {
-                false
+                if self.voice_channel_id.is_some() {
+                    if voice_state.channel_id.is_some() {
+                        self.left_voice();
+                        self.joined_voice(voice_state.channel_id.unwrap());
 
-            } else {
-
-                member.mute = voice_state.mute || voice_state.self_mute;
-                member.deaf = voice_state.deaf || voice_state.self_deaf;
-
-                if voice_state.channel_id != member.voice_channel_id {
-
-                    // Leave old channel
-                    if let Some(channel_id) = member.voice_channel_id {
-                        if let Some(channel) = self.channels.get_mut(&channel_id) {
-                            channel.remove_voice_member(&member.id);
-                            info!("{} {} user {} left ", server, channel, member);
-                        }
+                    } else {
+                        self.left_voice();
                     }
 
-                    // Join new channel
-                    if let Some(channel_id) = voice_state.channel_id {
-                        if let Some(channel) = self.channels.get_mut(&channel_id) {
-                            channel.add_voice_member(&member.id);
-                            info!("{} {} user {} joined ", server, channel, member);
-                        }
-                    }
-
-                    // TODO run greeting logic (return a Action for playing the effect?)
-                    member.voice_channel_id = voice_state.channel_id;
-
+                } else if voice_state.channel_id.is_some() {
+                    self.joined_voice(voice_state.channel_id.unwrap());
                 }
 
-                info!("{} {} voice state updated", server, member);
-                false
+                vec![]
 
+            },
+
+            VoiceStateResult::UpdateMemberVoice(true) => {
+                self.greet_member(&voice_state, bot_config)
+            },
+
+            VoiceStateResult::UpdateMemberVoice(false) | VoiceStateResult::Ignore => {
+                vec![]
             }
 
-        } else {
-            false
         };
 
-        // Handle Bot Voice Channel Updates
-        if bot_voice_update {
-
-            if self.voice_channel_id.is_some() {
-                if voice_state.channel_id.is_some() {
-                    self.left_voice();
-                    self.joined_voice(voice_state.channel_id.unwrap());
-
-                } else {
-                    self.left_voice();
-                }
-
-            } else if voice_state.channel_id.is_some() {
-                self.joined_voice(voice_state.channel_id.unwrap());
-            }
-
         // Check if current server voice channel has become empty
-        } else if let Some(channel_id) = self.voice_channel_id {
+        if let Some(channel_id) = self.voice_channel_id {
 
             let is_empty = {
                 if let Some(channel) = self.channels.get(&channel_id) {
@@ -496,13 +529,83 @@ impl Server {
             };
 
             if is_empty {
-                info!("{} Current voice channel has become vacant, leaving", server);
+                info!(
+                    "{} Current voice channel has become vacant, leaving",
+                    self
+                );
                 self.leave_voice(queue);
             }
 
         }
 
+        actions
+
     }
+
+    fn apply_voice_state(
+        &mut self,
+        voice_state: &DiscordVoiceState
+
+    ) -> VoiceStateResult {
+
+        let server = format!("{}", self);
+
+        if let Some(member) = self.members.get_mut(&voice_state.user_id) {
+
+            // Handle voice updates from active bot user
+            if member.is_active_bot {
+                VoiceStateResult::UpdateServerVoice
+
+            // Ignore all other bots
+            } else if member.is_bot {
+                VoiceStateResult::Ignore
+
+            } else {
+
+                member.mute = voice_state.mute || voice_state.self_mute;
+                member.deaf = voice_state.deaf || voice_state.self_deaf;
+
+                let mut joined = false;
+                if voice_state.channel_id != member.voice_channel_id {
+
+                    // Leave old channel
+                    if let Some(channel_id) = member.voice_channel_id {
+                        if let Some(channel) = self.channels.get_mut(&channel_id) {
+                            member.left_channel(&channel_id);
+                            channel.remove_voice_member(&member.id);
+                            info!("{} {} user {} left ", server, channel, member);
+                        }
+                    }
+
+                    // Join new channel
+                    if let Some(channel_id) = voice_state.channel_id {
+                        if let Some(channel) = self.channels.get_mut(&channel_id) {
+                            joined = true;
+                            channel.add_voice_member(&member.id);
+                            info!("{} {} user {} joined ", server, channel, member);
+                        }
+                    }
+
+                    member.voice_channel_id = voice_state.channel_id;
+
+                }
+
+                info!("{} {} voice state updated", server, member);
+                VoiceStateResult::UpdateMemberVoice(joined)
+
+            }
+
+        } else {
+            VoiceStateResult::Ignore
+        }
+
+    }
+
+}
+
+
+// Bot Interface --------------------------------------------------------------
+impl Server {
 
     pub fn get_bot(&self) -> Option<&Member> {
         self.members.values().find(|m| m.is_active_bot)
@@ -525,6 +628,7 @@ impl Server {
     }
 
 }
+
 
 // Channel Interface ----------------------------------------------------------
 impl Server {
