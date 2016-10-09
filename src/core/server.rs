@@ -114,15 +114,15 @@ impl Server {
 
                 server.reload();
 
-                for member in live_server.members.into_iter() {
+                for member in live_server.members {
                     server.add_member(member, bot_config);
                 }
 
-                for channel in live_server.channels.into_iter() {
+                for channel in live_server.channels {
                     server.add_discord_channel(DiscordChannel::Public(channel));
                 }
 
-                for voice_state in live_server.voice_states.into_iter() {
+                for voice_state in live_server.voice_states {
                     server.update_member_voice_state(
                         voice_state,
                         queue,

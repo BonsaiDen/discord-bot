@@ -21,7 +21,7 @@ impl MixerSource {
 
     pub fn new(effect: Effect) -> Result<MixerSource, ()> {
         let file = effect.to_path_str();
-        if let Ok(stream) = flac::StreamReader::<File>::from_file(&file) {
+        if let Ok(stream) = flac::StreamReader::<File>::from_file(file) {
             Ok(MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
