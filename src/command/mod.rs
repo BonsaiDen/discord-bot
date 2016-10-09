@@ -5,10 +5,13 @@ use std::fmt;
 // Modules --------------------------------------------------------------------
 mod ip;
 mod help;
+mod alias;
 mod leave;
 mod reload;
 mod sounds;
+mod aliases;
 mod silence;
+mod greetings;
 mod not_found;
 mod play_effect;
 mod delete_effect;
@@ -63,6 +66,9 @@ impl Command {
             "rename" => Box::new(rename_effect::RenameEffectCommand),
             "sounds" => Box::new(sounds::SoundsCommand),
             "silence" => Box::new(silence::SilenceCommand),
+            "alias" => Box::new(alias::AliasCommand),
+            "aliases" => Box::new(aliases::AliasesCommand),
+            "greetings" => Box::new(greetings::GreetingsCommand),
             "ip" => Box::new(ip::IpCommand),
             "leave" => Box::new(leave::LeaveCommand),
             "reload" => Box::new(reload::ReloadCommand),

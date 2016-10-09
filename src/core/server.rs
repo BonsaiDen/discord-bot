@@ -38,17 +38,22 @@ use ::effects::{Effect, EffectRegistry};
 
 // Server Abstraction ---------------------------------------------------------
 pub struct Server {
+
     pub id: ServerId,
     pub name: String,
+
     region: String,
     config: ServerConfig,
+
     effects: EffectRegistry,
     voice_channel_id: Option<ChannelId>,
     voice_status: ServerVoiceStatus,
     mixer_queue: MixerQueue,
+
     channels: HashMap<ChannelId, Channel>,
     members: HashMap<UserId, Member>,
     roles: Vec<Role>
+
 }
 
 
@@ -122,7 +127,7 @@ impl Server {
 
         };
 
-        info!("{} Mapped.", server);
+        info!("{} Initiated.", server);
 
         server
 
@@ -193,7 +198,7 @@ impl Server {
 
     pub fn update_voice(&mut self, _: &mut EventQueue) {
         if self.voice_status == ServerVoiceStatus::Joined {
-            info!("{} voice endpoint updated", self);
+            info!("{} ============ voice endpoint updated", self);
             // TODO this doesn't work since we're marked as joined BEFORE
             // this event is raised we need to have some delay check here
             //self.leave_voice(queue);
@@ -215,7 +220,7 @@ impl Server {
 
     fn joined_voice(&mut self, channel_id: ChannelId) {
         if self.voice_status == ServerVoiceStatus::Pending {
-            info!("{} Joined voice channel", self);
+            info!("{} ============ Joined voice channel", self);
             self.voice_status = ServerVoiceStatus::Joined;
             self.voice_channel_id = Some(channel_id);
         }
@@ -223,7 +228,7 @@ impl Server {
 
     fn left_voice(&mut self) {
         if self.voice_status == ServerVoiceStatus::Joined {
-            info!("{} Left voice channel", self);
+            info!("{} ============ Left voice channel", self);
             self.voice_status = ServerVoiceStatus::Left;
             self.voice_channel_id = None;
         }
@@ -235,29 +240,54 @@ impl Server {
 // Aliases Interface ----------------------------------------------------------
 impl Server {
 
-    /*
-    pub fn has_alias(&self, alias_name: &String) -> bool {
+    pub fn has_alias(&self, alias_name: &str) -> bool {
         self.config.aliases.contains_key(alias_name)
     }
 
-    pub fn add_alias(&mut self, alias_name: String, effect_names: Vec<String>) {
-        self.config.aliases.insert(alias_name, effect_names);
+    //pub fn add_alias(&mut self, alias_name: String, effect_names: Vec<String>) {
+    //    self.config.aliases.insert(alias_name, effect_names);
+    //    self.store_config();
+    //}
+
+    //pub fn remove_alias(&mut self, alias_name: &String) {
+    //    self.config.aliases.remove(alias_name);
+    //    self.store_config();
+    //}
+
+    pub fn list_aliases(&self) -> Vec<(&String, &Vec<String>)> {
+        self.config.aliases.iter().map(|(name, effects)| {
+            (name, effects)
+
+        }).collect()
     }
 
-    pub fn remove_alias(&mut self, alias_name: &String) {
-        self.config.aliases.remove(alias_name);
-    }
-
-    pub fn list_aliases(&self) -> Vec<String> {
-        self.config.aliases.keys().map(|alias| alias.to_string()).collect()
-    }
-    */
 }
 
 
 // Greetings Interface --------------------------------------------------------
 impl Server {
 
+
+    pub fn has_greeting(&self, nickname: &str) -> bool {
+        self.config.greetings.contains_key(nickname)
+    }
+
+    //pub fn add_alias(&mut self, nickname: String, effect_names: Vec<String>) {
+    //    self.config.greetings.insert(nickname, effect_names);
+    //    self.store_config();
+    //}
+
+    //pub fn remove_greeting(&mut self, nickname: &String) {
+    //    self.config.greeting.remove(nickname);
+    //    self.store_config();
+    //}
+
+    pub fn list_greetings(&self) -> Vec<(&String, &String)> {
+        self.config.greetings.iter().map(|(nickname, effect)| {
+            (nickname, effect)
+
+        }).collect()
+    }
 
 }
 
@@ -470,7 +500,7 @@ impl Server {
             };
 
             if is_empty {
-                info!("{} current voice channel has become vacant", server);
+                info!("{} Current voice channel has become vacant, leaving", server);
                 self.leave_voice(queue);
             }
 

@@ -38,6 +38,10 @@ impl Effect {
         }
     }
 
+    pub fn to_path_str(&self) -> &str {
+        self.path.to_str().unwrap_or("")
+    }
+
 }
 
 

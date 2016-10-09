@@ -212,6 +212,7 @@ impl Bot {
             },
 
             // Voice
+            // Note: Only triggered when actively joining / leaving a voice channel
             DiscordEvent::VoiceServerUpdate { server_id, .. } => {
                 if let Some(server_id) = server_id {
                     if let Some(server) = self.servers.get_mut(&server_id) {

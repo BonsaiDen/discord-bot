@@ -82,7 +82,7 @@ impl EventQueue {
         callback: C
     ) {
         let voice_connection = self.sender.connection.voice(Some(server_id));
-        info!("[EL] Create voice connection for {} on {}", channel_id, server_id);
+        info!("[EL] Create voice connection for Channel#{} on Server#{}", channel_id, server_id);
         voice_connection.connect(channel_id);
         callback(voice_connection);
     }

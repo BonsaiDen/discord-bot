@@ -33,7 +33,6 @@ pub fn list_words(
 
 }
 
-/*
 pub fn list_lines(
     title: &str,
     lines: Vec<String>,
@@ -57,4 +56,4 @@ pub fn list_lines(
     }).collect()
 
 }
-*/
+
