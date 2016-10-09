@@ -1,6 +1,4 @@
 // STD Dependencies -----------------------------------------------------------
-use std::thread;
-use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 
 
@@ -27,9 +25,8 @@ pub enum Event {
 
 // Low Level Event Queue ------------------------------------------------------
 pub struct EventQueue {
-    events: Arc<Mutex<VecDeque<Event>>>,
-    sender: DiscordHandle,
-    receiver: thread::JoinHandle<()>
+    events: VecDeque<Event>,
+    receiver: DiscordHandle
 }
 
 
@@ -37,41 +34,46 @@ pub struct EventQueue {
 impl EventQueue {
 
     pub fn new(token: String) -> EventQueue {
-
-        let events = Arc::new(Mutex::new(VecDeque::new()));
-        let receiver = DiscordHandle::from_token(token.clone()).expect("[EL] Initial connection failed.");
-
         EventQueue {
-            events: events.clone(),
-            sender: DiscordHandle::from_token(
+            events: VecDeque::new(),
+            receiver: DiscordHandle::from_token(
                 token.clone()
 
-            ).expect("[EL] Initial connection failed."),
-            receiver: EventQueue::receiver_thread(receiver, events)
+            ).expect("[EL] Initial connection failed.")
         }
-
     }
 
     pub fn events(&mut self) -> Vec<Event> {
 
-        let events = if let Ok(mut events) = self.events.lock() {
-            events.drain(0..).collect()
+        match self.receiver.recv_event() {
+            Ok(event) => {
+                self.receiver.update(&event);
+                self.events.push_back(Event::Received(event));
+            },
+            Err(err) => {
+                if let Error::WebSocket(..) = err {
+                    warn!("[EL] [Receiver] WebSocket closed...");
+                    match self.receiver.reconnect() {
+                        Ok(r) => {
+                            warn!("[EL] [Receiver] Reconnected.!");
+                            self.events.push_back(Event::Reconnected);
+                            self.receiver = r;
+                        },
+                        Err(_) => {
+                            warn!("[EL] [Receiver] Connection failed!");
+                            self.events.push_back(Event::Disconnected);
+                        }
+                    }
 
-        } else {
-            vec![]
-        };
-
-        for e in &events {
-            match e {
-                &Event::Received(ref e) => self.sender.update(e),
-                &Event::Reconnected => {
-                    self.sender =self.sender.reconnect().expect("[EL] Sender reconnect failed!");
-                },
-                _ => {}
+                } else if let Error::Closed(..) = err {
+                    warn!("[EL] [Receiver] Connection closed.");
+                    self.events.push_back(Event::Disconnected);
+                }
             }
+
         }
 
-        events
+        self.events.drain(0..).collect()
 
     }
 
@@ -81,18 +83,18 @@ impl EventQueue {
         channel_id: ChannelId,
         callback: C
     ) {
-        let voice_connection = self.sender.connection.voice(Some(server_id));
+        let voice_connection = self.receiver.connection.voice(Some(server_id));
         info!("[EL] Create voice connection for Channel#{} on Server#{}", channel_id, server_id);
         voice_connection.connect(channel_id);
         callback(voice_connection);
     }
 
     pub fn disconnect_server_voice(&mut self, server_id: ServerId) {
-        self.sender.connection.drop_voice(Some(server_id));
+        self.receiver.connection.drop_voice(Some(server_id));
     }
 
     pub fn shutdown(self) {
-        self.receiver.join().ok();
+
     }
 
 }
@@ -100,19 +102,17 @@ impl EventQueue {
 // Message Interface ----------------------------------------------------------
 impl EventQueue {
 
-    pub fn send_message_to_user(&self, user_id: &UserId, content: String) {
+    pub fn send_message_to_user(&mut self, user_id: &UserId, content: String) {
         if let Some(channel) = self.private_channel_for_user(user_id) {
             self.send_message_to_channel(&channel.id, content);
         }
     }
 
-    pub fn send_message_to_channel(&self, channel_id: &ChannelId, content: String) {
+    pub fn send_message_to_channel(&mut self, channel_id: &ChannelId, content: String) {
 
-        if let Err(_) = self.sender.discord.send_message(channel_id, content.as_str(), "", false) {
+        if let Err(_) = self.receiver.discord.send_message(channel_id, content.as_str(), "", false) {
             warn!("[EL] Failed to sent message.");
-            if let Ok(mut events) = self.events.lock() {
-                events.push_back(Event::SendMessageFailure(*channel_id, content));
-            }
+            self.events.push_back(Event::SendMessageFailure(*channel_id, content));
 
         } else {
             info!("[EL] Message sent.");
@@ -120,12 +120,10 @@ impl EventQueue {
 
     }
 
-    pub fn delete_message(&self, message_id: MessageId, channel_id: ChannelId) {
-        if let Err(_) = self.sender.discord.delete_message(&channel_id, &message_id) {
+    pub fn delete_message(&mut self, message_id: MessageId, channel_id: ChannelId) {
+        if let Err(_) = self.receiver.discord.delete_message(&channel_id, &message_id) {
             warn!("[EL] Failed to delete message.");
-            if let Ok(mut events) = self.events.lock() {
-                events.push_back(Event::DeleteMessageFailure(channel_id, message_id));
-            }
+            self.events.push_back(Event::DeleteMessageFailure(channel_id, message_id));
 
         } else {
             info!("[EL] Message deleted.");
@@ -138,60 +136,8 @@ impl EventQueue {
 // Internal Interface ---------------------------------------------------------
 impl EventQueue {
 
-    fn receiver_thread(
-        mut receiver: DiscordHandle,
-        events: Arc<Mutex<VecDeque<Event>>>
-
-    ) -> thread::JoinHandle<()> {
-        thread::spawn(move || {
-
-            loop {
-                match receiver.recv_event() {
-                    Ok(event) => {
-
-                        receiver.update(&event);
-
-                        if let Ok(mut queue) = events.lock() {
-                            queue.push_back(Event::Received(event));
-                        }
-
-                    },
-                    Err(err) => {
-                        if let Error::WebSocket(..) = err {
-                            warn!("[EL] [Receiver] WebSocket closed...");
-                            match receiver.reconnect() {
-                                Ok(r) => {
-                                    warn!("[EL] [Receiver] Reconnected.!");
-                                    if let Ok(mut queue) = events.lock() {
-                                        queue.push_back(Event::Reconnected);
-                                    }
-                                    receiver = r;
-                                },
-                                Err(_) => {
-                                    warn!("[EL] [Receiver] Connection failed!");
-                                    if let Ok(mut queue) = events.lock() {
-                                        queue.push_back(Event::Disconnected);
-                                    }
-                                    break;
-                                }
-                            }
-
-                        } else if let Error::Closed(..) = err {
-                            warn!("[EL] [Receiver] Connection closed.");
-                            if let Ok(mut queue) = events.lock() {
-                                queue.push_back(Event::Disconnected);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-        })
-    }
-
     fn private_channel_for_user(&self, user_id: &UserId) -> Option<PrivateChannel> {
-        self.sender.discord.create_private_channel(user_id).ok()
+        self.receiver.discord.create_private_channel(user_id).ok()
     }
 
 }
