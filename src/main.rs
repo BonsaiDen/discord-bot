@@ -59,9 +59,9 @@ fn main() {
 
         }).or_else(|| Some(vec![])).unwrap(),
         config_path: PathBuf::from(env::var_os("CONFIG_DIRECTORY").unwrap_or("".into())),
-        effect_playback_separation_ms: 10000, // TODO load from config
-        greeting_separation_ms: 10000, // TODO load from config
-        flac_max_size: 2048 * 1024,
+        effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or("".into()).parse().unwrap_or(10000),
+        greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or("".into()).parse().unwrap_or(30000),
+        flac_max_file_size: env::var("FLAC_MAX_FILE_SIZE").unwrap_or("".into()).parse().unwrap_or(2048 * 1024),
         flac_sample_rate: 48000,
         flac_bits_per_sample: 16
     };

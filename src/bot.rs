@@ -33,7 +33,7 @@ pub struct BotConfig {
     pub config_path: PathBuf,
     pub effect_playback_separation_ms: u64,
     pub greeting_separation_ms: u64,
-    pub flac_max_size: u64,
+    pub flac_max_file_size: u64,
     pub flac_sample_rate: u32,
     pub flac_bits_per_sample: u8
 }
@@ -46,7 +46,7 @@ impl Default for BotConfig {
             config_path: PathBuf::from(""),
             effect_playback_separation_ms: 0,
             greeting_separation_ms: 0,
-            flac_max_size: 0,
+            flac_max_file_size: 0,
             flac_sample_rate: 0,
             flac_bits_per_sample: 0
         }

@@ -106,7 +106,7 @@ impl Upload {
             )]
 
         } else if let Some(flac_info) = self.flac_info {
-            if flac_info.file_size > config.flac_max_size {
+            if flac_info.file_size > config.flac_max_file_size {
                 vec![SendPrivateMessage::new(
                     &self.message,
                     "Uploaded FLAC file exceeds 2 MiB.".to_string()
