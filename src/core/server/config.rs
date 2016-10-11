@@ -24,7 +24,8 @@ pub struct ServerConfig {
     pub aliases: HashMap<String, Vec<String>>,
     pub greetings: HashMap<String, String>,
     pub uploaders: Vec<String>,
-    pub admins: Vec<String>
+    pub admins: Vec<String>,
+    pub banned: Vec<String>
 }
 
 impl ServerConfig {
@@ -46,7 +47,8 @@ impl ServerConfig {
             aliases: HashMap::new(),
             greetings: HashMap::new(),
             admins: Vec::new(),
-            uploaders: Vec::new()
+            uploaders: Vec::new(),
+            banned: Vec::new()
         }
 
     }
@@ -62,6 +64,7 @@ impl ServerConfig {
 
         let mut toml: BTreeMap<String, toml::Value> = BTreeMap::new();
 
+        // TODO dry
         let list = toml::Value::Array(self.admins.iter().map(|nickname| {
             toml::Value::String(nickname.to_string())
 
@@ -75,6 +78,13 @@ impl ServerConfig {
         }).collect());
 
         toml.insert("uploaders".to_string(), list);
+
+        let list = toml::Value::Array(self.banned.iter().map(|nickname| {
+            toml::Value::String(nickname.to_string())
+
+        }).collect());
+
+        toml.insert("banned".to_string(), list);
 
         let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
         for (nickname, effect) in &self.greetings {
@@ -133,6 +143,7 @@ impl ServerConfig {
             }
         }
 
+        // TODO dry
         if let Some(&toml::Value::Array(ref nicknames)) = value.get("admins") {
             for nickname in nicknames {
                 if let toml::Value::String(ref nickname) = *nickname {
@@ -145,6 +156,14 @@ impl ServerConfig {
             for nickname in nicknames {
                 if let toml::Value::String(ref nickname) = *nickname {
                     self.uploaders.push(nickname.clone());
+                }
+            }
+        }
+
+        if let Some(&toml::Value::Array(ref nicknames)) = value.get("banned") {
+            for nickname in nicknames {
+                if let toml::Value::String(ref nickname) = *nickname {
+                    self.banned.push(nickname.clone());
                 }
             }
         }

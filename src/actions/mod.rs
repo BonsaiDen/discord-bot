@@ -8,6 +8,9 @@ use ::core::event::EventQueue;
 
 
 // Modules --------------------------------------------------------------------
+pub mod add_ban;
+pub mod list_bans;
+pub mod remove_ban;
 pub mod send_message;
 pub mod list_effects;
 pub mod list_aliases;
@@ -23,6 +26,9 @@ pub mod reload_server_configuration;
 
 
 // Re-Exports -----------------------------------------------------------------
+pub use self::add_ban::AddBan;
+pub use self::list_bans::ListBans;
+pub use self::remove_ban::RemoveBan;
 pub use self::play_effects::PlayEffects;
 pub use self::list_aliases::ListAliases;
 pub use self::rename_effect::RenameEffect;

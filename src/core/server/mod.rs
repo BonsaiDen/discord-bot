@@ -628,6 +628,29 @@ impl Server {
 }
 
 
+// Ban Interface --------------------------------------------------------------
+impl Server {
+
+    pub fn list_bans(&self) -> Vec<String> {
+        self.config.banned.iter().map(|n| n.to_string()).collect()
+    }
+
+    pub fn add_ban(&mut self, nickname: &String) {
+        if !self.config.banned.contains(nickname) {
+            self.store_config().ok();
+        }
+    }
+
+    pub fn remove_ban(&mut self, nickname: &String) {
+        if self.config.banned.contains(nickname) {
+            self.config.banned.retain(|n| n != nickname);
+            self.store_config().ok();
+        }
+    }
+
+}
+
+
 // Bot Interface --------------------------------------------------------------
 impl Server {
 
@@ -738,6 +761,7 @@ impl Server {
         for mut member in self.members.values_mut() {
             member.is_admin = self.config.admins.contains(&member.nickname);
             member.is_uploader = self.config.uploaders.contains(&member.nickname);
+            member.is_banned = self.config.banned.contains(&member.nickname);
         }
     }
 
@@ -754,5 +778,4 @@ impl fmt::Display for Server {
         )
     }
 }
-
 

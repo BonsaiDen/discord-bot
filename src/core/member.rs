@@ -31,6 +31,7 @@ pub struct Member {
     pub is_active_bot: bool,
     pub is_admin: bool,
     pub is_uploader: bool,
+    pub is_banned: bool,
     pub voice_channel_id: Option<ChannelId>,
     pub last_voice_leave: HashMap<ChannelId, u64>,
     pub mute: bool,
@@ -73,6 +74,7 @@ impl Member {
             is_active_bot: nickname == bot_config.bot_nickname,
             is_admin: false,
             is_uploader: false,
+            is_banned: false,
             voice_channel_id: None,
             last_voice_leave: HashMap::new(),
             mute: false,
@@ -112,12 +114,13 @@ impl Member {
 impl fmt::Display for Member {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
-        let kind = match (self.is_bot, self.is_admin, self.is_uploader) {
-            (true, _, _) => "<Bot>",
-            (false, true, true) => "<Admin, Uploader>",
-            (false, true, false) => "<Admin>",
-            (false, false, true) => "<Uploader>",
-            (false, false, false) => ""
+        let kind = match (self.is_bot, self.is_admin, self.is_uploader, self.is_banned) {
+            (_, _, _, true) => "<Banned>",
+            (true, _, _, false) => "<Bot>",
+            (false, true, true, false) => "<Admin, Uploader>",
+            (false, true, false, false) => "<Admin>",
+            (false, false, true, false) => "<Uploader>",
+            (false, false, false, false) => ""
         };
 
         if self.voice_channel_id.is_some() {

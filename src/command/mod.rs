@@ -4,6 +4,8 @@ use std::fmt;
 
 // Modules --------------------------------------------------------------------
 mod ip;
+mod ban;
+mod bans;
 mod help;
 mod alias;
 mod leave;
@@ -60,6 +62,10 @@ impl Command {
 
     ) -> ActionGroup {
 
+        if member.is_banned {
+            return vec![];
+        }
+
         let command: Box<CommandImplementation> = match self.name.as_str() {
             "s" => Box::new(play_effect::PlayEffectCommand::instant()),
             "q" => Box::new(play_effect::PlayEffectCommand::queued()),
@@ -71,6 +77,8 @@ impl Command {
             "aliases" => Box::new(aliases::AliasesCommand),
             "greeting" => Box::new(greeting::GreetingCommand),
             "greetings" => Box::new(greetings::GreetingsCommand),
+            "ban" => Box::new(ban::BanCommand),
+            "bans" => Box::new(bans::BansCommand),
             "ip" => Box::new(ip::IpCommand),
             "leave" => Box::new(leave::LeaveCommand),
             "reload" => Box::new(reload::ReloadCommand),
