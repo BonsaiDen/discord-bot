@@ -8,9 +8,9 @@ use ::actions::{ActionGroup, DeleteMessage, SendPrivateMessage};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct AliasCommand;
+pub struct GreetingCommand;
 
-impl AliasCommand {
+impl GreetingCommand {
 
     fn usage(&self, command: Command) -> ActionGroup {
         vec![
@@ -18,8 +18,8 @@ impl AliasCommand {
             SendPrivateMessage::new(
                 &command.message,
                 "Usage:
-                `!alias add <alias_name> <effect_name>...` or
-                `!alias remove <alias_name>`".to_string()
+                `!greeting add <user#ident> <effect_name>` or
+                `!greeting remove <user#ident>`".to_string()
             )
         ]
     }
@@ -28,16 +28,25 @@ impl AliasCommand {
         &self,
         server: &Server,
         command: &Command,
-        name: &str,
-        _: &[String]
+        nickname: &str,
+        _: &str
 
     ) -> ActionGroup {
-        if server.has_alias(name) {
+        if !server.has_member_with_nickname(nickname) {
             vec![
                 DeleteMessage::new(command.message),
                 SendPrivateMessage::new(
                     &command.message,
-                    format!("Alias `{}` already exists on the current server.", name)
+                    format!("The user `{}` was not found on the current server.", nickname)
+                )
+            ]
+
+        } else if server.has_greeting(nickname) {
+            vec![
+                DeleteMessage::new(command.message),
+                SendPrivateMessage::new(
+                    &command.message,
+                    format!("A greeting for the user `{}` already exists on the current server.", nickname)
                 )
             ]
 
@@ -48,20 +57,29 @@ impl AliasCommand {
         }
     }
 
-    fn remove(&self, server: &Server, command: &Command, name: &str) -> ActionGroup {
-        if server.has_alias(name) {
+    fn remove(&self, server: &Server, command: &Command, nickname: &str) -> ActionGroup {
+        if !server.has_member_with_nickname(nickname) {
             vec![
                 DeleteMessage::new(command.message),
                 SendPrivateMessage::new(
                     &command.message,
-                    format!("Alias `{}` does not exist on the current server.", name)
+                    format!("The user `{}` was not found on the current server.", nickname)
+                )
+            ]
+
+        } else if server.has_greeting(nickname) {
+            vec![
+                DeleteMessage::new(command.message),
+                SendPrivateMessage::new(
+                    &command.message,
+                    format!("A greeting for the user `{}` does not exist on the current server.", nickname)
                 )
             ]
 
         } else {
             vec![
                 DeleteMessage::new(command.message),
-                // TODO remove RemoveAlias::new(command.message, name)
+                // TODO remove RemoveGreeting::new(command.message, nickname)
                 //SendPrivateMessage::new(
                 //    &command.message,
                 //    "Alias `{}` was removed from the current server.".to_string()
@@ -72,7 +90,7 @@ impl AliasCommand {
 
 }
 
-impl CommandImplementation for AliasCommand {
+impl CommandImplementation for GreetingCommand {
 
     fn run(
         &self,
@@ -98,7 +116,7 @@ impl CommandImplementation for AliasCommand {
                         server,
                         &command,
                         &command.arguments[2],
-                        &command.arguments[3..]
+                        &command.arguments[3]
                     )
                 },
                 "remove" => self.remove(

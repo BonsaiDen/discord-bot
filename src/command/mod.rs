@@ -11,6 +11,7 @@ mod reload;
 mod sounds;
 mod aliases;
 mod silence;
+mod greeting;
 mod greetings;
 mod not_found;
 mod play_effect;
@@ -68,6 +69,7 @@ impl Command {
             "silence" => Box::new(silence::SilenceCommand),
             "alias" => Box::new(alias::AliasCommand),
             "aliases" => Box::new(aliases::AliasesCommand),
+            "greeting" => Box::new(greeting::GreetingCommand),
             "greetings" => Box::new(greetings::GreetingsCommand),
             "ip" => Box::new(ip::IpCommand),
             "leave" => Box::new(leave::LeaveCommand),
@@ -98,6 +100,8 @@ impl fmt::Display for Command {
 
 // Command Implementation Trait -----------------------------------------------
 pub trait CommandImplementation {
+
+    // TODO add default()
 
     fn run(
         &self,

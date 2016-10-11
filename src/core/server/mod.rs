@@ -302,15 +302,17 @@ impl Server {
                 None
             }
 
-        } else {
-            if let Some(effect_name) = self.config.greetings.get("effect") {
-                let patterns = vec![effect_name.to_string()];
-                Some(self.map_effects(&patterns[..], false, bot_config))
+        } else if let Some(effect_name) = self.config.greetings.get("effect") {
+            let patterns = vec![effect_name.to_string()];
+            Some(self.map_effects(&patterns[..], false, bot_config))
 
-            } else {
-                None
-            }
+        } else {
+            None
         }
+    }
+
+    pub fn has_greeting(&self, nickname: &str) -> bool {
+        self.config.greetings.contains_key(nickname)
     }
 
     //pub fn add_alias(&mut self, nickname: String, effect_names: Vec<String>) {
@@ -468,6 +470,10 @@ impl Server {
 
     pub fn has_member(&self, member_id: &UserId) -> bool {
         self.members.contains_key(member_id)
+    }
+
+    pub fn has_member_with_nickname(&self, nickname: &str) -> bool {
+        self.members.values().any(|m| m.nickname == nickname)
     }
 
     pub fn add_member(
