@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, SendPrivateMessage, AddBan, RemoveBan};
+use ::actions::{ActionGroup, AddBan, RemoveBan, SendMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -13,7 +13,7 @@ pub struct BanCommand;
 impl BanCommand {
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, SendPrivateMessage::new(
+        self.delete_and_send(command.message, SendMessage::private(
             &command.message,
             "Usage: `!ban add <user#ident>` or `!ban remove <user#ident>`".to_string()
         ))
@@ -27,7 +27,7 @@ impl BanCommand {
 
     ) -> ActionGroup {
         if !server.has_member_with_nickname(nickname) {
-            self.delete_and_send(command.message, SendPrivateMessage::new(
+            self.delete_and_send(command.message, SendMessage::private(
                 &command.message,
                 format!("The user `{}` is not a member of {}.", nickname, server.name)
             ))
@@ -39,7 +39,7 @@ impl BanCommand {
 
     fn remove(&self, server: &Server, command: &Command, nickname: &str) -> ActionGroup {
         if !server.has_member_with_nickname(nickname) {
-            self.delete_and_send(command.message, SendPrivateMessage::new(
+            self.delete_and_send(command.message, SendMessage::private(
                 &command.message,
                 format!("The user `{}` is not a member of {}.", nickname, server.name)
             ))

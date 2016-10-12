@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, PlayEffects, SendPublicMessage};
+use ::actions::{ActionGroup, PlayEffects, SendMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -42,7 +42,7 @@ impl CommandImplementation for PlayEffectCommand {
             self.requires_unique_server(command)
 
         } else if command.arguments.is_empty() {
-            self.delete_and_send(command.message, SendPublicMessage::new(
+            self.delete_and_send(command.message, SendMessage::public(
                 &command.message,
                 format!("Usage: `!{} <effect_name>`", if self.queued {
                     "q"
@@ -61,7 +61,7 @@ impl CommandImplementation for PlayEffectCommand {
             );
 
             if effects.is_empty() {
-                self.delete_and_send(command.message, SendPublicMessage::new(
+                self.delete_and_send(command.message, SendMessage::public(
                     &command.message,
                     format!("No matching effect(s) found on {}.", server.name)
                 ))
@@ -75,7 +75,7 @@ impl CommandImplementation for PlayEffectCommand {
                 ))
 
             } else {
-                self.delete_and_send(command.message, SendPublicMessage::new(
+                self.delete_and_send(command.message, SendMessage::public(
                     &command.message,
                     format!(
                         "You must be in a voice channel on {} in order to play sound effects.",

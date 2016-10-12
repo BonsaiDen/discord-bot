@@ -4,9 +4,9 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
+use ::actions::SendMessage;
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPublicMessage;
 use ::actions::{Action, ActionGroup};
 
 
@@ -41,7 +41,7 @@ impl Action for DownloadFlacFile {
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
             if server.has_effect(&self.effect_name) {
-                vec![SendPublicMessage::new(
+                vec![SendMessage::public(
                     &self.message,
                     format!(
                         "A sound effect with the name `{}` already exists on the server.",
@@ -59,7 +59,7 @@ impl Action for DownloadFlacFile {
                     &self.uploader
                 ) {
                     warn!("{} Download failed: {}", self, err);
-                    vec![SendPublicMessage::new(
+                    vec![SendMessage::public(
                         &self.message,
                         format!(
                             "Download of the sound effect `{}` failed, please try again.",
@@ -69,7 +69,7 @@ impl Action for DownloadFlacFile {
 
                 } else {
                     info!("{} Download successful.", self);
-                    vec![SendPublicMessage::new(
+                    vec![SendMessage::public(
                         &self.message,
                         format!(
                             "The sound effect was successfully downloaded to the server and is now available as `{}`!",

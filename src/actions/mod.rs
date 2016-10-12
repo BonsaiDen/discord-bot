@@ -37,7 +37,9 @@ pub use self::remove_ban::RemoveBan;
 pub use self::play_effects::PlayEffects;
 pub use self::add_greeting::AddGreeting;
 pub use self::list_aliases::ListAliases;
+pub use self::list_effects::ListEffects;
 pub use self::remove_alias::RemoveAlias;
+pub use self::send_message::SendMessage;
 pub use self::rename_effect::RenameEffect;
 pub use self::delete_effect::DeleteEffect;
 pub use self::delete_message::DeleteMessage;
@@ -46,8 +48,6 @@ pub use self::remove_greeting::RemoveGreeting;
 pub use self::download_flac_file::DownloadFlacFile;
 pub use self::leave_server_voice::LeaveServerVoice;
 pub use self::silence_active_effects::SilenceActiveEffects;
-pub use self::list_effects::{ListAllEffects, ListPatternEffects};
-pub use self::send_message::{SendPrivateMessage, SendPublicMessage};
 pub use self::reload_server_configuration::ReloadServerConfiguration;
 
 

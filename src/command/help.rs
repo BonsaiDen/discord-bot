@@ -3,7 +3,7 @@ use ::bot::BotConfig;
 use ::core::member::Member;
 use ::core::server::Server;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, SendPrivateMessage};
+use ::actions::{ActionGroup, DeleteMessage, SendMessage};
 
 
 // Statics --------------------------------------------------------------------
@@ -61,8 +61,8 @@ impl CommandImplementation for HelpCommand {
     ) -> ActionGroup {
         vec![
             DeleteMessage::new(command.message),
-            SendPrivateMessage::new(&command.message, HELP_TEXT_ONE.to_string()),
-            SendPrivateMessage::new(&command.message, HELP_TEXT_TWO.to_string())
+            SendMessage::private(&command.message, HELP_TEXT_ONE.to_string()),
+            SendMessage::private(&command.message, HELP_TEXT_TWO.to_string())
         ]
     }
 

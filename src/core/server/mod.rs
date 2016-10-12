@@ -264,12 +264,13 @@ impl Server {
         self.config.aliases.contains_key(alias_name)
     }
 
-    pub fn add_alias(&mut self, alias_name: &String, effect_names: &Vec<String>) {
+    #[allow(ptr_arg)]
+    pub fn add_alias(&mut self, alias_name: &str, effect_names: &Vec<String>) {
         self.config.aliases.insert(alias_name.to_string(), effect_names.clone());
         self.store_config().expect("add_alias failed to store config.");
     }
 
-    pub fn remove_alias(&mut self, alias_name: &String) {
+    pub fn remove_alias(&mut self, alias_name: &str) {
         self.config.aliases.remove(alias_name);
         self.store_config().expect("remove_alias failed to store config.");
     }
@@ -315,12 +316,13 @@ impl Server {
         self.config.greetings.contains_key(nickname)
     }
 
-    pub fn add_greeting(&mut self, nickname: &String, effect_name: &String) {
+    pub fn add_greeting(&mut self, nickname: &str, effect_name: &str) {
         self.config.greetings.insert(nickname.to_string(), effect_name.to_string());
         self.store_config().expect("add_greeting failed to store config.");
     }
 
-    pub fn remove_greeting(&mut self, nickname: &String) {
+
+    pub fn remove_greeting(&mut self, nickname: &str) {
         self.config.greetings.remove(nickname);
         self.store_config().expect("remove_greeting failed to store config.");
     }
@@ -640,6 +642,7 @@ impl Server {
         self.config.banned.iter().map(|n| n.to_string()).collect()
     }
 
+    #[allow(ptr_arg)]
     pub fn add_ban(&mut self, nickname: &String) -> bool {
         if !self.config.banned.contains(nickname) {
             self.config.banned.push(nickname.to_string());
@@ -651,6 +654,7 @@ impl Server {
         }
     }
 
+    #[allow(ptr_arg)]
     pub fn remove_ban(&mut self, nickname: &String) -> bool {
         if self.config.banned.contains(nickname) {
             self.config.banned.retain(|n| n != nickname);

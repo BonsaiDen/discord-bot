@@ -4,9 +4,9 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
+use ::actions::SendMessage;
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPrivateMessage;
 use ::actions::{Action, ActionGroup};
 
 

@@ -4,9 +4,9 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
+use ::actions::SendMessage;
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPrivateMessage;
 use ::actions::{Action, ActionGroup};
 
 
@@ -30,7 +30,7 @@ impl Action for RemoveBan {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             if server.remove_ban(&self.nickname) {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
                     format!(
                         "The user `{}` is now no longer banned on {}.",
@@ -39,7 +39,7 @@ impl Action for RemoveBan {
                 )]
 
             } else {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
                     format!(
                         "The user `{}` is not banned on {}.",

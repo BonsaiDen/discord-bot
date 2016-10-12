@@ -3,8 +3,8 @@ use ::bot::BotConfig;
 use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
+use ::actions::{ActionGroup, ListEffects};
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, ListAllEffects, ListPatternEffects};
 
 
 // Command Implementation -----------------------------------------------------
@@ -25,10 +25,10 @@ impl CommandImplementation for SoundsCommand {
 
         } else {
             self.delete_and_send(command.message, if command.arguments.is_empty() {
-                ListAllEffects::new(command.message)
+                ListEffects::all(command.message)
 
             } else {
-                ListPatternEffects::new(command.message, command.arguments)
+                ListEffects::matching(command.message, command.arguments)
             })
         }
     }

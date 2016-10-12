@@ -5,7 +5,7 @@ use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
 use ::actions::{
-    ActionGroup, DeleteMessage, SendPublicMessage, SilenceActiveEffects
+    ActionGroup, DeleteMessage, SilenceActiveEffects, SendMessage
 };
 
 
@@ -29,7 +29,7 @@ impl CommandImplementation for SilenceCommand {
             vec![
                 SilenceActiveEffects::new(command.message),
                 DeleteMessage::new(command.message),
-                SendPublicMessage::new(
+                SendMessage::public(
                     &command.message,
                     format!("{} has requested me to stay quiet.", member.nickname)
                 )

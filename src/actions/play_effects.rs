@@ -41,7 +41,6 @@ impl PlayEffects {
 impl Action for PlayEffects {
     fn run(&self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.server_id) {
-            info!("{} play effects...", self);
             server.play_effects(
                 &self.channel_id,
                 &self.effects,

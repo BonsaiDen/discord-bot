@@ -26,7 +26,7 @@ use ::bot::BotConfig;
 use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::Message;
-use ::actions::{Action, ActionGroup, DeleteMessage, SendPrivateMessage};
+use ::actions::{Action, ActionGroup, DeleteMessage, SendMessage};
 
 
 // Command Abstraction --------------------------------------------------------
@@ -119,7 +119,7 @@ pub trait CommandImplementation {
     ) -> ActionGroup;
 
     fn requires_unique_server(&self, command: Command) -> ActionGroup {
-        vec![SendPrivateMessage::new(
+        vec![SendMessage::private(
             &command.message,
             format!(
                 "The command `{}` requires a unique server as its target.
@@ -132,7 +132,7 @@ pub trait CommandImplementation {
     }
 
     fn requires_admin(&self, command: Command) -> ActionGroup {
-        vec![SendPrivateMessage::new(
+        vec![SendMessage::private(
             &command.message,
             format!(
                 "The command `{}` requires bot admin rights on the current server.",

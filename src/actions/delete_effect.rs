@@ -4,10 +4,10 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::effects::Effect;
+use ::actions::SendMessage;
 use ::bot::{Bot, BotConfig};
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPublicMessage;
 use ::actions::{Action, ActionGroup};
 
 
@@ -31,11 +31,11 @@ impl Action for DeleteEffect {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
-            info!("{} Deleting...", self);
+
 
             if let Err(err) = server.delete_effect(&self.effect) {
                 warn!("{} Deletion failed: {}", self, err);
-                vec![SendPublicMessage::new(
+                vec![SendMessage::public(
                     &self.message,
                     format!(
                         "Failed to delete sound effect `{}`.",
@@ -44,8 +44,7 @@ impl Action for DeleteEffect {
                 )]
 
             } else {
-                warn!("{} Deletion successful.", self);
-                vec![SendPublicMessage::new(
+                vec![SendMessage::public(
                     &self.message,
                     format!(
                         "Sound effect `{}` was deleted.",

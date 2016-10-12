@@ -4,10 +4,10 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::effects::Effect;
+use ::actions::SendMessage;
 use ::bot::{Bot, BotConfig};
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPublicMessage;
 use ::actions::{Action, ActionGroup};
 
 
@@ -32,10 +32,9 @@ impl Action for RenameEffect {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
-            info!("{} Renaming...", self);
             if let Err(err) = server.rename_effect(&self.effect, &self.name) {
                 warn!("{} Renaming failed: {}", self, err);
-                vec![SendPublicMessage::new(
+                vec![SendMessage::public(
                     &self.message,
                     format!(
                         "Failed to rename sound effect `{}` to `{}`.",
@@ -44,8 +43,7 @@ impl Action for RenameEffect {
                 )]
 
             } else {
-                warn!("{} Renaming successful.", self);
-                vec![SendPublicMessage::new(
+                vec![SendMessage::public(
                     &self.message,
                     format!(
                         "Sound effect `{}` was renamed to `{}`.",

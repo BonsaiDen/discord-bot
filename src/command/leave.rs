@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, SendPublicMessage, LeaveServerVoice};
+use ::actions::{ActionGroup, DeleteMessage, LeaveServerVoice, SendMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -27,9 +27,12 @@ impl CommandImplementation for LeaveCommand {
             vec![
                 LeaveServerVoice::new(command.message),
                 DeleteMessage::new(command.message),
-                SendPublicMessage::new(
+                SendMessage::public(
                     &command.message,
-                    format!("{} has requested me to leave the voice chat", member.nickname)
+                    format!(
+                        "{} has requested me to leave the voice channel.",
+                        member.nickname
+                    )
                 )
             ]
         }

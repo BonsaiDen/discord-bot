@@ -4,9 +4,9 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
+use ::actions::SendMessage;
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPrivateMessage;
 use ::text_util::list_lines;
 use ::actions::{Action, ActionGroup};
 
@@ -29,8 +29,6 @@ impl Action for ListAliases {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
-            info!("{} Listing aliases...", server);
-
             let mut aliases = server.list_aliases();
             aliases.sort();
 
@@ -40,14 +38,14 @@ impl Action for ListAliases {
             }).collect();
 
             if aliases.is_empty() {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
                     "No effect aliases found on the current server.".to_string()
                 )]
 
             } else {
                 list_lines("Effect Aliases", aliases, 25).into_iter().map(|text| {
-                    SendPrivateMessage::new(&self.message, text) as Box<Action>
+                    SendMessage::private(&self.message, text) as Box<Action>
 
                 }).collect()
             }

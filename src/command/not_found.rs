@@ -3,7 +3,7 @@ use ::bot::BotConfig;
 use ::core::member::Member;
 use ::core::server::Server;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, SendPrivateMessage};
+use ::actions::{ActionGroup, SendMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -19,7 +19,7 @@ impl CommandImplementation for NotFoundCommand {
         _: &BotConfig
 
     ) -> ActionGroup {
-        vec![SendPrivateMessage::new(
+        vec![SendMessage::private(
             &command.message,
             format!(
                 "The command `{}` does not exist, please type

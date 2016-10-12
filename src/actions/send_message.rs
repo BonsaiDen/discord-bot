@@ -14,70 +14,58 @@ use ::actions::{Action, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-// TODO have two constructrs, private and public
-pub struct SendPrivateMessage {
-    user_id: UserId,
+pub struct SendMessage {
+    user_id: Option<UserId>,
+    channel_id: Option<ChannelId>,
     content: String
 }
 
-impl SendPrivateMessage {
-    pub fn new(message: &Message, content: String) -> Box<SendPrivateMessage> {
-        Box::new(SendPrivateMessage {
-            user_id: message.user_id,
+impl SendMessage {
+
+    pub fn private(message: &Message, content: String) -> Box<SendMessage> {
+        Box::new(SendMessage {
+            user_id: Some(message.user_id),
+            channel_id: None,
             content: content
         })
     }
-}
 
-impl Action for SendPrivateMessage {
-    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
-        info!("{} Sending...", self);
-        queue.send_message_to_user(&self.user_id, self.content.clone());
-        vec![]
-    }
-}
-
-impl fmt::Display for SendPrivateMessage {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[Action] [SendPrivateMessage] To User#{}",
-            self.user_id
-        )
-    }
-}
-
-
-// Action Implementation ------------------------------------------------------
-pub struct SendPublicMessage {
-    channel_id: ChannelId,
-    content: String
-}
-
-impl SendPublicMessage {
-    pub fn new(message: &Message, content: String) -> Box<SendPublicMessage> {
-        Box::new(SendPublicMessage {
-            channel_id: message.channel_id,
+    pub fn public(message: &Message, content: String) -> Box<SendMessage> {
+        Box::new(SendMessage {
+            user_id: None,
+            channel_id: Some(message.channel_id),
             content: content
         })
     }
+
 }
 
-impl Action for SendPublicMessage {
+impl Action for SendMessage {
     fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
-        info!("{} Sending...", self);
-        queue.send_message_to_channel(&self.channel_id, self.content.clone());
+
+        if let Some(user_id) = self.user_id.as_ref() {
+            queue.send_message_to_user(user_id, self.content.clone());
+
+        } else if let Some(channel_id) = self.channel_id.as_ref() {
+            queue.send_message_to_channel(channel_id, self.content.clone());
+        }
+
         vec![]
+
     }
 }
 
-impl fmt::Display for SendPublicMessage {
+impl fmt::Display for SendMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[Action] [SendPublicMessage] To Channel#{}",
-            self.channel_id
-        )
+        if let Some(user_id) = self.user_id {
+            write!(f, "[Action] [SendMessage] To User#{}", user_id)
+
+        } else if let Some(channel_id) = self.channel_id {
+            write!(f, "[Action] [SendMessage] To Channel#{}", channel_id)
+
+        } else {
+            unreachable!()
+        }
     }
 }
 

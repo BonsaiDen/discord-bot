@@ -4,9 +4,9 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
+use ::actions::SendMessage;
 use ::core::message::Message;
 use ::core::event::EventQueue;
-use ::actions::SendPrivateMessage;
 use ::text_util::list_lines;
 use ::actions::{Action, ActionGroup};
 
@@ -29,21 +29,19 @@ impl Action for ListBans {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
-            info!("{} Listing bans...", server);
-
             let mut bans = server.list_bans();
             bans.sort();
 
             if bans.is_empty() {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
-                    format!("No banned users on {}.", server.name)
+                    format!("There are currently no banned users on {}.", server.name)
                 )]
 
             } else {
                 let title = format!("Banned Users on {}", server.name);
                 list_lines(&title, bans, 25).into_iter().map(|text| {
-                    SendPrivateMessage::new(&self.message, text) as Box<Action>
+                    SendMessage::private(&self.message, text) as Box<Action>
 
                 }).collect()
             }

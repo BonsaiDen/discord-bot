@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, AddAlias, RemoveAlias, SendPrivateMessage};
+use ::actions::{ActionGroup, AddAlias, RemoveAlias, SendMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -13,7 +13,7 @@ pub struct AliasCommand;
 impl AliasCommand {
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, SendPrivateMessage::new(
+        self.delete_and_send(command.message, SendMessage::private(
             &command.message,
             "Usage: `!alias add <alias_name> <effect_name>...` or `!alias remove <alias_name>`".to_string()
         ))
@@ -28,7 +28,7 @@ impl AliasCommand {
 
     ) -> ActionGroup {
         if server.has_alias(alias) {
-            self.delete_and_send(command.message, SendPrivateMessage::new(
+            self.delete_and_send(command.message, SendMessage::private(
                 &command.message,
                 format!(
                     "An alias named `{}` already exists on {}.",
@@ -53,7 +53,7 @@ impl AliasCommand {
 
     ) -> ActionGroup {
         if server.has_alias(alias) {
-            self.delete_and_send(command.message, SendPrivateMessage::new(
+            self.delete_and_send(command.message, SendMessage::private(
                 &command.message,
                 format!(
                     "An alias named `{}` does not exist on {}.",

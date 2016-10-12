@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, RenameEffect, SendPublicMessage};
+use ::actions::{ActionGroup, RenameEffect, SendMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -28,13 +28,13 @@ impl CommandImplementation for RenameEffectCommand {
             self.requires_admin(command)
 
         } else if command.arguments.len() != 2 {
-            self.delete_and_send(command.message, SendPublicMessage::new(
+            self.delete_and_send(command.message, SendMessage::public(
                 &command.message,
                 "Usage: `!rename <old_effect_name> <new_effect_name>`".to_string()
             ))
 
         } else if !server.has_effect(&command.arguments[0]) {
-            self.delete_and_send(command.message, SendPublicMessage::new(
+            self.delete_and_send(command.message, SendMessage::public(
                 &command.message,
                 format!(
                     "A sound effect named `{}` does not exist on {}.",
@@ -44,7 +44,7 @@ impl CommandImplementation for RenameEffectCommand {
             ))
 
         } else if server.has_effect(&command.arguments[1]) {
-            self.delete_and_send(command.message, SendPublicMessage::new(
+            self.delete_and_send(command.message, SendMessage::public(
                 &command.message,
                 format!(
                     "A sound effect named `{}` already exist on {}.",

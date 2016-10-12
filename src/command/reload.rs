@@ -5,7 +5,7 @@ use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
 use ::actions::{
-    ActionGroup, DeleteMessage, SendPublicMessage, ReloadServerConfiguration
+    ActionGroup, DeleteMessage, ReloadServerConfiguration, SendMessage
 };
 
 
@@ -29,7 +29,7 @@ impl CommandImplementation for ReloadCommand {
             vec![
                 ReloadServerConfiguration::new(command.message),
                 DeleteMessage::new(command.message),
-                SendPublicMessage::new(
+                SendMessage::public(
                     &command.message,
                     format!(
                         "{} requested a configuration reload for {}.",

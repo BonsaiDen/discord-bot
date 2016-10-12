@@ -22,7 +22,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::{Message, MessageOrigin};
 use ::actions::{
-    ActionGroup, DownloadFlacFile, SendPrivateMessage, SendPublicMessage
+    ActionGroup, DownloadFlacFile, SendMessage
 };
 
 
@@ -91,13 +91,13 @@ impl Upload {
     ) -> ActionGroup {
 
         if !member.is_uploader {
-            vec![SendPrivateMessage::new(
+            vec![SendMessage::private(
                 &self.message,
                 "Only whitelisted users can upload sound effects.".to_string()
             )]
 
         } else if self.message.origin == MessageOrigin::DirectMessage {
-            vec![SendPrivateMessage::new(
+            vec![SendMessage::private(
                 &self.message,
                 "FLAC uploads require a unique server as their target.
                 Since you are a member of at least two bot-enabled servers,
@@ -107,26 +107,26 @@ impl Upload {
 
         } else if let Some(flac_info) = self.flac_info {
             if flac_info.file_size > config.flac_max_file_size {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
                     "Uploaded FLAC file exceeds 2 MiB.".to_string()
                 )]
 
             } else if flac_info.sample_rate != config.flac_sample_rate {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
                     "Uploaded FLAC file does not have a valid sample rate of 48000hz.".to_string()
                 )]
 
             } else if flac_info.bits_per_sample != config.flac_bits_per_sample {
-                vec![SendPrivateMessage::new(
+                vec![SendMessage::private(
                     &self.message,
                     "Uploaded FLAC file does not feature 16 bits per sample.".to_string()
                 )]
 
             } else {
                 vec![
-                    SendPublicMessage::new(&self.message, "FLAC download to server started...".to_string()),
+                    SendMessage::public(&self.message, "FLAC download to server started...".to_string()),
                     DownloadFlacFile::new(
                         self.message,
                         self.name,
