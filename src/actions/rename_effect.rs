@@ -11,7 +11,7 @@ use ::actions::SendPublicMessage;
 use ::actions::{Action, ActionGroup};
 
 
-// Effect Rename Action -------------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct RenameEffect {
     message: Message,
     effect: Effect,

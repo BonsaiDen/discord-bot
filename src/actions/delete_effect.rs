@@ -11,7 +11,7 @@ use ::actions::SendPublicMessage;
 use ::actions::{Action, ActionGroup};
 
 
-// Effect Delete Action -------------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct DeleteEffect {
     message: Message,
     effect: Effect

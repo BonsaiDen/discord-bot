@@ -9,7 +9,7 @@ use ::core::event::EventQueue;
 use ::actions::{Action, ActionGroup};
 
 
-// Server Effect Silencing Action ---------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct SilenceActiveEffects {
     message: Message
 }

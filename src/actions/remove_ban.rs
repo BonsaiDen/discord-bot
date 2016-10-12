@@ -6,10 +6,11 @@ use std::fmt;
 use ::bot::{Bot, BotConfig};
 use ::core::message::Message;
 use ::core::event::EventQueue;
+use ::actions::SendPrivateMessage;
 use ::actions::{Action, ActionGroup};
 
 
-// User Ban Action ------------------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct RemoveBan {
     message: Message,
     nickname: String
@@ -28,13 +29,23 @@ impl Action for RemoveBan {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
-            if server.has_member_with_nickname(&self.nickname) {
-                server.add_ban(&self.nickname);
-                // TODO add ban
-                vec![]
+            if server.remove_ban(&self.nickname) {
+                vec![SendPrivateMessage::new(
+                    &self.message,
+                    format!(
+                        "The user `{}` is now no longer banned on {}.",
+                        self.nickname, server.name
+                    )
+                )]
 
             } else {
-                vec![]
+                vec![SendPrivateMessage::new(
+                    &self.message,
+                    format!(
+                        "The user `{}` is not banned on {}.",
+                        self.nickname, server.name
+                    )
+                )]
             }
 
         } else {

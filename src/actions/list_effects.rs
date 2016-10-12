@@ -12,7 +12,8 @@ use ::text_util::list_words;
 use ::actions::{Action, ActionGroup};
 
 
-// List Sound Effects Action --------------------------------------------------
+// Action Implementation ------------------------------------------------------
+// TODO have two constructrs, all() and matching()
 pub struct ListAllEffects {
     message: Message
 }
@@ -50,7 +51,7 @@ impl fmt::Display for ListAllEffects {
 }
 
 
-// List Sound Effects Action --------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct ListPatternEffects {
     message: Message,
     patterns: Vec<String>

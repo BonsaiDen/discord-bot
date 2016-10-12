@@ -264,15 +264,15 @@ impl Server {
         self.config.aliases.contains_key(alias_name)
     }
 
-    //pub fn add_alias(&mut self, alias_name: String, effect_names: Vec<String>) {
-    //    self.config.aliases.insert(alias_name, effect_names);
-    //    self.store_config();
-    //}
+    pub fn add_alias(&mut self, alias_name: &String, effect_names: &Vec<String>) {
+        self.config.aliases.insert(alias_name.to_string(), effect_names.clone());
+        self.store_config().expect("add_alias failed to store config.");
+    }
 
-    //pub fn remove_alias(&mut self, alias_name: &String) {
-    //    self.config.aliases.remove(alias_name);
-    //    self.store_config();
-    //}
+    pub fn remove_alias(&mut self, alias_name: &String) {
+        self.config.aliases.remove(alias_name);
+        self.store_config().expect("remove_alias failed to store config.");
+    }
 
     pub fn list_aliases(&self) -> Vec<(&String, &Vec<String>)> {
         self.config.aliases.iter().map(|(name, effects)| {
@@ -315,15 +315,15 @@ impl Server {
         self.config.greetings.contains_key(nickname)
     }
 
-    //pub fn add_alias(&mut self, nickname: String, effect_names: Vec<String>) {
-    //    self.config.greetings.insert(nickname, effect_names);
-    //    self.store_config();
-    //}
+    pub fn add_greeting(&mut self, nickname: &String, effect_name: &String) {
+        self.config.greetings.insert(nickname.to_string(), effect_name.to_string());
+        self.store_config().expect("add_greeting failed to store config.");
+    }
 
-    //pub fn remove_greeting(&mut self, nickname: &String) {
-    //    self.config.greeting.remove(nickname);
-    //    self.store_config();
-    //}
+    pub fn remove_greeting(&mut self, nickname: &String) {
+        self.config.greetings.remove(nickname);
+        self.store_config().expect("remove_greeting failed to store config.");
+    }
 
     pub fn list_greetings(&self) -> Vec<(&String, &String)> {
         self.config.greetings.iter().map(|(nickname, effect)| {
@@ -417,15 +417,20 @@ impl Server {
         self.effects.get_effect(effect_name)
     }
 
+    pub fn has_matching_effects(&self, effect_name: &str, bot_config: &BotConfig) -> bool {
+        let patterns = vec![effect_name.to_string()];
+        !self.map_effects(&patterns, true, bot_config).is_empty()
+    }
+
     pub fn map_effects(
         &self,
         patterns: &[String],
         match_all: bool,
-        config: &BotConfig
+        bot_config: &BotConfig
 
     ) -> Vec<Effect> {
         self.effects.map_patterns(
-            patterns, Some(&self.config.aliases), match_all, config
+            patterns, Some(&self.config.aliases), match_all, bot_config
         )
     }
 
@@ -635,16 +640,25 @@ impl Server {
         self.config.banned.iter().map(|n| n.to_string()).collect()
     }
 
-    pub fn add_ban(&mut self, nickname: &String) {
+    pub fn add_ban(&mut self, nickname: &String) -> bool {
         if !self.config.banned.contains(nickname) {
-            self.store_config().ok();
+            self.config.banned.push(nickname.to_string());
+            self.store_config().expect("add_ban failed to store config.");
+            true
+
+        } else {
+            false
         }
     }
 
-    pub fn remove_ban(&mut self, nickname: &String) {
+    pub fn remove_ban(&mut self, nickname: &String) -> bool {
         if self.config.banned.contains(nickname) {
             self.config.banned.retain(|n| n != nickname);
-            self.store_config().ok();
+            self.store_config().expect("remove_ban failed to store config.");
+            true
+
+        } else {
+            false
         }
     }
 

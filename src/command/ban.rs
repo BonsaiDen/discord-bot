@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, SendPrivateMessage, AddBan, RemoveBan};
+use ::actions::{ActionGroup, SendPrivateMessage, AddBan, RemoveBan};
 
 
 // Command Implementation -----------------------------------------------------
@@ -13,15 +13,10 @@ pub struct BanCommand;
 impl BanCommand {
 
     fn usage(&self, command: Command) -> ActionGroup {
-        vec![
-            DeleteMessage::new(command.message),
-            SendPrivateMessage::new(
-                &command.message,
-                "Usage:
-                `!ban add <user#ident>` or
-                `!ban remove <user#ident>`".to_string()
-            )
-        ]
+        self.delete_and_send(command.message, SendPrivateMessage::new(
+            &command.message,
+            "Usage: `!ban add <user#ident>` or `!ban remove <user#ident>`".to_string()
+        ))
     }
 
     fn add(
@@ -32,37 +27,25 @@ impl BanCommand {
 
     ) -> ActionGroup {
         if !server.has_member_with_nickname(nickname) {
-            vec![
-                DeleteMessage::new(command.message),
-                SendPrivateMessage::new(
-                    &command.message,
-                    format!("The user `{}` was not found on the current server.", nickname)
-                )
-            ]
+            self.delete_and_send(command.message, SendPrivateMessage::new(
+                &command.message,
+                format!("The user `{}` is not a member of {}.", nickname, server.name)
+            ))
 
         } else {
-            vec![
-                DeleteMessage::new(command.message),
-                AddBan::new(command.message, nickname.to_string())
-            ]
+            self.delete_and_send(command.message, AddBan::new(command.message, nickname.to_string()))
         }
     }
 
     fn remove(&self, server: &Server, command: &Command, nickname: &str) -> ActionGroup {
         if !server.has_member_with_nickname(nickname) {
-            vec![
-                DeleteMessage::new(command.message),
-                SendPrivateMessage::new(
-                    &command.message,
-                    format!("The user `{}` was not found on the current server.", nickname)
-                )
-            ]
+            self.delete_and_send(command.message, SendPrivateMessage::new(
+                &command.message,
+                format!("The user `{}` is not a member of {}.", nickname, server.name)
+            ))
 
         } else {
-            vec![
-                DeleteMessage::new(command.message),
-                RemoveBan::new(command.message, nickname.to_string())
-            ]
+            self.delete_and_send(command.message, RemoveBan::new(command.message, nickname.to_string()))
         }
     }
 
@@ -84,7 +67,7 @@ impl CommandImplementation for BanCommand {
         } else if !member.is_admin {
             self.requires_admin(command)
 
-        } else if command.arguments.len() < 3 {
+        } else if command.arguments.len() < 2 {
             self.usage(command)
 
         } else {
@@ -92,12 +75,12 @@ impl CommandImplementation for BanCommand {
                 "add" => self.add(
                     server,
                     &command,
-                    &command.arguments[2],
+                    &command.arguments[1],
                 ),
                 "remove" => self.remove(
                     server,
                     &command,
-                    &command.arguments[2],
+                    &command.arguments[1],
                 ),
                 _ => self.usage(command)
             }

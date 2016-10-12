@@ -13,7 +13,7 @@ use ::core::event::EventQueue;
 use ::actions::{Action, ActionGroup};
 
 
-// Play Sound Effects Action --------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct PlayEffects {
     server_id: ServerId,
     channel_id: ChannelId,

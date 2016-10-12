@@ -6,39 +6,43 @@ use std::fmt;
 use ::bot::{Bot, BotConfig};
 use ::core::message::Message;
 use ::core::event::EventQueue;
+use ::actions::SendPrivateMessage;
 use ::actions::{Action, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ReloadServerConfiguration {
-    message: Message
+pub struct RemoveGreeting {
+    message: Message,
+    nickname: String
 }
 
-impl ReloadServerConfiguration {
-    pub fn new(message: Message) -> Box<ReloadServerConfiguration> {
-        Box::new(ReloadServerConfiguration {
-            message: message
+impl RemoveGreeting {
+    pub fn new(message: Message, nickname: String) -> Box<RemoveGreeting> {
+        Box::new(RemoveGreeting {
+            message: message,
+            nickname: nickname
         })
     }
 }
 
-impl Action for ReloadServerConfiguration {
+impl Action for RemoveGreeting {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
+
         if let Some(server) = bot.get_server(&self.message.server_id) {
-            server.reload();
+            server.remove_greeting(&self.nickname);
+            // TODO message
+            vec![]
+
+        } else {
+            vec![]
         }
-        vec![]
+
     }
 }
 
-impl fmt::Display for ReloadServerConfiguration {
+impl fmt::Display for RemoveGreeting {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[Action] [ReloadServerConfiguration] Server #{}",
-            self.message.server_id
-        )
+        write!(f, "[Action] [RemoveGreeting] {}", self.nickname)
     }
 }
-
 

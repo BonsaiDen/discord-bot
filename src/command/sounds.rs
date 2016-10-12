@@ -4,9 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{
-    ActionGroup, DeleteMessage, ListAllEffects, ListPatternEffects
-};
+use ::actions::{ActionGroup, ListAllEffects, ListPatternEffects};
 
 
 // Command Implementation -----------------------------------------------------
@@ -26,15 +24,12 @@ impl CommandImplementation for SoundsCommand {
             self.requires_unique_server(command)
 
         } else {
-            vec![
-                DeleteMessage::new(command.message),
-                if command.arguments.is_empty() {
-                    ListAllEffects::new(command.message)
+            self.delete_and_send(command.message, if command.arguments.is_empty() {
+                ListAllEffects::new(command.message)
 
-                } else {
-                    ListPatternEffects::new(command.message, command.arguments)
-                }
-            ]
+            } else {
+                ListPatternEffects::new(command.message, command.arguments)
+            })
         }
     }
 

@@ -12,7 +12,7 @@ use ::bot::BotConfig;
 use ::core::member::Member;
 use ::core::server::Server;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, SendPublicMessage};
+use ::actions::{ActionGroup, SendPublicMessage};
 
 
 // Command Implementation -----------------------------------------------------
@@ -28,17 +28,14 @@ impl CommandImplementation for IpCommand {
         _: &BotConfig
 
     ) -> ActionGroup {
-        vec![
-            DeleteMessage::new(command.message),
-            SendPublicMessage::new(
-                &command.message,
-                format!(
-                    "{} has requested my public IP address which is: {}.",
-                    member.nickname,
-                    get_ip().trim()
-                )
+        self.delete_and_send(command.message, SendPublicMessage::new(
+            &command.message,
+            format!(
+                "{} has requested my public IP address which is: {}.",
+                member.nickname,
+                get_ip().trim()
             )
-        ]
+        ))
     }
 
 }

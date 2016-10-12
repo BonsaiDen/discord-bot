@@ -29,7 +29,7 @@ impl CommandImplementation for LeaveCommand {
                 DeleteMessage::new(command.message),
                 SendPublicMessage::new(
                     &command.message,
-                    format!("{} has requested me to leave", member.nickname)
+                    format!("{} has requested me to leave the voice chat", member.nickname)
                 )
             ]
         }

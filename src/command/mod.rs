@@ -26,7 +26,7 @@ use ::bot::BotConfig;
 use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::Message;
-use ::actions::{ActionGroup, SendPrivateMessage};
+use ::actions::{Action, ActionGroup, DeleteMessage, SendPrivateMessage};
 
 
 // Command Abstraction --------------------------------------------------------
@@ -109,8 +109,6 @@ impl fmt::Display for Command {
 // Command Implementation Trait -----------------------------------------------
 pub trait CommandImplementation {
 
-    // TODO add default()
-
     fn run(
         &self,
         _: Command,
@@ -141,6 +139,13 @@ pub trait CommandImplementation {
                 command.name
             )
         )]
+    }
+
+    fn delete_and_send(&self, message: Message, action: Box<Action>) -> ActionGroup {
+        vec![
+            DeleteMessage::new(message),
+            action
+        ]
     }
 
 }

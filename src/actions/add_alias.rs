@@ -6,39 +6,50 @@ use std::fmt;
 use ::bot::{Bot, BotConfig};
 use ::core::message::Message;
 use ::core::event::EventQueue;
+use ::actions::SendPrivateMessage;
 use ::actions::{Action, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ReloadServerConfiguration {
-    message: Message
+pub struct AddAlias {
+    message: Message,
+    name: String,
+    effect_names: Vec<String>
 }
 
-impl ReloadServerConfiguration {
-    pub fn new(message: Message) -> Box<ReloadServerConfiguration> {
-        Box::new(ReloadServerConfiguration {
-            message: message
+impl AddAlias {
+    pub fn new(message: Message, name: String, effect_names: Vec<String>) -> Box<AddAlias> {
+        Box::new(AddAlias {
+            message: message,
+            name: name,
+            effect_names: effect_names
         })
     }
 }
 
-impl Action for ReloadServerConfiguration {
+impl Action for AddAlias {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
+
         if let Some(server) = bot.get_server(&self.message.server_id) {
-            server.reload();
+            server.add_alias(&self.name, &self.effect_names);
+            // TODO message
+            vec![]
+
+        } else {
+            vec![]
         }
-        vec![]
+
     }
 }
 
-impl fmt::Display for ReloadServerConfiguration {
+impl fmt::Display for AddAlias {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "[Action] [ReloadServerConfiguration] Server #{}",
-            self.message.server_id
+            "[Action] [AddAlias] {} for \"{}\"",
+            self.name,
+            self.effect_names.join("\", \"")
         )
     }
 }
-
 

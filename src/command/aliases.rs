@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, ListAliases};
+use ::actions::{ActionGroup, ListAliases};
 
 
 // Command Implementation -----------------------------------------------------
@@ -24,10 +24,7 @@ impl CommandImplementation for AliasesCommand {
             self.requires_unique_server(command)
 
         } else {
-            vec![
-                DeleteMessage::new(command.message),
-                ListAliases::new(command.message)
-            ]
+            self.delete_and_send(command.message, ListAliases::new(command.message))
         }
     }
 

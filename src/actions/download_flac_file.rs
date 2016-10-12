@@ -10,7 +10,7 @@ use ::actions::SendPublicMessage;
 use ::actions::{Action, ActionGroup};
 
 
-// FLAC Effect Download Action ------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct DownloadFlacFile {
     message: Message,
     effect_name: String,

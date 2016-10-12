@@ -11,7 +11,7 @@ use ::text_util::list_lines;
 use ::actions::{Action, ActionGroup};
 
 
-// List User Greetings Action -------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct ListGreetings {
     message: Message
 }

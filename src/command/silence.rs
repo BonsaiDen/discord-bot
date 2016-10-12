@@ -5,7 +5,7 @@ use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
 use ::actions::{
-    ActionGroup,DeleteMessage, SendPublicMessage, SilenceActiveEffects
+    ActionGroup, DeleteMessage, SendPublicMessage, SilenceActiveEffects
 };
 
 

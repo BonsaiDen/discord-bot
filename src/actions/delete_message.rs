@@ -9,7 +9,7 @@ use ::core::event::EventQueue;
 use ::actions::{Action, ActionGroup};
 
 
-// Message Delete Action ------------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct DeleteMessage {
     message: Message
 }

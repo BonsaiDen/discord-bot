@@ -13,7 +13,8 @@ use ::core::event::EventQueue;
 use ::actions::{Action, ActionGroup};
 
 
-// Private Message Sending Actions --------------------------------------------
+// Action Implementation ------------------------------------------------------
+// TODO have two constructrs, private and public
 pub struct SendPrivateMessage {
     user_id: UserId,
     content: String
@@ -47,7 +48,7 @@ impl fmt::Display for SendPrivateMessage {
 }
 
 
-// Public Message Sending Actions ---------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct SendPublicMessage {
     channel_id: ChannelId,
     content: String

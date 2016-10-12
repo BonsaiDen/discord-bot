@@ -9,7 +9,7 @@ use ::core::event::EventQueue;
 use ::actions::{Action, ActionGroup};
 
 
-// Server Voice Leave Action --------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct LeaveServerVoice {
     message: Message
 }

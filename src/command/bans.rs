@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, ListBans};
+use ::actions::{ActionGroup, ListBans};
 
 
 // Command Implementation -----------------------------------------------------
@@ -27,10 +27,7 @@ impl CommandImplementation for BansCommand {
             self.requires_admin(command)
 
         } else {
-            vec![
-                DeleteMessage::new(command.message),
-                ListBans::new(command.message)
-            ]
+            self.delete_and_send(command.message, ListBans::new(command.message))
         }
     }
 

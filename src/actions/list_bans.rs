@@ -11,7 +11,7 @@ use ::text_util::list_lines;
 use ::actions::{Action, ActionGroup};
 
 
-// List Bans Action -----------------------------------------------------------
+// Action Implementation ------------------------------------------------------
 pub struct ListBans {
     message: Message
 }
@@ -37,11 +37,12 @@ impl Action for ListBans {
             if bans.is_empty() {
                 vec![SendPrivateMessage::new(
                     &self.message,
-                    "No banned user found on the current server.".to_string()
+                    format!("No banned users on {}.", server.name)
                 )]
 
             } else {
-                list_lines("Banned Users", bans, 25).into_iter().map(|text| {
+                let title = format!("Banned Users on {}", server.name);
+                list_lines(&title, bans, 25).into_iter().map(|text| {
                     SendPrivateMessage::new(&self.message, text) as Box<Action>
 
                 }).collect()

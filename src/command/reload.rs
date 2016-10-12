@@ -17,7 +17,7 @@ impl CommandImplementation for ReloadCommand {
     fn run(
         &self,
         command: Command,
-        _: &Server,
+        server: &Server,
         member: &Member,
         _: &BotConfig
 
@@ -32,8 +32,9 @@ impl CommandImplementation for ReloadCommand {
                 SendPublicMessage::new(
                     &command.message,
                     format!(
-                        "{} requested a configuration reload for this server.",
-                        member.nickname
+                        "{} requested a configuration reload for {}.",
+                        member.nickname,
+                        server.name
                     )
                 )
             ]

@@ -4,7 +4,7 @@ use ::core::member::Member;
 use ::core::server::Server;
 use ::core::message::MessageOrigin;
 use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, ListGreetings};
+use ::actions::{ActionGroup, ListGreetings};
 
 
 // Command Implementation -----------------------------------------------------
@@ -24,10 +24,10 @@ impl CommandImplementation for GreetingsCommand {
             self.requires_unique_server(command)
 
         } else {
-            vec![
-                DeleteMessage::new(command.message),
+            self.delete_and_send(
+                command.message,
                 ListGreetings::new(command.message)
-            ]
+            )
         }
     }
 
