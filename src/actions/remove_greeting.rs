@@ -30,8 +30,10 @@ impl Action for RemoveGreeting {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.remove_greeting(&self.nickname);
-            // TODO message
-            vec![]
+            vec![SendMessage::private(&self.message, format!(
+                "Greeting for `{}` has been removed on {}.",
+                self.nickname, server.name
+            ))]
 
         } else {
             vec![]

@@ -32,8 +32,10 @@ impl Action for AddGreeting {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.add_greeting(&self.nickname, &self.effect_name);
-            // TODO message
-            vec![]
+            vec![SendMessage::private(&self.message, format!(
+                "Greeting for `{}` has been set to `{}` on {}.",
+                self.nickname, self.effect_name, server.name
+            ))]
 
         } else {
             vec![]

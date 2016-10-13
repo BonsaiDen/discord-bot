@@ -42,19 +42,15 @@ impl Action for ListEffects {
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
             if let Some(ref patterns) = self.patterns {
-
                 let title = format!(
-                    "Sound Effect matching \"{}\"", patterns.join("\", \"")
+                    "Sound Effect matching \"{}\"",
+                    patterns.join("\", \"")
                 );
-
-                info!("{} {}", self, title);
 
                 let effects = server.map_effects(&patterns[..], true, config);
                 list_effects(&self.message, title.as_str(), effects)
 
             } else {
-                info!("{} Listing all sound effects...", server);
-
                 let patterns = vec![String::from("*")];
                 let effects = server.map_effects(&patterns[..], true, config);
                 list_effects(&self.message, "Sound Effects", effects)

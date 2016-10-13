@@ -30,8 +30,10 @@ impl Action for RemoveAlias {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.remove_alias(&self.name);
-            // TODO message
-            vec![]
+            vec![SendMessage::private(&self.message, format!(
+                "Alias `{}` has been removed on {}.",
+                self.name, server.name
+            ))]
 
         } else {
             vec![]
