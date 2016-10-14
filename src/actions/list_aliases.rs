@@ -40,7 +40,7 @@ impl Action for ListAliases {
             if aliases.is_empty() {
                 vec![SendMessage::private(
                     &self.message,
-                    "No effect aliases found on the current server.".to_string()
+                    format!("No effect aliases found on {}.", server.name)
                 )]
 
             } else {
