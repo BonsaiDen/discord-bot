@@ -1,16 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, ListAliases};
+use ::command::{Command, CommandHandler};
+use ::action::{ActionGroup, AliasActions};
+use ::core::{Member, MessageOrigin, Server};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct AliasesCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for AliasesCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -24,7 +22,9 @@ impl CommandImplementation for AliasesCommand {
             self.requires_unique_server(command)
 
         } else {
-            self.delete_and_send(command.message, ListAliases::new(command.message))
+            self.delete_and_send(command.message, AliasActions::List::new(
+                command.message
+            ))
         }
     }
 

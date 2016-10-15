@@ -4,27 +4,25 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
-use ::actions::SendMessage;
-use ::core::message::Message;
-use ::core::event::EventQueue;
 use ::text_util::list_lines;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ListGreetings {
+pub struct ActionImpl {
     message: Message
 }
 
-impl ListGreetings {
-    pub fn new(message: Message) -> Box<ListGreetings> {
-        Box::new(ListGreetings {
+impl ActionImpl {
+    pub fn new(message: Message) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message
         })
     }
 }
 
-impl Action for ListGreetings {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -38,14 +36,14 @@ impl Action for ListGreetings {
             }).collect();
 
             if aliases.is_empty() {
-                vec![SendMessage::private(
+                vec![MessageActions::Send::private(
                     &self.message,
-                    "No user greetings found on the current server.".to_string()
+                    format!("No user greetings found on {}.", server.name)
                 )]
 
             } else {
                 list_lines("User Greetings", aliases, 25).into_iter().map(|text| {
-                    SendMessage::private(&self.message, text) as Box<Action>
+                    MessageActions::Send::private(&self.message, text) as Box<Action>
 
                 }).collect()
             }
@@ -57,7 +55,7 @@ impl Action for ListGreetings {
     }
 }
 
-impl fmt::Display for ListGreetings {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [ListGreetings]")
     }

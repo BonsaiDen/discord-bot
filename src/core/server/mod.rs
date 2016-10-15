@@ -31,8 +31,8 @@ use ::bot::BotConfig;
 use ::core::event::EventQueue;
 use ::core::member::Member;
 use ::core::channel::Channel;
-use ::effects::{Effect, EffectRegistry};
-use ::actions::{ActionGroup, PlayEffects};
+use ::effect::{Effect, EffectRegistry};
+use ::action::{ActionGroup, EffectActions};
 
 
 // Modules --------------------------------------------------------------------
@@ -291,16 +291,22 @@ impl Server {
     ) -> Option<Vec<&Effect>> {
         if let Some(member) = self.members.get(member_id) {
             if let Some(effect_name) = self.config.greetings.get(&member.nickname) {
-                let patterns = vec![effect_name.to_string()];
-                Some(self.map_effects(&patterns[..], false, bot_config))
+                Some(self.map_effects(
+                    &[effect_name.to_string()],
+                    false,
+                    bot_config
+                ))
 
             } else {
                 None
             }
 
         } else if let Some(effect_name) = self.config.greetings.get("effect") {
-            let patterns = vec![effect_name.to_string()];
-            Some(self.map_effects(&patterns[..], false, bot_config))
+            Some(self.map_effects(
+                &[effect_name.to_string()],
+                false,
+                bot_config
+            ))
 
         } else {
             None
@@ -358,7 +364,7 @@ impl Server {
                 &voice_state.user_id,
                 bot_config
             ) {
-                vec![PlayEffects::new(self.id, channel_id, effects, false)]
+                vec![EffectActions::Play::new(self.id, channel_id, effects, false)]
 
             } else {
                 vec![]
@@ -424,8 +430,12 @@ impl Server {
     }
 
     pub fn has_matching_effects(&self, effect_name: &str, bot_config: &BotConfig) -> bool {
-        let patterns = vec![effect_name.to_string()];
-        !self.map_effects(&patterns, true, bot_config).is_empty()
+        !self.map_effects(
+            &[effect_name.to_string()],
+            true,
+            bot_config
+
+        ).is_empty()
     }
 
     pub fn map_effects(

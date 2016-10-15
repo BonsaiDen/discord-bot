@@ -3,32 +3,30 @@ use std::fmt;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::effects::Effect;
-use ::actions::SendMessage;
+use ::effect::Effect;
 use ::bot::{Bot, BotConfig};
-use ::core::message::Message;
-use ::core::event::EventQueue;
 use ::text_util::list_words;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ListEffects {
+pub struct ActionImpl {
     message: Message,
     patterns: Option<Vec<String>>
 }
 
-impl ListEffects {
+impl ActionImpl {
 
-    pub fn all(message: Message) -> Box<ListEffects> {
-        Box::new(ListEffects {
+    pub fn all(message: Message) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message,
             patterns: None
         })
     }
 
-    pub fn matching(message: Message, patterns: Vec<String>) -> Box<ListEffects> {
-        Box::new(ListEffects {
+    pub fn matching(message: Message, patterns: Vec<String>) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message,
             patterns: Some(patterns)
         })
@@ -36,7 +34,7 @@ impl ListEffects {
 
 }
 
-impl Action for ListEffects {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -63,7 +61,7 @@ impl Action for ListEffects {
     }
 }
 
-impl fmt::Display for ListEffects {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [ListEffects]")
     }
@@ -86,7 +84,7 @@ fn list_effects(
     effects_names.sort();
 
     list_words(title, effects_names, 100, 4).into_iter().map(|text| {
-        SendMessage::private(message, text) as Box<Action>
+        MessageActions::Send::private(message, text) as Box<Action>
 
     }).collect()
 

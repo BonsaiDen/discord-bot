@@ -3,30 +3,28 @@ use std::fmt;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::effects::Effect;
-use ::actions::SendMessage;
+use ::effect::Effect;
 use ::bot::{Bot, BotConfig};
-use ::core::message::Message;
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct DeleteEffect {
+pub struct ActionImpl {
     message: Message,
     effect: Effect
 }
 
-impl DeleteEffect {
-    pub fn new(message: Message, effect: &Effect) -> Box<DeleteEffect> {
-        Box::new(DeleteEffect {
+impl ActionImpl {
+    pub fn new(message: Message, effect: &Effect) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message,
             effect: effect.clone()
         })
     }
 }
 
-impl Action for DeleteEffect {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -35,7 +33,7 @@ impl Action for DeleteEffect {
 
             if let Err(err) = server.delete_effect(&self.effect) {
                 warn!("{} Deletion failed: {}", self, err);
-                vec![SendMessage::public(
+                vec![MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Failed to delete sound effect `{}`.",
@@ -44,7 +42,7 @@ impl Action for DeleteEffect {
                 )]
 
             } else {
-                vec![SendMessage::public(
+                vec![MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Sound effect `{}` was deleted.",
@@ -60,7 +58,7 @@ impl Action for DeleteEffect {
     }
 }
 
-impl fmt::Display for DeleteEffect {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [DeleteEffect] {}", self.effect)
     }

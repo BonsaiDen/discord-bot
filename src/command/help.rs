@@ -1,9 +1,8 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteMessage, SendMessage};
+use ::core::{Member, Server};
+use ::command::{Command, CommandHandler};
+use ::action::{ActionGroup, MessageActions};
 
 
 // Statics --------------------------------------------------------------------
@@ -12,15 +11,15 @@ static HELP_TEXT_ONE: &'static str = "
 
 - `!s <sound>` - Plays the requested sound immediately. See below for details on what `<sound>` can be.
 - `!q <sound>` - Queues up the requested sound to be played once all other currently playing / queued sounds have finished.
-- `!sounds` [<pattern>, ...] - Sends a listing of all available sound effects (matching the specified patterns) in a private channel.
+- `!sounds` [<pattern>, ...] - Show a list of all available sound effects (matching the specified patterns) in a private channel.
 - `!delete <effect>` - Deletes the specified sound effect.
-- `!rename <old_effect> <new_effect>` - Renames the specified sound effect.
+- `!rename <old_effect_name> <new_effect_name>` - Renames the specified sound effect.
 - `!silence` - Immediately stops all playing sounds and removes all other queued effects.
-- `!greeting <add|remove> <user#ident> [<effect>]` - Adds or remove a custom greeting for a user.
-- `!greetings` - Sends a listing of all existing custom user greetings in a private channel.
-- `!alias <add|remove> <name> [<effect>, ...]` - Adds or remove a effect alias.
-- `!aliases` - Sends a listing of all existing effect aliases in a private channel.
-- `!bans` - Sends a listing of all banned users for the current server.
+- `!greeting <add|remove> <user#ident> [<effect_name>]` - Adds or remove a custom greeting for a user.
+- `!greetings` - Show a list of all existing custom user greetings in a private channel.
+- `!alias <add|remove> <name> [<effect_name>, ...]` - Adds or remove a effect alias.
+- `!aliases` - Show a list of all existing effect aliases in a private channel.
+- `!bans` - Show a list of all banned users for the current server.
 - `!ban <add|remove> <user#ident>` - Add or remove user bans.
 - `!leave` - Makes the bot leave its current voice channel.
 - `!ip` - Posts the bot's the public IP onto the current channel.
@@ -39,7 +38,7 @@ where `<sound>` can either be the *full name*, a *group prefix*, or a *wildcard*
 
 **Effect File Uploads**
 
-Sound effects can be directly uploaded by whitelisted users by dropping a audio file to the bot in a private channel.
+Sound effects can be directly uploaded by whitelisted users via the default discord file upload feature.
 
 The filename must be at least 3 characters long, the file extension must be `flac` and the file itself must be a valid flac file encoded at 48khz and 16bit with at most 2 MiB.
 
@@ -47,9 +46,9 @@ Also, a effect with the same name may not yet exist.";
 
 
 // Command Implementation -----------------------------------------------------
-pub struct HelpCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for HelpCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -60,9 +59,9 @@ impl CommandImplementation for HelpCommand {
 
     ) -> ActionGroup {
         vec![
-            DeleteMessage::new(command.message),
-            SendMessage::private(&command.message, HELP_TEXT_ONE.to_string()),
-            SendMessage::private(&command.message, HELP_TEXT_TWO.to_string())
+            MessageActions::Delete::new(command.message),
+            MessageActions::Send::private(&command.message, HELP_TEXT_ONE.to_string()),
+            MessageActions::Send::private(&command.message, HELP_TEXT_TWO.to_string())
         ]
     }
 

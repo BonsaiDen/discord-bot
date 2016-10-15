@@ -1,16 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, DeleteEffect, SendMessage};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct DeleteEffectCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for DeleteEffectCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -27,13 +25,13 @@ impl CommandImplementation for DeleteEffectCommand {
             self.requires_admin(command)
 
         } else if command.arguments.len() != 1 {
-            self.delete_and_send(command.message, SendMessage::public(
+            self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
                 "Usage: `!delete <effect_name>`".to_string()
             ))
 
         } else if !server.has_effect(&command.arguments[0]) {
-            self.delete_and_send(command.message, SendMessage::public(
+            self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
                 format!(
                     "Sound effect `{}` does not exist and thus cannot be deleted.",
@@ -42,7 +40,7 @@ impl CommandImplementation for DeleteEffectCommand {
             ))
 
         } else {
-            vec![DeleteEffect::new(
+            vec![EffectActions::Delete::new(
                 command.message,
                 server.get_effect(&command.arguments[0]).unwrap()
             )]

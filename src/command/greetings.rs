@@ -1,16 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, ListGreetings};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, GreetingActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct GreetingsCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for GreetingsCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -26,7 +24,7 @@ impl CommandImplementation for GreetingsCommand {
         } else {
             self.delete_and_send(
                 command.message,
-                ListGreetings::new(command.message)
+                GreetingActions::List::new(command.message)
             )
         }
     }

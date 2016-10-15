@@ -1,18 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{
-    ActionGroup, DeleteMessage, SilenceActiveEffects, SendMessage
-};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct SilenceCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for SilenceCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -27,9 +23,9 @@ impl CommandImplementation for SilenceCommand {
 
         } else {
             vec![
-                SilenceActiveEffects::new(command.message),
-                DeleteMessage::new(command.message),
-                SendMessage::public(
+                EffectActions::Silence::new(command.message),
+                MessageActions::Delete::new(command.message),
+                MessageActions::Send::public(
                     &command.message,
                     format!("{} has requested me to stay quiet.", member.nickname)
                 )

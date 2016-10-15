@@ -1,19 +1,17 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, AddAlias, RemoveAlias, SendMessage};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, AliasActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct AliasCommand;
+pub struct CommandImpl;
 
-impl AliasCommand {
+impl CommandImpl {
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, SendMessage::private(
+        self.delete_and_send(command.message, MessageActions::Send::private(
             &command.message,
             "Usage: `!alias add <alias_name> <effect_name>...` or `!alias remove <alias_name>`".to_string()
         ))
@@ -28,7 +26,7 @@ impl AliasCommand {
 
     ) -> ActionGroup {
         if server.has_alias(alias) {
-            self.delete_and_send(command.message, SendMessage::private(
+            self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!(
                     "An alias named `{}` already exists on {}.",
@@ -37,7 +35,7 @@ impl AliasCommand {
             ))
 
         } else {
-            self.delete_and_send(command.message, AddAlias::new(
+            self.delete_and_send(command.message, AliasActions::Add::new(
                 command.message,
                 alias.to_string(),
                 effect_names.iter().map(|e| e.to_string()).collect()
@@ -53,7 +51,7 @@ impl AliasCommand {
 
     ) -> ActionGroup {
         if server.has_alias(alias) {
-            self.delete_and_send(command.message, SendMessage::private(
+            self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!(
                     "An alias named `{}` does not exist on {}.",
@@ -62,7 +60,7 @@ impl AliasCommand {
             ))
 
         } else {
-            self.delete_and_send(command.message, RemoveAlias::new(
+            self.delete_and_send(command.message, AliasActions::Remove::new(
                 command.message,
                 alias.to_string()
             ))
@@ -71,7 +69,7 @@ impl AliasCommand {
 
 }
 
-impl CommandImplementation for AliasCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,

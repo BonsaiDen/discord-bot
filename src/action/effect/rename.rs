@@ -3,24 +3,22 @@ use std::fmt;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::effects::Effect;
-use ::actions::SendMessage;
+use ::effect::Effect;
 use ::bot::{Bot, BotConfig};
-use ::core::message::Message;
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct RenameEffect {
+pub struct ActionImpl {
     message: Message,
     effect: Effect,
     name: String
 }
 
-impl RenameEffect {
-    pub fn new(message: Message, effect: &Effect, name: String) -> Box<RenameEffect> {
-        Box::new(RenameEffect {
+impl ActionImpl {
+    pub fn new(message: Message, effect: &Effect, name: String) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message,
             effect: effect.clone(),
             name: name
@@ -28,13 +26,13 @@ impl RenameEffect {
     }
 }
 
-impl Action for RenameEffect {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             if let Err(err) = server.rename_effect(&self.effect, &self.name) {
                 warn!("{} Renaming failed: {}", self, err);
-                vec![SendMessage::public(
+                vec![MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Failed to rename sound effect `{}` to `{}`.",
@@ -43,7 +41,7 @@ impl Action for RenameEffect {
                 )]
 
             } else {
-                vec![SendMessage::public(
+                vec![MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Sound effect `{}` was renamed to `{}`.",
@@ -59,7 +57,7 @@ impl Action for RenameEffect {
     }
 }
 
-impl fmt::Display for RenameEffect {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [RenameEffect] {} to \"{}\"", self.effect, self.name)
     }

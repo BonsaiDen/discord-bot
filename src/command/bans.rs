@@ -1,16 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, ListBans};
+use ::action::{ActionGroup, BanActions};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct BansCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for BansCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -27,7 +25,10 @@ impl CommandImplementation for BansCommand {
             self.requires_admin(command)
 
         } else {
-            self.delete_and_send(command.message, ListBans::new(command.message))
+            self.delete_and_send(
+                command.message,
+                BanActions::List::new(command.message)
+            )
         }
     }
 

@@ -7,7 +7,7 @@ use flac;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::effects::Effect;
+use ::effect::Effect;
 
 
 // Mixer Source Implementation ------------------------------------------------

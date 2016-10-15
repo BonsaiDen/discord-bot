@@ -1,6 +1,6 @@
 // Internal Dependencies ------------------------------------------------------
 use super::MixerSource;
-use ::effects::Effect;
+use ::effect::Effect;
 
 
 // Mixer Source List Implementation -------------------------------------------

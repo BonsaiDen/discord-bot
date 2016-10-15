@@ -1,7 +1,5 @@
 // STD Dependencies -----------------------------------------------------------
-use std::thread;
 use std::path::PathBuf;
-use std::time::Duration;
 use std::collections::HashMap;
 
 
@@ -17,13 +15,14 @@ use discord::model::{
 // Internal Dependencies ------------------------------------------------------
 use upload::Upload;
 use command::Command;
-use actions::ActionGroup;
-
-use core::server::Server;
-use core::member::Member;
-use core::channel::Channel;
-use core::event::{EventQueue, Event};
-use core::message::{Message, MessageKind, MessageOrigin};
+use action::ActionGroup;
+use core::{
+    Channel,
+    Event, EventQueue,
+    Member,
+    Message, MessageKind, MessageOrigin,
+    Server
+};
 
 
 // Bot Configuration ----------------------------------------------------------
@@ -96,16 +95,18 @@ impl Bot {
                     Event::Disconnected => {
                         break 'main;
                     },
-                    Event::Received(event) => self.discord_event(event, &config, &mut queue),
+                    Event::Received(event) => {
+                        self.discord_event(event, &config, &mut queue)
+                    },
                     _ => self.event(event)
                 };
 
                 // Run resulting Actions
                 while !actions.is_empty() {
-                    info!("[Bot] Running {} actions...", actions.len());
 
                     let mut next_actions = Vec::new();
                     for action in actions.drain(0..) {
+                        println!("[Bot] Running {}...", action);
                         next_actions.extend(action.run(&mut self, &config, &mut queue));
                     }
 
@@ -114,8 +115,6 @@ impl Bot {
                 }
 
             }
-
-            thread::sleep(Duration::from_millis(50));
 
         }
 
@@ -268,13 +267,13 @@ impl Bot {
 
         let mut actions = Vec::new();
         if author.bot {
-            info!("[Bot] Ignored bot message.");
+            info!("[Bot] Ignored message from a bot.");
 
         } else if let Some(origin) = self.get_origin_from_message(
             &channel_id,
             &author.id,
         ) {
-            info!("[Bot] Received message from whitelisted server.");
+            info!("[Bot] Parsing message from whitelisted server...");
 
             for kind in Message::parse(
                 id, author.id, channel_id, content, attachments, origin
@@ -291,7 +290,7 @@ impl Bot {
     }
 
     fn command_event(&mut self, command: Command, config: &BotConfig) -> ActionGroup {
-        info!("[Bot] Possible {} received", command);
+        info!("[Bot] Potenial {} received...", command);
         if let Some((server, member)) = self.get_server_and_member(&command.message) {
             command.parse(server, member, config)
 
@@ -301,7 +300,7 @@ impl Bot {
     }
 
     fn upload_event(&mut self, upload: Upload, config: &BotConfig) -> ActionGroup {
-        info!("[Bot] Possible {} received", upload);
+        info!("[Bot] Potenial {} received...", upload);
         if let Some((server, member)) = self.get_server_and_member(&upload.message) {
             upload.process(server, member, config)
 

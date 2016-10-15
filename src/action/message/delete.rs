@@ -4,25 +4,24 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
-use ::core::message::Message;
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct DeleteMessage {
+pub struct ActionImpl {
     message: Message
 }
 
-impl DeleteMessage {
-    pub fn new(message: Message) -> Box<DeleteMessage> {
-        Box::new(DeleteMessage {
+impl ActionImpl {
+    pub fn new(message: Message) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message
         })
     }
 }
 
-impl Action for DeleteMessage {
+impl Action for ActionImpl {
     fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         info!("{} Deleting...", self);
         queue.delete_message(self.message.id, self.message.channel_id);
@@ -30,7 +29,7 @@ impl Action for DeleteMessage {
     }
 }
 
-impl fmt::Display for DeleteMessage {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [DeleteMessage] {}", self.message)
     }

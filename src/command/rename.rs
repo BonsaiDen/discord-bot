@@ -1,16 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, RenameEffect, SendMessage};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct RenameEffectCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for RenameEffectCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -28,13 +26,13 @@ impl CommandImplementation for RenameEffectCommand {
             self.requires_admin(command)
 
         } else if command.arguments.len() != 2 {
-            self.delete_and_send(command.message, SendMessage::public(
+            self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
                 "Usage: `!rename <old_effect_name> <new_effect_name>`".to_string()
             ))
 
         } else if !server.has_effect(&command.arguments[0]) {
-            self.delete_and_send(command.message, SendMessage::public(
+            self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
                 format!(
                     "A sound effect named `{}` does not exist on {}.",
@@ -44,7 +42,7 @@ impl CommandImplementation for RenameEffectCommand {
             ))
 
         } else if server.has_effect(&command.arguments[1]) {
-            self.delete_and_send(command.message, SendMessage::public(
+            self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
                 format!(
                     "A sound effect named `{}` already exist on {}.",
@@ -54,7 +52,7 @@ impl CommandImplementation for RenameEffectCommand {
             ))
 
         } else {
-            vec![RenameEffect::new(
+            vec![EffectActions::Rename::new(
                 command.message,
                 server.get_effect(&command.arguments[0]).unwrap(),
                 command.arguments[1].clone()

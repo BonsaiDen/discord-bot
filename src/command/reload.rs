@@ -1,18 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{
-    ActionGroup, DeleteMessage, ReloadServerConfiguration, SendMessage
-};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, MessageActions, ServerActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct ReloadCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for ReloadCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -27,9 +23,9 @@ impl CommandImplementation for ReloadCommand {
 
         } else {
             vec![
-                ReloadServerConfiguration::new(command.message),
-                DeleteMessage::new(command.message),
-                SendMessage::public(
+                ServerActions::Reload::new(command.message),
+                MessageActions::Delete::new(command.message),
+                MessageActions::Send::public(
                     &command.message,
                     format!(
                         "{} requested a configuration reload for {}.",

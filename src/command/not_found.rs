@@ -1,15 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, SendMessage};
+use ::core::{Member, Server};
+use ::command::{Command, CommandHandler};
+use ::action::{ActionGroup, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct NotFoundCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for NotFoundCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -19,7 +18,7 @@ impl CommandImplementation for NotFoundCommand {
         _: &BotConfig
 
     ) -> ActionGroup {
-        vec![SendMessage::private(
+        vec![MessageActions::Send::private(
             &command.message,
             format!(
                 "The command `{}` does not exist, please type

@@ -7,29 +7,29 @@ use discord::model::{ChannelId, ServerId};
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::effects::Effect;
+use ::effect::Effect;
+use ::core::EventQueue;
 use ::bot::{Bot, BotConfig};
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::action::{Action, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct PlayEffects {
+pub struct ActionImpl {
     server_id: ServerId,
     channel_id: ChannelId,
     effects: Vec<Effect>,
     queued: bool
 }
 
-impl PlayEffects {
+impl ActionImpl {
     pub fn new(
         server_id: ServerId,
         channel_id: ChannelId,
         effects: Vec<&Effect>,
         queued: bool
 
-    ) -> Box<PlayEffects> {
-        Box::new(PlayEffects {
+    ) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             server_id: server_id,
             channel_id: channel_id,
             effects: effects.iter().map(|e| (*e).clone()).collect(),
@@ -38,7 +38,7 @@ impl PlayEffects {
     }
 }
 
-impl Action for PlayEffects {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.server_id) {
             server.play_effects(
@@ -55,7 +55,7 @@ impl Action for PlayEffects {
     }
 }
 
-impl fmt::Display for PlayEffects {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [PlayEffects]")
     }

@@ -1,16 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::actions::{ActionGroup, ListEffects};
-use ::command::{Command, CommandImplementation};
+use ::command::{Command, CommandHandler};
+use ::action::{ActionGroup, EffectActions};
+use ::core::{Member, MessageOrigin, Server};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct SoundsCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for SoundsCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -25,10 +23,10 @@ impl CommandImplementation for SoundsCommand {
 
         } else {
             self.delete_and_send(command.message, if command.arguments.is_empty() {
-                ListEffects::all(command.message)
+                EffectActions::List::all(command.message)
 
             } else {
-                ListEffects::matching(command.message, command.arguments)
+                EffectActions::List::matching(command.message, command.arguments)
             })
         }
     }

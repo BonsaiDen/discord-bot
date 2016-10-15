@@ -4,29 +4,27 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
-use ::actions::SendMessage;
-use ::core::message::Message;
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct DownloadFlacFile {
+pub struct ActionImpl {
     message: Message,
     effect_name: String,
     upload_url: String,
     uploader: String
 }
 
-impl DownloadFlacFile {
+impl ActionImpl {
     pub fn new(
         message: Message,
         effect_name: String,
         upload_url: String,
         uploader: String
 
-    ) -> Box<DownloadFlacFile> {
-        Box::new(DownloadFlacFile {
+    ) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message,
             effect_name: effect_name,
             upload_url: upload_url,
@@ -35,13 +33,13 @@ impl DownloadFlacFile {
     }
 }
 
-impl Action for DownloadFlacFile {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
             if server.has_effect(&self.effect_name) {
-                vec![SendMessage::public(
+                vec![MessageActions::Send::public(
                     &self.message,
                     format!(
                         "A sound effect with the name `{}` already exists on the server.",
@@ -59,7 +57,7 @@ impl Action for DownloadFlacFile {
                     &self.uploader
                 ) {
                     warn!("{} Download failed: {}", self, err);
-                    vec![SendMessage::public(
+                    vec![MessageActions::Send::public(
                         &self.message,
                         format!(
                             "Download of the sound effect `{}` failed, please try again.",
@@ -69,7 +67,7 @@ impl Action for DownloadFlacFile {
 
                 } else {
                     info!("{} Download successful.", self);
-                    vec![SendMessage::public(
+                    vec![MessageActions::Send::public(
                         &self.message,
                         format!(
                             "The sound effect was successfully downloaded to the server and is now available as `{}`!",
@@ -87,7 +85,7 @@ impl Action for DownloadFlacFile {
     }
 }
 
-impl fmt::Display for DownloadFlacFile {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

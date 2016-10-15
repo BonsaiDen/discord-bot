@@ -4,33 +4,31 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
-use ::actions::SendMessage;
-use ::core::message::Message;
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct RemoveGreeting {
+pub struct ActionImpl {
     message: Message,
     nickname: String
 }
 
-impl RemoveGreeting {
-    pub fn new(message: Message, nickname: String) -> Box<RemoveGreeting> {
-        Box::new(RemoveGreeting {
+impl ActionImpl {
+    pub fn new(message: Message, nickname: String) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message,
             nickname: nickname
         })
     }
 }
 
-impl Action for RemoveGreeting {
+impl Action for ActionImpl {
     fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.remove_greeting(&self.nickname);
-            vec![SendMessage::private(&self.message, format!(
+            vec![MessageActions::Send::private(&self.message, format!(
                 "Greeting for `{}` has been removed on {}.",
                 self.nickname, server.name
             ))]
@@ -42,7 +40,7 @@ impl Action for RemoveGreeting {
     }
 }
 
-impl fmt::Display for RemoveGreeting {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [RemoveGreeting] {}", self.nickname)
     }

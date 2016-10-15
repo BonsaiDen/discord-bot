@@ -71,13 +71,13 @@ impl Message {
                 command_name[1..].to_string(),
                 split.map(|s| s.to_string()).collect(),
                 message
-            )))
+            )));
 
         } else if !attachments.is_empty() {
             for attachment in attachments {
                 kinds.push(MessageKind::Upload(
                     Upload::new(attachment, message)
-                ))
+                ));
             }
         }
 

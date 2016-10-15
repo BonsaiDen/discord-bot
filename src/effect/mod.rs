@@ -17,7 +17,7 @@ use hyper::header::Connection;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::server::ServerConfig;
+use ::core::ServerConfig;
 
 
 // Effect Abstraction ---------------------------------------------------------
@@ -107,12 +107,7 @@ impl EffectRegistry {
     }
 
     pub fn get_effect(&self, effect_name: &str) -> Option<&Effect> {
-        if let Some(effect) = self.effects.get(effect_name) {
-            Some(effect)
-
-        } else {
-            None
-        }
+        self.effects.get(effect_name)
     }
 
     pub fn map_patterns(
@@ -277,21 +272,21 @@ impl EffectRegistry {
         &self,
         effects: Vec<&str>,
         aliases: Option<&HashMap<String, Vec<String>>>,
-        config: &BotConfig
+        bot_config: &BotConfig
 
     ) -> Option<Vec<&Effect>> {
 
         // Select one random effect...
         if let Some(name) = thread_rng().choose(&effects[..]) {
 
-            // ...selected effect is already a full effect
+            // ...selected effect is already an actual effect
             if let Some(effect) = self.effects.get(*name) {
                 Some(vec![effect])
 
             // ...selected effect is an alias, so we need to resolve its mapped effect
             } else if let Some(aliases) = aliases {
-                if let Some(aliased_effects) = aliases.get(*name) {
-                    Some(self.map_patterns(aliased_effects, None, false, config))
+                if let Some(effects) = aliases.get(*name) {
+                    Some(self.map_patterns(effects, None, false, bot_config))
 
                 } else {
                     None

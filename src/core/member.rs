@@ -20,7 +20,7 @@ use ::bot::BotConfig;
 
 
 // Member Abstraction ---------------------------------------------------------
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Member {
     pub id: UserId,
     pub server_id: ServerId,

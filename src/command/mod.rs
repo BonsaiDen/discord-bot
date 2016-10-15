@@ -3,30 +3,28 @@ use std::fmt;
 
 
 // Modules --------------------------------------------------------------------
-mod ip;
+mod alias;
+mod aliases;
 mod ban;
 mod bans;
-mod help;
-mod alias;
-mod leave;
-mod reload;
-mod sounds;
-mod aliases;
-mod silence;
+mod delete;
 mod greeting;
 mod greetings;
+mod help;
+mod ip;
+mod leave;
 mod not_found;
-mod play_effect;
-mod delete_effect;
-mod rename_effect;
+mod play;
+mod reload;
+mod rename;
+mod sounds;
+mod silence;
 
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::Message;
-use ::actions::{Action, ActionGroup, DeleteMessage, SendMessage};
+use ::core::{Member, Message, Server};
+use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Command Abstraction --------------------------------------------------------
@@ -66,24 +64,24 @@ impl Command {
             return vec![];
         }
 
-        let command: Box<CommandImplementation> = match self.name.as_str() {
-            "s" => Box::new(play_effect::PlayEffectCommand::instant()),
-            "q" => Box::new(play_effect::PlayEffectCommand::queued()),
-            "delete" => Box::new(delete_effect::DeleteEffectCommand),
-            "rename" => Box::new(rename_effect::RenameEffectCommand),
-            "sounds" => Box::new(sounds::SoundsCommand),
-            "silence" => Box::new(silence::SilenceCommand),
-            "alias" => Box::new(alias::AliasCommand),
-            "aliases" => Box::new(aliases::AliasesCommand),
-            "greeting" => Box::new(greeting::GreetingCommand),
-            "greetings" => Box::new(greetings::GreetingsCommand),
-            "ban" => Box::new(ban::BanCommand),
-            "bans" => Box::new(bans::BansCommand),
-            "ip" => Box::new(ip::IpCommand),
-            "leave" => Box::new(leave::LeaveCommand),
-            "reload" => Box::new(reload::ReloadCommand),
-            "help" => Box::new(help::HelpCommand),
-            _ => Box::new(not_found::NotFoundCommand)
+        let command: Box<CommandHandler> = match self.name.as_str() {
+            "s" => Box::new(play::CommandImpl::instant()),
+            "q" => Box::new(play::CommandImpl::queued()),
+            "delete" => Box::new(delete::CommandImpl),
+            "rename" => Box::new(rename::CommandImpl),
+            "sounds" => Box::new(sounds::CommandImpl),
+            "silence" => Box::new(silence::CommandImpl),
+            "alias" => Box::new(alias::CommandImpl),
+            "aliases" => Box::new(aliases::CommandImpl),
+            "greeting" => Box::new(greeting::CommandImpl),
+            "greetings" => Box::new(greetings::CommandImpl),
+            "ban" => Box::new(ban::CommandImpl),
+            "bans" => Box::new(bans::CommandImpl),
+            "ip" => Box::new(ip::CommandImpl),
+            "leave" => Box::new(leave::CommandImpl),
+            "reload" => Box::new(reload::CommandImpl),
+            "help" => Box::new(help::CommandImpl),
+            _ => Box::new(not_found::CommandImpl)
         };
 
         command.run(self, server, member, config)
@@ -107,7 +105,7 @@ impl fmt::Display for Command {
 }
 
 // Command Implementation Trait -----------------------------------------------
-pub trait CommandImplementation {
+pub trait CommandHandler {
 
     fn run(
         &self,
@@ -119,7 +117,7 @@ pub trait CommandImplementation {
     ) -> ActionGroup;
 
     fn requires_unique_server(&self, command: Command) -> ActionGroup {
-        vec![SendMessage::private(
+        vec![MessageActions::Send::private(
             &command.message,
             format!(
                 "The command `{}` requires a unique server as its target.
@@ -132,7 +130,7 @@ pub trait CommandImplementation {
     }
 
     fn requires_admin(&self, command: Command) -> ActionGroup {
-        vec![SendMessage::private(
+        vec![MessageActions::Send::private(
             &command.message,
             format!(
                 "The command `{}` requires bot admin rights on the current server.",
@@ -143,7 +141,7 @@ pub trait CommandImplementation {
 
     fn delete_and_send(&self, message: Message, action: Box<Action>) -> ActionGroup {
         vec![
-            DeleteMessage::new(message),
+            MessageActions::Delete::new(message),
             action
         ]
     }

@@ -1,34 +1,32 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, PlayEffects, SendMessage};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct PlayEffectCommand {
+pub struct CommandImpl {
     queued: bool
 }
 
-impl PlayEffectCommand {
+impl CommandImpl {
 
-    pub fn instant() -> PlayEffectCommand {
-        PlayEffectCommand {
+    pub fn instant() -> CommandImpl {
+        CommandImpl {
             queued: false
         }
     }
 
-    pub fn queued() -> PlayEffectCommand {
-        PlayEffectCommand {
+    pub fn queued() -> CommandImpl {
+        CommandImpl {
             queued: true
         }
     }
 
 }
 
-impl CommandImplementation for PlayEffectCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -42,7 +40,7 @@ impl CommandImplementation for PlayEffectCommand {
             self.requires_unique_server(command)
 
         } else if command.arguments.is_empty() {
-            self.delete_and_send(command.message, SendMessage::private(
+            self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!("Usage: `!{} <effect_name>`", if self.queued {
                     "q"
@@ -62,7 +60,7 @@ impl CommandImplementation for PlayEffectCommand {
 
             if effects.is_empty() {
                 // TODO provide a listing of similiar sounds
-                self.delete_and_send(command.message, SendMessage::private(
+                self.delete_and_send(command.message, MessageActions::Send::private(
                     &command.message,
                     format!(
                         "No effect(s) matching `{}` found on {}.",
@@ -72,7 +70,7 @@ impl CommandImplementation for PlayEffectCommand {
                 ))
 
             } else if let Some(channel_id) = member.voice_channel_id {
-                self.delete_and_send(command.message, PlayEffects::new(
+                self.delete_and_send(command.message, EffectActions::Play::new(
                     command.message.server_id,
                     channel_id,
                     effects,
@@ -80,7 +78,7 @@ impl CommandImplementation for PlayEffectCommand {
                 ))
 
             } else {
-                self.delete_and_send(command.message, SendMessage::private(
+                self.delete_and_send(command.message, MessageActions::Send::private(
                     &command.message,
                     format!(
                         "You must be in a voice channel on {} in order to play sound effects.",

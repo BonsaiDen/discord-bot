@@ -9,16 +9,15 @@ use hyper::header::Connection;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, SendMessage};
+use ::core::{Member, Server};
+use ::command::{Command, CommandHandler};
+use ::action::{ActionGroup, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct IpCommand;
+pub struct CommandImpl;
 
-impl CommandImplementation for IpCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
@@ -28,7 +27,7 @@ impl CommandImplementation for IpCommand {
         _: &BotConfig
 
     ) -> ActionGroup {
-        self.delete_and_send(command.message, SendMessage::public(
+        self.delete_and_send(command.message, MessageActions::Send::public(
             &command.message,
             format!(
                 "{} has requested my public IP address which is: {}.",

@@ -1,5 +1,5 @@
 // Modules --------------------------------------------------------------------
-pub mod mixer;
+mod mixer;
 mod mixer_list;
 mod mixer_source;
 

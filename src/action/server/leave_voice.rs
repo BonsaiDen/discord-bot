@@ -4,40 +4,41 @@ use std::fmt;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
-use ::core::message::Message;
-use ::core::event::EventQueue;
-use ::actions::{Action, ActionGroup};
+use ::core::{EventQueue, Message};
+use ::action::{Action, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct SilenceActiveEffects {
+pub struct ActionImpl {
     message: Message
 }
 
-impl SilenceActiveEffects {
-    pub fn new(message: Message) -> Box<SilenceActiveEffects> {
-        Box::new(SilenceActiveEffects {
+impl ActionImpl {
+    pub fn new(message: Message) -> Box<ActionImpl> {
+        Box::new(ActionImpl {
             message: message
         })
     }
 }
 
-impl Action for SilenceActiveEffects {
-    fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
+impl Action for ActionImpl {
+    fn run(&self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.message.server_id) {
-            server.silence_active_effects()
+            info!("{} Leaving active voice channel...", self);
+            server.leave_voice(queue);
         }
         vec![]
     }
 }
 
-impl fmt::Display for SilenceActiveEffects {
+impl fmt::Display for ActionImpl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "[Action] [SilenceActiveEffects] Server #{}",
+            "[Action] [LeaveServerVoice] Server #{}",
             self.message.server_id
         )
     }
 }
+
 

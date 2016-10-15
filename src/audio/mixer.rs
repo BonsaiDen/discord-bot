@@ -15,7 +15,7 @@ use rand::{thread_rng, Rng};
 
 // Internal Dependencies ------------------------------------------------------
 use super::MixerList;
-use ::effects::Effect;
+use ::effect::Effect;
 
 
 // Statics --------------------------------------------------------------------

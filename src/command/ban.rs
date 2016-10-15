@@ -1,19 +1,17 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::member::Member;
-use ::core::server::Server;
-use ::core::message::MessageOrigin;
-use ::command::{Command, CommandImplementation};
-use ::actions::{ActionGroup, AddBan, RemoveBan, SendMessage};
+use ::command::{Command, CommandHandler};
+use ::core::{Member, MessageOrigin, Server};
+use ::action::{ActionGroup, BanActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct BanCommand;
+pub struct CommandImpl;
 
-impl BanCommand {
+impl CommandImpl {
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, SendMessage::private(
+        self.delete_and_send(command.message, MessageActions::Send::private(
             &command.message,
             "Usage: `!ban add <user#ident>` or `!ban remove <user#ident>`".to_string()
         ))
@@ -27,31 +25,37 @@ impl BanCommand {
 
     ) -> ActionGroup {
         if !server.has_member_with_nickname(nickname) {
-            self.delete_and_send(command.message, SendMessage::private(
+            self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!("The user `{}` is not a member of {}.", nickname, server.name)
             ))
 
         } else {
-            self.delete_and_send(command.message, AddBan::new(command.message, nickname.to_string()))
+            self.delete_and_send(command.message, BanActions::Add::new(
+                command.message,
+                nickname.to_string()
+            ))
         }
     }
 
     fn remove(&self, server: &Server, command: &Command, nickname: &str) -> ActionGroup {
         if !server.has_member_with_nickname(nickname) {
-            self.delete_and_send(command.message, SendMessage::private(
+            self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!("The user `{}` is not a member of {}.", nickname, server.name)
             ))
 
         } else {
-            self.delete_and_send(command.message, RemoveBan::new(command.message, nickname.to_string()))
+            self.delete_and_send(command.message, BanActions::Remove::new(
+                command.message,
+                nickname.to_string()
+            ))
         }
     }
 
 }
 
-impl CommandImplementation for BanCommand {
+impl CommandHandler for CommandImpl {
 
     fn run(
         &self,
