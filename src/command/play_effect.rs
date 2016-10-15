@@ -42,7 +42,7 @@ impl CommandImplementation for PlayEffectCommand {
             self.requires_unique_server(command)
 
         } else if command.arguments.is_empty() {
-            self.delete_and_send(command.message, SendMessage::public(
+            self.delete_and_send(command.message, SendMessage::private(
                 &command.message,
                 format!("Usage: `!{} <effect_name>`", if self.queued {
                     "q"
@@ -61,9 +61,14 @@ impl CommandImplementation for PlayEffectCommand {
             );
 
             if effects.is_empty() {
-                self.delete_and_send(command.message, SendMessage::public(
+                // TODO provide a listing of similiar sounds
+                self.delete_and_send(command.message, SendMessage::private(
                     &command.message,
-                    format!("No matching effect(s) found on {}.", server.name)
+                    format!(
+                        "No effect(s) matching `{}` found on {}.",
+                        command.arguments.join("`, `"),
+                        server.name
+                    )
                 ))
 
             } else if let Some(channel_id) = member.voice_channel_id {
@@ -75,7 +80,7 @@ impl CommandImplementation for PlayEffectCommand {
                 ))
 
             } else {
-                self.delete_and_send(command.message, SendMessage::public(
+                self.delete_and_send(command.message, SendMessage::private(
                     &command.message,
                     format!(
                         "You must be in a voice channel on {} in order to play sound effects.",
