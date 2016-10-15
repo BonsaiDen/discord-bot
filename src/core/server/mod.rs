@@ -8,7 +8,6 @@ use std::collections::HashMap;
 // Discord Dependencies -------------------------------------------------------
 use discord::model::{
     ChannelId, UserId, ServerId,
-    Role,
     User as DiscordUser,
     Member as DiscordMember,
     Server as DiscordServer,
@@ -69,8 +68,7 @@ pub struct Server {
     mixer_queue: MixerQueue,
 
     channels: HashMap<ChannelId, Channel>,
-    members: HashMap<UserId, Member>,
-    roles: Vec<Role>
+    members: HashMap<UserId, Member>
 
 }
 
@@ -105,8 +103,7 @@ impl Server {
                     voice_status: ServerVoiceStatus::Left,
                     mixer_queue: EmptyMixerQueue::create(),
                     channels: HashMap::new(),
-                    members: HashMap::new(),
-                    roles: Vec::new()
+                    members: HashMap::new()
                 }
             },
 
@@ -123,8 +120,7 @@ impl Server {
                     voice_status: ServerVoiceStatus::Left,
                     mixer_queue: EmptyMixerQueue::create(),
                     channels: HashMap::new(),
-                    members: HashMap::new(),
-                    roles: live_server.roles
+                    members: HashMap::new()
                 };
 
                 server.reload();
@@ -160,7 +156,6 @@ impl Server {
     pub fn update(&mut self, server: DiscordServer) {
         self.name = server.name;
         self.region = server.region;
-        self.roles = server.roles;
         info!("{} Updated", self);
     }
 
