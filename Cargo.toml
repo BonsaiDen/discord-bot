@@ -9,7 +9,7 @@ flac = { git = "https://github.com/bonsaiden/flac.git", rev = "master" }
 clock_ticks = "*"
 dotenv = "*"
 chrono = "*"
-hyper = "0.8.1"
+hyper = "0.9"
 toml = "0.1"
 rand = "*"
 log = "*"

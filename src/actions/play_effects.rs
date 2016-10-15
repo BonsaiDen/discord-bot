@@ -25,14 +25,14 @@ impl PlayEffects {
     pub fn new(
         server_id: ServerId,
         channel_id: ChannelId,
-        effects: Vec<Effect>,
+        effects: Vec<&Effect>,
         queued: bool
 
     ) -> Box<PlayEffects> {
         Box::new(PlayEffects {
             server_id: server_id,
             channel_id: channel_id,
-            effects: effects,
+            effects: effects.iter().map(|e| (*e).clone()).collect(),
             queued: queued
         })
     }

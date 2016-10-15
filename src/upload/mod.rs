@@ -68,6 +68,7 @@ impl Upload {
         let ext = os_str_to_string(path.extension());
         let valid_name = name.is_ascii() && name.len() >= 2 && ext == "flac";
 
+        // TODO extract upload comments and use it as the transcription
         Upload {
             name: name.to_string(),
             url: attachment.url.to_string(),

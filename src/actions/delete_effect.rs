@@ -18,10 +18,10 @@ pub struct DeleteEffect {
 }
 
 impl DeleteEffect {
-    pub fn new(message: Message, effect: Effect) -> Box<DeleteEffect> {
+    pub fn new(message: Message, effect: &Effect) -> Box<DeleteEffect> {
         Box::new(DeleteEffect {
             message: message,
-            effect: effect
+            effect: effect.clone()
         })
     }
 }

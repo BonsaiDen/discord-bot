@@ -293,7 +293,7 @@ impl Server {
         member_id: &UserId,
         bot_config: &BotConfig
 
-    ) -> Option<Vec<Effect>> {
+    ) -> Option<Vec<&Effect>> {
         if let Some(member) = self.members.get(member_id) {
             if let Some(effect_name) = self.config.greetings.get(&member.nickname) {
                 let patterns = vec![effect_name.to_string()];
@@ -341,28 +341,37 @@ impl Server {
 
     ) -> ActionGroup {
 
-        let greeting_effects = self.get_greeting(
-            &voice_state.user_id,
-            bot_config
-        );
-
-        if clock_ticks::precise_time_ms() - self.startup_time < 1000 {
+        let now = clock_ticks::precise_time_ms();
+        let channel_id = if now - self.startup_time < 1000 {
             info!("{} Ignored greeting for already connected member", self);
+            None
 
         } else if let Some(member) = self.members.get_mut(&voice_state.user_id) {
             if member.should_be_greeted(bot_config) {
-                if let Some(effects) = greeting_effects {
-                    return vec![PlayEffects::new(
-                        self.id,
-                        member.voice_channel_id.unwrap(),
-                        effects,
-                        false
-                    )];
-                }
-            }
-        }
+                Some(member.voice_channel_id.unwrap())
 
-        vec![]
+            } else {
+                None
+            }
+
+        } else {
+            None
+        };
+
+        if let Some(channel_id) = channel_id {
+            if let Some(effects) = self.get_greeting(
+                &voice_state.user_id,
+                bot_config
+            ) {
+                vec![PlayEffects::new(self.id, channel_id, effects, false)]
+
+            } else {
+                vec![]
+            }
+
+        } else {
+            vec![]
+        }
 
     }
 
@@ -415,7 +424,7 @@ impl Server {
         self.effects.has_effect(effect_name)
     }
 
-    pub fn get_effect(&self, effect_name: &str) -> Option<Effect> {
+    pub fn get_effect(&self, effect_name: &str) -> Option<&Effect> {
         self.effects.get_effect(effect_name)
     }
 
@@ -430,7 +439,7 @@ impl Server {
         match_all: bool,
         bot_config: &BotConfig
 
-    ) -> Vec<Effect> {
+    ) -> Vec<&Effect> {
         self.effects.map_patterns(
             patterns, Some(&self.config.aliases), match_all, bot_config
         )

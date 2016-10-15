@@ -19,10 +19,10 @@ pub struct RenameEffect {
 }
 
 impl RenameEffect {
-    pub fn new(message: Message, effect: Effect, name: String) -> Box<RenameEffect> {
+    pub fn new(message: Message, effect: &Effect, name: String) -> Box<RenameEffect> {
         Box::new(RenameEffect {
             message: message,
-            effect: effect,
+            effect: effect.clone(),
             name: name
         })
     }

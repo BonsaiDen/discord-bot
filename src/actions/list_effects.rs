@@ -74,7 +74,7 @@ impl fmt::Display for ListEffects {
 fn list_effects(
     message: &Message,
     title: &str,
-    effects: Vec<Effect>
+    effects: Vec<&Effect>
 
 ) -> ActionGroup {
 

@@ -21,20 +21,31 @@ use ::core::server::ServerConfig;
 
 
 // Effect Abstraction ---------------------------------------------------------
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Effect {
     pub name: String,
     path: PathBuf,
-    uploader: Option<String>
+    last_played: u64,
+    uploader: Option<String>,
+    transcript: Option<Vec<String>>
 }
 
 impl Effect {
 
-    fn new(name: &str, path: PathBuf, uploader: Option<String>) -> Effect {
+    fn new(
+        name: &str,
+        path: PathBuf,
+        uploader: Option<String>,
+        transcript: Option<Vec<String>>
+
+    ) -> Effect {
         Effect {
             name: name.to_string(),
             path: path,
-            uploader: uploader
+            last_played: 0,
+            uploader: uploader,
+            // TODO add commands to show and set effect transcriptions
+            transcript: transcript
         }
     }
 
@@ -42,6 +53,18 @@ impl Effect {
         self.path.to_str().unwrap_or("")
     }
 
+}
+
+impl Clone for Effect {
+    fn clone(&self) -> Self {
+        Effect {
+            name: self.name.to_string(),
+            path: self.path.clone(),
+            last_played: self.last_played,
+            uploader: self.uploader.clone(),
+            transcript: None
+        }
+    }
 }
 
 
@@ -61,8 +84,7 @@ impl fmt::Display for Effect {
 // Effects Registration -------------------------------------------------------
 #[derive(Debug)]
 pub struct EffectRegistry {
-    effects: HashMap<String, Vec<Effect>>,
-    effects_last_playback: HashMap<String, u64>
+    effects: HashMap<String, Effect>
 }
 
 
@@ -71,14 +93,12 @@ impl EffectRegistry {
 
     pub fn new() -> EffectRegistry {
         EffectRegistry {
-            effects: HashMap::new(),
-            effects_last_playback: HashMap::new()
+            effects: HashMap::new()
         }
     }
 
     pub fn reload(&mut self, config: &ServerConfig) {
         self.effects.clear();
-        self.effects_last_playback.clear();
         self.load_effects(config)
     }
 
@@ -86,9 +106,9 @@ impl EffectRegistry {
         self.effects.contains_key(effect_name)
     }
 
-    pub fn get_effect(&self, effect_name: &str) -> Option<Effect> {
-        if let Some(effects) = self.effects.get(effect_name) {
-            effects.get(0).and_then(|e| Some(e.clone()))
+    pub fn get_effect(&self, effect_name: &str) -> Option<&Effect> {
+        if let Some(effect) = self.effects.get(effect_name) {
+            Some(effect)
 
         } else {
             None
@@ -102,9 +122,9 @@ impl EffectRegistry {
         match_all: bool,
         config: &BotConfig
 
-    ) -> Vec<Effect> {
+    ) -> Vec<&Effect> {
 
-        let effects: Vec<Effect> = patterns.iter()
+        let effects: Vec<&Effect> = patterns.iter()
              .map(|name| self.map_from_pattern(name, aliases, match_all, config))
              .filter(|e| e.is_some())
              .map(|e| e.unwrap())
@@ -207,28 +227,19 @@ impl EffectRegistry {
         match_all: bool,
         config: &BotConfig
 
-    ) -> Option<Vec<Effect>> {
-
-        let now = clock_ticks::precise_time_ms();
+    ) -> Option<Vec<&Effect>> {
 
         // Find matching effect names
-        let mut matching_effects: Vec<&str> = self.effects.keys().map(|n| {
-            n.as_str()
+        let mut matching_effects: Vec<&str> = self.effects.values().filter(|effect| {
+            match_effect_pattern(
+                effect,
+                pattern,
+                !match_all,
+                config.effect_playback_separation_ms
+            )
 
-        }).filter(|name| {
-            // TODO clean up
-            if match_all {
-                match_name_pattern(name, pattern, 0, now)
-
-            } else {
-                let last_played = *self.effects_last_playback.get(*name).unwrap();
-                match_name_pattern(
-                    name,
-                    pattern,
-                    last_played + config.effect_playback_separation_ms,
-                    now
-                )
-            }
+        }).map(|effect| {
+            effect.name.as_str()
 
         }).collect();
 
@@ -238,7 +249,10 @@ impl EffectRegistry {
             let matching_aliases: Vec<&str> = aliases.keys().map(|n| {
                 n.as_str()
 
-            }).filter(|name| match_name_pattern(name, pattern, 0, now)).collect();
+            }).filter(|name| {
+                match_alias_pattern(name, pattern)
+
+            }).collect();
 
             matching_effects.extend(matching_aliases);
 
@@ -248,7 +262,7 @@ impl EffectRegistry {
             let mut effects = Vec::new();
             for m in matching_effects {
                 if let Some(e) = self.effects.get(m) {
-                    effects.append(&mut e.clone())
+                    effects.push(e)
                 }
             }
             Some(effects)
@@ -265,14 +279,14 @@ impl EffectRegistry {
         aliases: Option<&HashMap<String, Vec<String>>>,
         config: &BotConfig
 
-    ) -> Option<Vec<Effect>> {
+    ) -> Option<Vec<&Effect>> {
 
         // Select one random effect...
         if let Some(name) = thread_rng().choose(&effects[..]) {
 
             // ...selected effect is already a full effect
             if let Some(effect) = self.effects.get(*name) {
-                Some(effect.clone())
+                Some(vec![effect])
 
             // ...selected effect is an alias, so we need to resolve its mapped effect
             } else if let Some(aliases) = aliases {
@@ -297,19 +311,64 @@ impl EffectRegistry {
 
         filter_dir(&config.effects_path, "flac", |name, path| {
 
-            let description: Vec<&str> = name.split('.').collect();
-            let effect = match *description.as_slice() {
+            // Try to load a transcript if present
+            let mut transcript_path = path.clone();
+            transcript_path.set_extension("txt");
+
+            let transcript = if let Ok(mut file) = File::open(transcript_path) {
+
+                let mut text = String::new();
+                file.read_to_string(&mut text).expect("Failed to read flac transcript.");
+
+                // Remove linebreaks
+                text = text.to_lowercase().replace(|c| {
+                    match c {
+                        '\n' | '\r' | '\t' => true,
+                        _ => false
+                    }
+
+                }, " ");
+
+                // Split up into unique words
+                let mut parts: Vec<String> = text.split(' ').filter(|s| {
+                    !s.trim().is_empty()
+
+                }).map(|s| {
+                    s.to_string()
+
+                }).collect();
+
+                parts.dedup();
+
+                Some(parts)
+
+            } else {
+                None
+            };
+
+            // Create effect from flac
+            let descriptor: Vec<&str> = name.split('.').collect();
+            let effect = match *descriptor.as_slice() {
                 [name, uploader] => {
-                    Effect::new(name, path, Some(uploader.replace("_", "#")))
+                    Effect::new(
+                        name,
+                        path,
+                        Some(uploader.replace("_", "#")),
+                        transcript
+                    )
                 },
                 [name] => {
-                    Effect::new(name, path, None)
+                    Effect::new(
+                        name,
+                        path,
+                        None,
+                        transcript
+                    )
                 },
                 _ => unreachable!()
             };
 
-            self.effects_last_playback.insert(effect.name.clone(), 0);
-            self.effects.insert(effect.name.clone(), vec![effect]);
+            self.effects.insert(effect.name.clone(), effect);
 
         });
 
@@ -333,47 +392,88 @@ impl fmt::Display for EffectRegistry {
 
 
 // Helpers --------------------------------------------------------------------
-fn match_name_pattern(
-    name: &str,
+fn match_effect_pattern(
+    effect: &Effect,
     pattern: &str,
-    last_played: u64,
-    now: u64
+    ignore_recent: bool,
+    recent_threshold: u64
 
 ) -> bool {
 
     let len = pattern.len();
 
-    // Random
+    // Name: Random
     if pattern == "*" {
-        // Filter out recently played effects
-        last_played < now
+        ignore_recent || !was_recently_played(effect, recent_threshold)
 
-    // Contains
+    // Name: Contains
     } else if len > 2 && pattern.starts_with('*') && pattern.ends_with('*') {
-        name.contains(&pattern[1..len - 1])
+        effect.name.contains(&pattern[1..len - 1])
 
-    // Endswith
-    } else if len > 1 && pattern.starts_with('*') {
-        name.ends_with(&pattern[1..])
-
-    // Startswith
-    } else if len > 1 && pattern.ends_with('*') {
-        name.starts_with(&pattern[0..len - 1])
-
-    } else if len > 0 {
-
-        // Exact
-        if name == pattern {
-            true
-
-        // Prefix
-        } else if name.starts_with(&format!("{}_", pattern)) {
-            // Filter out recently played effects
-            last_played < now
+    // Transcript: Contains
+    } else if len > 2 && pattern.starts_with('"') && pattern.ends_with('"') {
+        if let Some(ref transcript) = effect.transcript {
+            transcript.contains(&pattern[1..len - 1].to_string())
 
         } else {
             false
         }
+
+    // Name: Endswith
+    } else if len > 1 && pattern.starts_with('*') {
+        effect.name.ends_with(&pattern[1..])
+
+    // Name: Startswith
+    } else if len > 1 && pattern.ends_with('*') {
+        effect.name.starts_with(&pattern[0..len - 1])
+
+    } else if len > 0 {
+
+        // Name: Exact
+        if effect.name == pattern {
+            true
+
+        // Name: Prefix
+        } else if effect.name.starts_with(&format!("{}_", pattern)) {
+            ignore_recent || !was_recently_played(effect, recent_threshold)
+
+        } else {
+            false
+        }
+
+    } else {
+        false
+    }
+
+}
+
+fn was_recently_played(effect: &Effect, threshold: u64) -> bool {
+    effect.last_played + threshold < clock_ticks::precise_time_ms()
+}
+
+fn match_alias_pattern(alias: &str, pattern: &str) -> bool {
+
+    let len = pattern.len();
+
+    // Random
+    if pattern == "*" {
+        true
+
+    // Name: Contains
+    } else if len > 2 && pattern.starts_with('*') && pattern.ends_with('*') {
+        alias.contains(&pattern[1..len - 1])
+
+    // Name: Endswith
+    } else if len > 1 && pattern.starts_with('*') {
+        alias.ends_with(&pattern[1..])
+
+    // Name: Startswith
+    } else if len > 1 && pattern.ends_with('*') {
+        alias.starts_with(&pattern[0..len - 1])
+
+    // Name: Exact or Prefix
+    } else if len > 0 {
+        alias == pattern || alias.starts_with(&format!("{}_", pattern))
 
     } else {
         false
