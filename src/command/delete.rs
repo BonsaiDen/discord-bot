@@ -30,7 +30,13 @@ impl CommandHandler for CommandImpl {
                 "Usage: `!delete <effect_name>`".to_string()
             ))
 
-        } else if !server.has_effect(&command.arguments[0]) {
+        } else if let Some(effect) = server.get_effect(&command.arguments[0]) {
+            vec![EffectActions::Delete::new(
+                command.message,
+                effect
+            )]
+
+        } else {
             self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
                 format!(
@@ -38,12 +44,6 @@ impl CommandHandler for CommandImpl {
                     command.arguments[0]
                 )
             ))
-
-        } else {
-            vec![EffectActions::Delete::new(
-                command.message,
-                server.get_effect(&command.arguments[0]).unwrap()
-            )]
         }
     }
 

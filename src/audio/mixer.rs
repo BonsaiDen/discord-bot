@@ -79,7 +79,7 @@ impl Mixer {
 
             // Pop the next command from the queue
             if let Some(command) = {
-                self.command_queue.lock().unwrap().pop_front()
+                self.command_queue.lock().expect("No command queue lock.").pop_front()
 
             } {
                 match command {
@@ -107,10 +107,10 @@ impl Mixer {
             }
 
         } else if let Some(&MixerCommand::ClearQueue) = {
-            self.command_queue.lock().unwrap().front()
+            self.command_queue.lock().expect("No command queue lock.").front()
         } {
             info!("{} List queues cleared", self);
-            self.command_queue.lock().unwrap().pop_front();
+            self.command_queue.lock().expect("No command queue lock.").pop_front();
             self.active_sources.clear();
             self.queued_sources.clear();
         }

@@ -55,7 +55,7 @@ impl ServerConfig {
 
     pub fn ensure_directory(&self) -> Result<(), String> {
         fs::create_dir_all(
-            self.config_path.clone().parent().unwrap()
+            self.config_path.clone().parent().expect("Invalid config directory.")
 
         ).map_err(|err| err.to_string())
     }

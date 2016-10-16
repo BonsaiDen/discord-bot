@@ -121,8 +121,7 @@ impl EffectRegistry {
 
         let effects: Vec<&Effect> = patterns.iter()
              .map(|name| self.map_from_pattern(name, aliases, match_all, config))
-             .filter(|e| e.is_some())
-             .map(|e| e.unwrap())
+             .filter_map(|e| e)
              .flat_map(|s| s).collect();
 
         info!(
@@ -456,7 +455,7 @@ fn filter_dir<F: FnMut(String, PathBuf)>(
                         if let Some(stem) = path.file_stem() {
                             if stem != "" {
                                 callback(
-                                    stem.to_str().unwrap().to_string(),
+                                    stem.to_str().unwrap_or("").to_string(),
                                     PathBuf::from(path.clone())
                                 )
                             }

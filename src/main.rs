@@ -57,10 +57,7 @@ fn main() {
 
             }).collect::<Vec<ServerId>>())
 
-        }).or_else(|| {
-            Some(vec![])
-
-        }).unwrap(),
+        }).unwrap_or_else(|| Vec::new()),
         config_path: PathBuf::from(
             env::var_os("CONFIG_DIRECTORY").unwrap_or("".into())
         ),

@@ -27,30 +27,43 @@ impl CommandHandler for CommandImpl {
         _: &BotConfig
 
     ) -> ActionGroup {
-        self.delete_and_send(command.message, MessageActions::Send::public(
-            &command.message,
-            format!(
+
+        let response = match resolve_ip() {
+            Ok(ip) => format!(
                 "{} has requested my public IP address which is: {}.",
                 member.nickname,
-                get_ip().trim()
-            )
+                ip
+            ),
+            Err(_) => "{} has requested my public IP address, but the lookup failed.".to_string()
+        };
+
+        self.delete_and_send(command.message, MessageActions::Send::public(
+            &command.message,
+            response
         ))
+
     }
 
 }
 
+
 // Helpers --------------------------------------------------------------------
-fn get_ip() -> String {
+fn resolve_ip() -> Result<String, String> {
 
     let client = Client::new();
-    let mut res = client.get(
-        "https://icanhazip.com/"
+    client.get("https://icanhazip.com/")
+        .header(Connection::close())
+        .send()
+        .map_err(|err| err.to_string())
+        .and_then(|mut res| {
+            let mut body = String::new();
+            res.read_to_string(&mut body)
+               .map_err(|err| err.to_string())
+               .map(|_| body)
 
-    ).header(Connection::close()).send().unwrap();
-
-    let mut body = String::new();
-    res.read_to_string(&mut body).unwrap();
-    body
+        }).and_then(|body| {
+            Ok(body.trim().to_string())
+        })
 
 }
 

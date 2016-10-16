@@ -200,13 +200,15 @@ impl Bot {
 
             // Message Related Events
             DiscordEvent::MessageUpdate { id, channel_id, content, author, .. } => {
-                if !author.is_none() && !content.is_none() {
-                    return self.message_event(
-                        id, channel_id,
-                        content.unwrap(), author.unwrap(),
-                        Vec::new(),
-                        config
-                    );
+                if let Some(content) = content {
+                    if let Some(author) = author {
+                        return self.message_event(
+                            id, channel_id,
+                            content, author,
+                            Vec::new(),
+                            config
+                        );
+                    }
                 }
             },
 

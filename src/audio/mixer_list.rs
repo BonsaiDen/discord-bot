@@ -31,7 +31,7 @@ impl MixerList {
     pub fn update(&mut self) {
 
         // Check if there is either no current source or the current source has ended
-        if self.source.is_none() || !self.source.as_ref().unwrap().is_active() {
+        if !self.is_active() {
 
             // Check if there is another, valid file which should be played
             while let Some(effect) = self.effects.pop() {
@@ -48,7 +48,12 @@ impl MixerList {
     }
 
     pub fn is_active(&self) -> bool {
-        !self.source.is_none() && self.source.as_ref().unwrap().is_active()
+        if let Some(ref source) = self.source {
+            source.is_active()
+
+        } else {
+            false
+        }
     }
 
 }

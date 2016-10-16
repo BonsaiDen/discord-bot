@@ -30,16 +30,6 @@ impl CommandHandler for CommandImpl {
                 "Usage: `!rename <old_effect_name> <new_effect_name>`".to_string()
             ))
 
-        } else if !server.has_effect(&command.arguments[0]) {
-            self.delete_and_send(command.message, MessageActions::Send::public(
-                &command.message,
-                format!(
-                    "A sound effect named `{}` does not exist on {}.",
-                    command.arguments[0],
-                    server.name
-                )
-            ))
-
         } else if server.has_effect(&command.arguments[1]) {
             self.delete_and_send(command.message, MessageActions::Send::public(
                 &command.message,
@@ -50,12 +40,22 @@ impl CommandHandler for CommandImpl {
                 )
             ))
 
-        } else {
+        } else if let Some(effect) = server.get_effect(&command.arguments[0]) {
             vec![EffectActions::Rename::new(
                 command.message,
-                server.get_effect(&command.arguments[0]).unwrap(),
+                effect,
                 command.arguments[1].clone()
             )]
+
+        } else {
+            self.delete_and_send(command.message, MessageActions::Send::public(
+                &command.message,
+                format!(
+                    "A sound effect named `{}` does not exist on {}.",
+                    command.arguments[0],
+                    server.name
+                )
+            ))
         }
     }
 

@@ -293,16 +293,16 @@ impl Server {
                     bot_config
                 ))
 
+            } else if let Some(effect_name) = self.config.greetings.get("effect") {
+                Some(self.map_effects(
+                    &[effect_name.to_string()],
+                    false,
+                    bot_config
+                ))
+
             } else {
                 None
             }
-
-        } else if let Some(effect_name) = self.config.greetings.get("effect") {
-            Some(self.map_effects(
-                &[effect_name.to_string()],
-                false,
-                bot_config
-            ))
 
         } else {
             None
@@ -530,7 +530,7 @@ impl Server {
 
             VoiceStateResult::UpdateServerVoice => {
 
-                if self.voice_channel_id.is_some() {
+                if self.voice_channel_id.is_some() {
                     if voice_state.channel_id.is_some() {
                         self.left_voice();
                         self.joined_voice(voice_state.channel_id.unwrap());
