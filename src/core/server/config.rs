@@ -64,27 +64,9 @@ impl ServerConfig {
 
         let mut toml: BTreeMap<String, toml::Value> = BTreeMap::new();
 
-        // TODO dry
-        let list = toml::Value::Array(self.admins.iter().map(|nickname| {
-            toml::Value::String(nickname.to_string())
-
-        }).collect());
-
-        toml.insert("admins".to_string(), list);
-
-        let list = toml::Value::Array(self.uploaders.iter().map(|nickname| {
-            toml::Value::String(nickname.to_string())
-
-        }).collect());
-
-        toml.insert("uploaders".to_string(), list);
-
-        let list = toml::Value::Array(self.banned.iter().map(|nickname| {
-            toml::Value::String(nickname.to_string())
-
-        }).collect());
-
-        toml.insert("banned".to_string(), list);
+        toml.insert("admins".to_string(), to_toml_strings(&self.admins));
+        toml.insert("uploaders".to_string(), to_toml_strings(&self.uploaders));
+        toml.insert("banned".to_string(), to_toml_strings(&self.banned));
 
         let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
         for (nickname, effect) in &self.greetings {
@@ -97,13 +79,7 @@ impl ServerConfig {
 
         let mut table: BTreeMap<String, toml::Value> = BTreeMap::new();
         for (alias, effects) in &self.aliases {
-            table.insert(
-                alias.clone(),
-                toml::Value::Array(effects.iter().map(|e| {
-                    toml::Value::String(e.to_string())
-
-                }).collect())
-            );
+            table.insert(alias.clone(), to_toml_strings(effects));
         }
         toml.insert("aliases".to_string(), toml::Value::Table(table));
 
@@ -114,9 +90,6 @@ impl ServerConfig {
     pub fn decode_from_toml(&mut self, value: BTreeMap<String, toml::Value>) {
 
         self.aliases.clear();
-        self.greetings.clear();
-        self.admins.clear();
-        self.uploaders.clear();
 
         if let Some(&toml::Value::Table(ref table)) = value.get("aliases") {
             for (alias, names) in table {
@@ -132,43 +105,41 @@ impl ServerConfig {
             }
         }
 
+        self.greetings.clear();
+
         if let Some(&toml::Value::Table(ref table)) = value.get("greetings") {
             for (nickname, effect) in table {
                 if let toml::Value::String(ref effect) = *effect {
-                    self.greetings.insert(
-                        nickname.clone(),
-                        effect.clone()
-                    );
+                    self.greetings.insert(nickname.clone(), effect.clone());
                 }
             }
         }
 
-        // TODO dry
-        if let Some(&toml::Value::Array(ref nicknames)) = value.get("admins") {
-            for nickname in nicknames {
-                if let toml::Value::String(ref nickname) = *nickname {
-                    self.admins.push(nickname.clone());
-                }
-            }
-        }
-
-        if let Some(&toml::Value::Array(ref nicknames)) = value.get("uploaders") {
-            for nickname in nicknames {
-                if let toml::Value::String(ref nickname) = *nickname {
-                    self.uploaders.push(nickname.clone());
-                }
-            }
-        }
-
-        if let Some(&toml::Value::Array(ref nicknames)) = value.get("banned") {
-            for nickname in nicknames {
-                if let toml::Value::String(ref nickname) = *nickname {
-                    self.banned.push(nickname.clone());
-                }
-            }
-        }
+        self.admins = from_toml_strings(value.get("admins"));
+        self.uploaders = from_toml_strings(value.get("uploaders"));
+        self.banned = from_toml_strings(value.get("banned"));
 
     }
 
+}
+
+// Helpers --------------------------------------------------------------------
+fn to_toml_strings(items: &[String]) -> toml::Value {
+    toml::Value::Array(items.iter().map(|item| {
+        toml::Value::String(item.to_string())
+
+    }).collect())
+}
+
+fn from_toml_strings(array: Option<&toml::Value>) -> Vec<String> {
+    let mut items = Vec::new();
+    if let Some(&toml::Value::Array(ref array)) = array {
+        for item in array {
+            if let toml::Value::String(ref item) = *item {
+                items.push(item.clone());
+            }
+        }
+    }
+    items
 }
 

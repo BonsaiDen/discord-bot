@@ -176,11 +176,7 @@ impl Server {
 // Voice Interface ------------------------------------------------------------
 impl Server {
 
-    fn join_voice(
-        &mut self,
-        channel_id: &ChannelId,
-        queue: &mut EventQueue
-    ) {
+    fn join_voice(&mut self, channel_id: &ChannelId, queue: &mut EventQueue) {
 
         // Check voice channel permissions
         let permissions = self.get_bot_permissions(channel_id);
