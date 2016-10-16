@@ -212,7 +212,7 @@ impl EffectRegistry {
 }
 
 
-// Internal Inteface ----------------------------------------------------------
+// Internal Interface ---------------------------------------------------------
 impl EffectRegistry {
 
     fn map_from_pattern(
@@ -306,42 +306,7 @@ impl EffectRegistry {
 
         filter_dir(&config.effects_path, "flac", |name, path| {
 
-            // Try to load a transcript if present
-            let mut transcript_path = path.clone();
-            transcript_path.set_extension("txt");
-
-            let transcript = if let Ok(mut file) = File::open(transcript_path) {
-
-                let mut text = String::new();
-                file.read_to_string(&mut text).expect("Failed to read flac transcript.");
-
-                // Remove linebreaks
-                text = text.to_lowercase().replace(|c| {
-                    match c {
-                        '\n' | '\r' | '\t' => true,
-                        _ => false
-                    }
-
-                }, " ");
-
-                // Split up into unique words
-                let mut parts: Vec<String> = text.split(' ').filter(|s| {
-                    !s.trim().is_empty()
-
-                }).map(|s| {
-                    s.to_string()
-
-                }).collect();
-
-                parts.dedup();
-
-                Some(parts)
-
-            } else {
-                None
-            };
-
-            // Create effect from flac
+            let transcript = load_transcript(path.clone());
             let descriptor: Vec<&str> = name.split('.').collect();
             let effect = match *descriptor.as_slice() {
                 [name, uploader] => {
@@ -370,6 +335,7 @@ impl EffectRegistry {
         info!("{} Effects loaded.", self);
 
     }
+
 
 }
 
@@ -500,6 +466,43 @@ fn filter_dir<F: FnMut(String, PathBuf)>(
             }
         }
     }
+}
+
+fn load_transcript(mut flac_path: PathBuf) -> Option<Vec<String>> {
+
+    flac_path.set_extension("txt");
+
+    if let Ok(mut file) = File::open(flac_path) {
+
+        let mut text = String::new();
+        file.read_to_string(&mut text).expect("Failed to read flac transcript.");
+
+        // Remove linebreaks
+        text = text.to_lowercase().replace(|c| {
+            match c {
+                '\n' | '\r' | '\t' => true,
+                _ => false
+            }
+
+        }, " ");
+
+        // Split up into unique words
+        let mut parts: Vec<String> = text.split(' ').filter(|s| {
+            !s.trim().is_empty()
+
+        }).map(|s| {
+            s.to_string()
+
+        }).collect();
+
+        parts.dedup();
+
+        Some(parts)
+
+    } else {
+        None
+    }
+
 }
 
 fn download_file(

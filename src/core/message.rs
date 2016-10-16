@@ -12,11 +12,23 @@ use ::command::Command;
 
 
 // Message Origin for Server specific Commands --------------------------------
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub enum MessageOrigin {
     PublicServerChannel,
     PrivateServerChannel,
     DirectMessage
+}
+
+impl MessageOrigin {
+
+    pub fn is_unique(&self) -> bool {
+        match *self {
+            MessageOrigin::PublicServerChannel => true,
+            MessageOrigin::PrivateServerChannel => true,
+            MessageOrigin::DirectMessage => false
+        }
+    }
+
 }
 
 

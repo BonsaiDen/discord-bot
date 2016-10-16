@@ -1,8 +1,8 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
+use ::core::{Member, Server};
 use ::action::{ActionGroup, BanActions};
 use ::command::{Command, CommandHandler};
-use ::core::{Member, MessageOrigin, Server};
 
 
 // Command Implementation -----------------------------------------------------
@@ -18,7 +18,7 @@ impl CommandHandler for CommandImpl {
         _: &BotConfig
 
     ) -> ActionGroup {
-        if command.message.origin == MessageOrigin::DirectMessage {
+        if !command.message.origin.is_unique() {
             self.requires_unique_server(command)
 
         } else if !member.is_admin {

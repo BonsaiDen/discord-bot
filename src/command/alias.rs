@@ -1,7 +1,7 @@
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
 use ::command::{Command, CommandHandler};
-use ::core::{Member, MessageOrigin, Server};
+use ::core::{Member, Server};
 use ::action::{ActionGroup, AliasActions, MessageActions};
 
 
@@ -79,7 +79,7 @@ impl CommandHandler for CommandImpl {
         _: &BotConfig
 
     ) -> ActionGroup {
-        if command.message.origin == MessageOrigin::DirectMessage {
+        if !command.message.origin.is_unique() {
             self.requires_unique_server(command)
 
         } else if command.arguments.len() < 2 {

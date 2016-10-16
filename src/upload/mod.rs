@@ -18,7 +18,7 @@ use flac::{ByteStream, Stream};
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::{Member, Message, MessageOrigin, Server};
+use ::core::{Member, Message, Server};
 use ::action::{ActionGroup, ServerActions, MessageActions};
 
 
@@ -93,7 +93,7 @@ impl Upload {
                 "Only whitelisted users can upload sound effects.".to_string()
             )]
 
-        } else if self.message.origin == MessageOrigin::DirectMessage {
+        } else if !self.message.origin.is_unique() {
             vec![MessageActions::Send::private(
                 &self.message,
                 "FLAC uploads require a unique server as their target.
