@@ -107,7 +107,7 @@ impl CommandHandler for CommandImpl {
         config: &BotConfig
 
     ) -> ActionGroup {
-        if !command.message.origin.is_unique() {
+        if !command.message.has_unique_server() {
             self.requires_unique_server(command)
 
         } else if command.arguments.len() < 2 {

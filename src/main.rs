@@ -57,7 +57,7 @@ fn main() {
 
             }).collect::<Vec<ServerId>>())
 
-        }).unwrap_or_else(|| Vec::new()),
+        }).unwrap_or_else(Vec::new),
         config_path: PathBuf::from(
             env::var_os("CONFIG_DIRECTORY").unwrap_or("".into())
         ),

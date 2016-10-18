@@ -84,17 +84,14 @@ impl EventQueue {
         callback: C
     ) {
         let voice_connection = self.receiver.connection.voice(Some(server_id));
-        info!("[EL] Create voice connection for Channel#{} on Server#{}", channel_id, server_id);
+        info!("[EL] Creating voice connection for Channel#{} on Server#{}", channel_id, server_id);
         voice_connection.connect(channel_id);
         callback(voice_connection);
     }
 
     pub fn disconnect_server_voice(&mut self, server_id: ServerId) {
+        info!("[EL] Dropping voice connection for Server#{}", server_id);
         self.receiver.connection.drop_voice(Some(server_id));
-    }
-
-    pub fn shutdown(self) {
-
     }
 
 }
@@ -155,7 +152,10 @@ impl DiscordHandle {
 
     fn from_token(token: String) -> Result<DiscordHandle, String> {
 
-        let discord = Discord::from_bot_token(&token).expect("Discord login failed.");
+        let discord = try!(Discord::from_bot_token(&token).map_err(|err| {
+            err.to_string()
+        }));
+
         match discord.connect() {
             Ok((conn, ready)) => Ok(DiscordHandle {
                 token: token,

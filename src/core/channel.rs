@@ -22,8 +22,8 @@ use ::core::member::Member;
 pub struct Channel {
     pub id: ChannelId,
     pub server_id: Option<ServerId>,
-    pub name: String,
-    pub is_voice: bool,
+    name: String,
+    is_voice: bool,
     voice_members: Vec<UserId>,
     permissions: Vec<PermissionOverwrite>
 }
@@ -125,7 +125,7 @@ impl fmt::Display for Channel {
         if self.is_voice {
             write!(
                 f,
-                "[Voice Channel {} {} voice(s)]",
+                "[Voice Channel {} {} speaker(s)]",
                 self.name, self.voice_members.len()
             )
 

@@ -93,7 +93,7 @@ impl Upload {
                 "Only whitelisted users can upload sound effects.".to_string()
             )]
 
-        } else if !self.message.origin.is_unique() {
+        } else if !self.message.has_unique_server() {
             vec![MessageActions::Send::private(
                 &self.message,
                 "FLAC uploads require a unique server as their target.

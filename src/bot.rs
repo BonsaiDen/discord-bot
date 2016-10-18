@@ -20,7 +20,7 @@ use core::{
     Channel,
     Event, EventQueue,
     Member,
-    Message, MessageKind, MessageOrigin,
+    Message, MessageContent,
     Server
 };
 
@@ -106,7 +106,7 @@ impl Bot {
 
                     let mut next_actions = Vec::new();
                     for action in actions.drain(0..) {
-                        println!("[Bot] Running {}...", action);
+                        info!("[Bot] Running {}...", action);
                         next_actions.extend(action.run(&mut self, &config, &mut queue));
                     }
 
@@ -118,8 +118,6 @@ impl Bot {
 
         }
 
-        queue.shutdown();
-
     }
 
 }
@@ -128,7 +126,7 @@ impl Bot {
 // Event Handling -------------------------------------------------------------
 impl Bot {
 
-    fn event(&mut self, event: Event) -> ActionGroup{
+    fn event(&mut self, event: Event) -> ActionGroup {
         info!("[Bot] Event: {:?}", event);
         vec![]
     }
@@ -267,27 +265,39 @@ impl Bot {
 
     ) -> ActionGroup {
 
-        let mut actions = Vec::new();
         if author.bot {
             info!("[Bot] Ignored message from a bot.");
+            vec![]
 
-        } else if let Some(origin) = self.get_origin_from_message(
+        } else if let Some((server_id, is_unique_server)) = self.get_server_for_channel(
             &channel_id,
-            &author.id,
+            &author.id
         ) {
             info!("[Bot] Parsing message from whitelisted server...");
 
-            for kind in Message::parse(
-                id, author.id, channel_id, content, attachments, origin
-            ) {
-                actions.extend(match kind {
-                    MessageKind::Command(command) => self.command_event(command, config),
-                    MessageKind::Upload(upload) => self.upload_event(upload, config)
-                })
-            }
-        }
+            let message = Message::from_parts(
+                id,
+                author.id,
+                channel_id,
+                server_id,
+                is_unique_server
+            );
 
-        actions
+            message.parse_contents(content, attachments).into_iter().flat_map(|content| {
+                match content {
+                    MessageContent::Command(command) => {
+                        self.command_event(command, config)
+                    },
+                    MessageContent::Upload(upload) => {
+                        self.upload_event(upload, config)
+                    }
+                }
+
+            }).collect()
+
+        } else {
+            vec![]
+        }
 
     }
 
@@ -317,23 +327,23 @@ impl Bot {
 // Internal Utilities ---------------------------------------------------------
 impl Bot {
 
-    fn get_origin_from_message(
+    fn get_server_for_channel(
         &self,
         channel_id: &ChannelId,
         user_id: &UserId
 
-    ) -> Option<(ServerId, MessageOrigin)> {
+    ) -> Option<(ServerId, bool)> {
 
         for (server_id, server) in &self.servers {
             if server.has_channel(channel_id) {
-                return Some((*server_id, MessageOrigin::PublicServerChannel));
+                return Some((*server_id, true));
 
             } else if server.has_member(user_id) {
                 if self.servers.len() == 1 {
-                    return Some((*server_id, MessageOrigin::PrivateServerChannel));
+                    return Some((*server_id, true));
 
                 } else {
-                    return Some((*server_id, MessageOrigin::DirectMessage));
+                    return Some((*server_id, false));
                 }
             }
         }

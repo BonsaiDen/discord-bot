@@ -11,29 +11,8 @@ use ::upload::Upload;
 use ::command::Command;
 
 
-// Message Origin for Server specific Commands --------------------------------
-#[derive(Debug, Copy, Clone)]
-pub enum MessageOrigin {
-    PublicServerChannel,
-    PrivateServerChannel,
-    DirectMessage
-}
-
-impl MessageOrigin {
-
-    pub fn is_unique(&self) -> bool {
-        match *self {
-            MessageOrigin::PublicServerChannel => true,
-            MessageOrigin::PrivateServerChannel => true,
-            MessageOrigin::DirectMessage => false
-        }
-    }
-
-}
-
-
-// Message Kind Abstraction ---------------------------------------------------
-pub enum MessageKind {
+// Message Content Abstraction ------------------------------------------------
+pub enum MessageContent {
     Command(Command),
     Upload(Upload)
 }
@@ -43,58 +22,64 @@ pub enum MessageKind {
 #[derive(Debug, Copy, Clone)]
 pub struct Message {
     pub id: MessageId,
+    pub user_id: UserId,
     pub channel_id: ChannelId,
     pub server_id: ServerId,
-    pub user_id: UserId,
-    pub origin: MessageOrigin
+    server_is_unique: bool
 }
 
 
 // Public Interface -----------------------------------------------------------
 impl Message {
 
-    pub fn parse(
+    pub fn from_parts(
         id: MessageId,
         user_id: UserId,
         channel_id: ChannelId,
-        content: String,
-        attachments: Vec<Attachment>,
-        origin: (ServerId, MessageOrigin)
+        server_id: ServerId,
+        server_is_unique: bool
 
-    ) -> Vec<MessageKind> {
-
-        let message = Message {
+    ) -> Message {
+        Message {
             id: id,
-            channel_id: channel_id,
-            server_id: origin.0,
             user_id: user_id,
-            origin: origin.1
-        };
+            channel_id: channel_id,
+            server_id: server_id,
+            server_is_unique: server_is_unique
+        }
+    }
 
-        info!("{} received", message);
+    pub fn parse_contents(
+        self,
+        content: String,
+        attachments: Vec<Attachment>
 
-        let mut kinds = Vec::new();
+    ) -> Vec<MessageContent> {
+
+        info!("{} parsing contents...", self);
+
         if content.starts_with('!') {
 
             let mut split = content.split(' ');
             let command_name = split.next().unwrap_or("!");
 
-            kinds.push(MessageKind::Command(Command::new(
+            vec![MessageContent::Command(Command::new(
                 command_name[1..].to_string(),
                 split.map(|s| s.to_string()).collect(),
-                message
-            )));
+                self
+            ))]
 
-        } else if !attachments.is_empty() {
-            for attachment in attachments {
-                kinds.push(MessageKind::Upload(
-                    Upload::new(attachment, message)
-                ));
-            }
+        } else {
+            attachments.into_iter().map(|attachment| {
+                MessageContent::Upload(Upload::new(attachment, self))
+
+            }).collect()
         }
 
-        kinds
+    }
 
+    pub fn has_unique_server(&self) -> bool {
+        self.server_is_unique
     }
 
 }
@@ -102,28 +87,19 @@ impl Message {
 // Traits ---------------------------------------------------------------------
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.origin {
-            MessageOrigin::PublicServerChannel => {
-                write!(
-                    f,
-                    "[Server Message #{} from #{} in #{}(public) for #{}]",
-                    self.id, self.user_id, self.channel_id, self.server_id
-                )
-            },
-            MessageOrigin::PrivateServerChannel => {
-                write!(
-                    f,
-                    "[Server Message #{} from #{} in #{}(private) for #{}]",
-                    self.id, self.user_id, self.channel_id, self.server_id
-                )
-            },
-            MessageOrigin::DirectMessage  => {
-                write!(
-                    f,
-                    "[Private Message #{} from #{} in #{}]",
-                    self.id, self.user_id, self.channel_id
-                )
-            }
+        if self.has_unique_server() {
+            write!(
+                f,
+                "[Server Message #{} from #{} in #{}(public) for #{}]",
+                self.id, self.user_id, self.channel_id, self.server_id
+            )
+
+        } else {
+            write!(
+                f,
+                "[Other Message #{} from #{} in #{}]",
+                self.id, self.user_id, self.channel_id
+            )
         }
     }
 }

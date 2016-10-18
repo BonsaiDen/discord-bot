@@ -87,6 +87,7 @@ impl Member {
         bot_config: &BotConfig
 
     ) -> bool {
+        // TODO cleanup
         if self.voice_channel_id.is_some() {
             let last_leave = self.last_voice_leave
                                  .entry(self.voice_channel_id.unwrap())
