@@ -7,6 +7,7 @@ dependencies = [
  "clock_ticks 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "discord 0.6.0 (git+https://github.com/bonsaiden/discord-rs.git?rev=master)",
  "dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "edit-distance 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "flac 0.3.0 (git+https://github.com/bonsaiden/flac.git?rev=master)",
  "hyper 0.9.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -133,6 +134,11 @@ dependencies = [
 [[package]]
 name = "dtoa"
 version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "edit-distance"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -736,6 +742,7 @@ dependencies = [
 "checksum docopt 0.6.86 (registry+https://github.com/rust-lang/crates.io-index)" = "4a7ef30445607f6fc8720f0a0a2c7442284b629cf0d049286860fae23e71c4d9"
 "checksum dotenv 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "eea1395d2df3b5344dc577809296d9578303296e8d105c408aa80ed67d598ef1"
 "checksum dtoa 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "0dd841b58510c9618291ffa448da2e4e0f699d984d436122372f446dae62263d"
+"checksum edit-distance 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cd50a61206c09132fdf9cbaccc64a82cfccb6be528453903e03d4eb4ec80a61d"
 "checksum flac 0.3.0 (git+https://github.com/bonsaiden/flac.git?rev=master)" = "<none>"
 "checksum flate2 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)" = "3eeb481e957304178d2e782f2da1257f1434dfecbae883bafb61ada2a9fea3bb"
 "checksum gcc 0.3.35 (registry+https://github.com/rust-lang/crates.io-index)" = "91ecd03771effb0c968fd6950b37e89476a578aaf1c70297d8e92b6516ec3312"

@@ -13,6 +13,7 @@ extern crate chrono;
 extern crate dotenv;
 extern crate discord;
 extern crate clock_ticks;
+extern crate edit_distance;
 
 
 // STD Dependencies -----------------------------------------------------------

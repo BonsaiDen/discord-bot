@@ -446,6 +446,13 @@ impl Server {
         )
     }
 
+    pub fn map_similiar_effects(&self, patterns: &[String]) -> Vec<&str> {
+        self.effects.map_similiar(
+            patterns,
+            &self.config.aliases
+        )
+    }
+
     pub fn rename_effect(&mut self, effect: &Effect, effect_name: &str) -> Result<(), String> {
         self.effects.rename_effect(&self.config, effect, effect_name)
     }

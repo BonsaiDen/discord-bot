@@ -13,6 +13,7 @@ use clock_ticks;
 use rand::{thread_rng, Rng};
 use hyper::Client;
 use hyper::header::Connection;
+use edit_distance::edit_distance;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -136,6 +137,37 @@ impl EffectRegistry {
 
         effects
 
+    }
+
+    pub fn map_similiar(
+        &self,
+        patterns: &[String],
+        _: &HashMap<String, Vec<String>>
+
+    ) -> Vec<&str> {
+        self.effects.keys().map(|name| name.as_str()).filter(|name| {
+            patterns.iter().any(|p| {
+
+                let len = p.len();
+                let p = if len > 2 && p.starts_with('*') && p.ends_with('*') {
+                    &p[1..len - 1]
+
+                } else if len > 1 && p.starts_with('*') {
+                    &p[1..]
+
+                } else if len > 1 && p.ends_with('*') {
+                    &p[0..len - 1]
+
+                } else {
+                    p
+                };
+
+                name.ends_with(p) || name.starts_with(p)
+                    || name.contains(p) || edit_distance(name, p) < 3
+
+            })
+
+        }).take(10).collect()
     }
 
     pub fn rename_effect(

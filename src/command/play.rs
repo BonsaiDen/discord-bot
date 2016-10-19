@@ -59,15 +59,29 @@ impl CommandHandler for CommandImpl {
             );
 
             if effects.is_empty() {
-                // TODO provide a listing of similiar sounds
-                self.delete_and_send(command.message, MessageActions::Send::private(
-                    &command.message,
-                    format!(
-                        "No effect(s) matching `{}` found on {}.",
-                        command.arguments.join("`, `"),
-                        server.name
-                    )
-                ))
+
+                let similiar = server.map_similiar_effects(&command.arguments[..]);
+                if similiar.is_empty() {
+                    self.delete_and_send(command.message, MessageActions::Send::private(
+                        &command.message,
+                        format!(
+                            "No effect(s) matching `{}` were found on {}.",
+                            command.arguments.join("`, `"),
+                            server.name
+                        )
+                    ))
+
+                } else {
+                    self.delete_and_send(command.message, MessageActions::Send::private(
+                        &command.message,
+                        format!(
+                            "No effect(s) matching `{}` were found on {}.\n\n**Perhaps meant one of the following:**\n\n`{}`",
+                            command.arguments.join("`, `"),
+                            server.name,
+                            similiar.join("`, `")
+                        )
+                    ))
+                }
 
             } else if let Some(channel_id) = member.voice_channel_id {
                 self.delete_and_send(command.message, EffectActions::Play::new(
