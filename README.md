@@ -4,7 +4,7 @@
 2. Clone the repository
 3. Setup the project to use rust nightly `rustup override add nightly`
 4. Create a bot application at https://discordapp.com/developers/applications/me
-5. Create a `.env` file containing the general bot confuration:
+5. Create a `.env` file containing the general bot configuration:
 
   ```env
   DISCORD_BOT_TOKEN=<YOUR_BOT_TOKEN>
@@ -21,6 +21,7 @@
   
 7. Compile and run the bot via `cargo run`
 
+8. Then message `!help` in a channel of your server where the bot is present.
 
 ## License
 
