@@ -82,19 +82,14 @@ impl Member {
         }
     }
 
-    pub fn should_be_greeted(
-        &mut self,
-        bot_config: &BotConfig
-
-    ) -> bool {
-        // TODO cleanup
+    pub fn should_be_greeted(&mut self, bot_config: &BotConfig ) -> bool {
         if self.voice_channel_id.is_some() {
-            let last_leave = self.last_voice_leave
-                                 .entry(self.voice_channel_id.unwrap())
-                                 .or_insert(0);
+            let now = clock_ticks::precise_time_ms();
+            let time = self.last_voice_leave
+                           .entry(self.voice_channel_id.unwrap())
+                           .or_insert(0);
 
-            clock_ticks::precise_time_ms() - *last_leave
-                > bot_config.greeting_separation_ms
+            now - *time > bot_config.greeting_separation_ms
 
         } else {
             false
