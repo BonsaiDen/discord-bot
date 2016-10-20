@@ -90,7 +90,7 @@ impl Upload {
         if !member.is_uploader {
             vec![MessageActions::Send::private(
                 &self.message,
-                "Only whitelisted users can upload sound effects.".to_string()
+                "Only white listed users can upload sound effects.".to_string()
             )]
 
         } else if !self.message.has_unique_server() {
@@ -151,7 +151,7 @@ impl fmt::Display for Upload {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ref flac) = self.flac_info {
             write!(
-                f, "[Flac upload \"{}\" with {} from user #{} on server #{}]",
+                f, "[FLAC upload \"{}\" with {} from user #{} on server #{}]",
                 self.name, flac, self.message.user_id, self.message.server_id
             )
         } else {
@@ -191,7 +191,7 @@ fn retrieve_flac_info(url: String) -> Result<FlacInfo, String> {
         })
         .and_then(|(length, header)| {
             Stream::<ByteStream>::from_buffer(&header[..])
-                .map_err(|_| "Failed to parse flac header.".to_string())
+                .map_err(|_| "Failed to parse FLAC header.".to_string())
                 .map(|stream| {
                     let stream_info = stream.info();
                     FlacInfo {

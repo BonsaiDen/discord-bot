@@ -88,7 +88,7 @@ impl Mixer {
                         self.active_sources.push(MixerList::new(effects));
                     },
                     MixerCommand::QueueEffects(effects) => {
-                        info!("{} Queing effects list...", self);
+                        info!("{} Queueing effects list...", self);
                         self.queued_sources.push_back(MixerList::new(effects));
                     },
                     MixerCommand::ClearQueue => {
@@ -98,8 +98,8 @@ impl Mixer {
                     }
                 }
 
-            // If there is no next comman in the queue and we currently have no active
-            // sources, pop a source from the queued stack and make it active
+            // If there is no next command in the queue and we currently have no
+            // active sources, pop a source from the queued stack and make it active
             } else if self.active_sources.is_empty() {
                 if let Some(source) = self.queued_sources.pop_front() {
                     self.active_sources.push(source);

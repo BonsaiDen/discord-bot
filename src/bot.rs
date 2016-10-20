@@ -283,7 +283,7 @@ impl Bot {
             &channel_id,
             &author.id
         ) {
-            info!("[Bot] Parsing message from whitelisted server...");
+            info!("[Bot] Parsing message from white listed server...");
 
             let message = Message::from_parts(
                 id,
@@ -312,7 +312,7 @@ impl Bot {
     }
 
     fn command_event(&mut self, command: Command, config: &BotConfig) -> ActionGroup {
-        info!("[Bot] Potenial {} received...", command);
+        info!("[Bot] Potential {} received...", command);
         if let Some((server, member)) = self.get_server_and_member(&command.message) {
             command.parse(server, member, config)
 
@@ -322,7 +322,7 @@ impl Bot {
     }
 
     fn upload_event(&mut self, upload: Upload, config: &BotConfig) -> ActionGroup {
-        info!("[Bot] Potenial {} received...", upload);
+        info!("[Bot] Potential {} received...", upload);
         if let Some((server, member)) = self.get_server_and_member(&upload.message) {
             upload.process(server, member, config)
 
