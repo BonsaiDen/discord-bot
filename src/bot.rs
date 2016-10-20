@@ -142,11 +142,21 @@ impl Bot {
 
             // Server Related Events
             DiscordEvent::ServerCreate(server) => {
+
                 let server_id = Server::id_from_possible_server(&server);
-                if config.server_whitelist.contains(&server_id) {
+
+                if self.servers.contains_key(&server_id) {
+                    // In case of a client reconnect, also reconnect any existing
+                    // voice connections
+                    if let Some(mut server) = self.servers.get_mut(&server_id) {
+                        server.reconnect_voice(queue);
+                    }
+
+                } else if config.server_whitelist.contains(&server_id) {
                     let server = Server::from_possible_server(server, config, queue);
                     self.servers.insert(server.id, server);
                 }
+
             },
             DiscordEvent::ServerUpdate(updated_server) => {
                 if let Some(server) = self.servers.get_mut(&updated_server.id) {

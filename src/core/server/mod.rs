@@ -217,6 +217,14 @@ impl Server {
         }
     }
 
+    pub fn reconnect_voice(&mut self, queue: &mut EventQueue) {
+        if self.voice_status == ServerVoiceStatus::Joined {
+            info!("{} Reconnecting voice...", self);
+            let channel_id = self.voice_channel_id.take().unwrap();
+            self.join_voice(&channel_id, queue);
+        }
+    }
+
     pub fn leave_voice(&mut self, queue: &mut EventQueue) {
         if let Some(channel_id) = self.voice_channel_id {
 
