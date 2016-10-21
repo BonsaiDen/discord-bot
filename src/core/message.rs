@@ -6,15 +6,10 @@ use std::fmt;
 use discord::model::{Attachment, MessageId, ChannelId, UserId, ServerId};
 
 
-// Internal Dependencies ------------------------------------------------------
-use ::upload::Upload;
-use ::command::Command;
-
-
 // Message Content Abstraction ------------------------------------------------
 pub enum MessageContent {
-    Command(Command),
-    Upload(Upload)
+    Command(String, Vec<String>, Message),
+    Upload(Attachment, Message)
 }
 
 
@@ -63,15 +58,15 @@ impl Message {
             let mut split = content.split(' ');
             let command_name = split.next().unwrap_or("!");
 
-            vec![MessageContent::Command(Command::new(
+            vec![MessageContent::Command(
                 command_name[1..].to_string(),
                 split.map(|s| s.to_string()).collect(),
                 self
-            ))]
+            )]
 
         } else {
             attachments.into_iter().map(|attachment| {
-                MessageContent::Upload(Upload::new(attachment, self))
+                MessageContent::Upload(attachment, self)
 
             }).collect()
         }

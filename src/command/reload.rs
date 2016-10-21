@@ -1,40 +1,28 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, MessageActions, ServerActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        server: &Server,
-        member: &Member,
-        _: &BotConfig
+    require_unique_server!();
 
-    ) -> ActionGroup {
-        if !command.message.has_unique_server() {
-            self.requires_unique_server(command)
-
-        } else {
-            vec![
-                ServerActions::Reload::new(command.message),
-                MessageActions::Delete::new(command.message),
-                MessageActions::Send::public(
-                    &command.message,
-                    format!(
-                        "{} requested a configuration reload for {}.",
-                        member.nickname,
-                        server.name
-                    )
+    fn run(&self, command: Command) -> ActionGroup {
+        vec![
+            ServerActions::Reload::new(command.message),
+            MessageActions::Delete::new(command.message),
+            MessageActions::Send::public(
+                &command.message,
+                format!(
+                    "{} requested a configuration reload for {}.",
+                    command.member.nickname,
+                    command.server.name
                 )
-            ]
-        }
+            )
+        ]
     }
 
 }

@@ -1,23 +1,14 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        _: &Server,
-        _: &Member,
-        _: &BotConfig
-
-    ) -> ActionGroup {
+    fn run(&self, command: Command) -> ActionGroup {
         vec![MessageActions::Send::private(
             &command.message,
             format!(

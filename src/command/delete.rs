@@ -1,36 +1,19 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        server: &Server,
-        member: &Member,
-        _: &BotConfig
+    require_unique_server!();
+    require_server_admin!();
+    require_exact_arguments!(1);
 
-    ) -> ActionGroup {
-        if !command.message.has_unique_server() {
-            self.requires_unique_server(command)
-
-        } else if !member.is_admin {
-            self.requires_admin(command)
-
-        } else if command.arguments.len() != 1 {
-            self.delete_and_send(command.message, MessageActions::Send::public(
-                &command.message,
-                "Usage: `!delete <effect_name>`".to_string()
-            ))
-
-        } else if let Some(effect) = server.get_effect(&command.arguments[0]) {
+    fn run(&self, command: Command) -> ActionGroup {
+        if let Some(effect) = command.server.get_effect(&command.arguments[0]) {
             vec![EffectActions::Delete::new(
                 command.message,
                 effect
@@ -45,6 +28,13 @@ impl CommandHandler for CommandImpl {
                 )
             ))
         }
+    }
+
+    fn usage(&self, command: Command) -> ActionGroup {
+        self.delete_and_send(command.message, MessageActions::Send::public(
+            &command.message,
+            "Usage: `!delete <effect_name>`".to_string()
+        ))
     }
 
 }

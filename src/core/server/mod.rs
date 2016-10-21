@@ -64,6 +64,7 @@ pub struct Server {
 
     effects: EffectRegistry,
     voice_channel_id: Option<ChannelId>,
+    // pinned_channel_id: Option<ChannelId>, TODO allow for channel pinning
     voice_status: ServerVoiceStatus,
     mixer_queue: MixerQueue,
 

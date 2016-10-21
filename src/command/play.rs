@@ -1,45 +1,35 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl {
+pub struct Handler {
     queued: bool
 }
 
-impl CommandImpl {
+impl Handler {
 
-    pub fn instant() -> CommandImpl {
-        CommandImpl {
+    pub fn instant() -> Handler {
+        Handler {
             queued: false
         }
     }
 
-    pub fn queued() -> CommandImpl {
-        CommandImpl {
+    pub fn queued() -> Handler {
+        Handler {
             queued: true
         }
     }
 
 }
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        server: &Server,
-        member: &Member,
-        config: &BotConfig
+    require_unique_server!();
 
-    ) -> ActionGroup {
-        if !command.message.has_unique_server() {
-            self.requires_unique_server(command)
-
-        } else if command.arguments.is_empty() {
+    fn run(&self, command: Command) -> ActionGroup {
+        if command.arguments.is_empty() {
             self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!("Usage: `!{} <effect_name>`", if self.queued {
@@ -52,22 +42,22 @@ impl CommandHandler for CommandImpl {
 
         } else {
 
-            let effects = server.map_effects(
+            let effects = command.server.map_effects(
                 &command.arguments[..],
                 false,
-                config
+                command.config
             );
 
             if effects.is_empty() {
 
-                let similiar = server.map_similiar_effects(&command.arguments[..]);
+                let similiar = command.server.map_similiar_effects(&command.arguments[..]);
                 if similiar.is_empty() {
                     self.delete_and_send(command.message, MessageActions::Send::private(
                         &command.message,
                         format!(
                             "No effect(s) matching `{}` were found on {}.",
                             command.arguments.join("`, `"),
-                            server.name
+                            command.server.name
                         )
                     ))
 
@@ -77,13 +67,13 @@ impl CommandHandler for CommandImpl {
                         format!(
                             "No effect(s) matching `{}` were found on {}.\n\n**Perhaps meant one of the following:**\n\n`{}`",
                             command.arguments.join("`, `"),
-                            server.name,
+                            command.server.name,
                             similiar.join("`, `")
                         )
                     ))
                 }
 
-            } else if let Some(channel_id) = member.voice_channel_id {
+            } else if let Some(channel_id) = command.member.voice_channel_id {
                 self.delete_and_send(command.message, EffectActions::Play::new(
                     command.message.server_id,
                     channel_id,
@@ -96,7 +86,7 @@ impl CommandHandler for CommandImpl {
                     &command.message,
                     format!(
                         "You must be in a voice channel on {} in order to play sound effects.",
-                        server.name
+                        command.server.name
                     )
                 ))
             }

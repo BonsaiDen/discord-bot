@@ -1,14 +1,35 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
 use ::command::{Command, CommandHandler};
-use ::core::{Member, Server};
 use ::action::{ActionGroup, AliasActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandImpl {
+impl CommandHandler for Handler {
+
+    require_unique_server!();
+    require_min_arguments!(2);
+
+    fn run(&self, command: Command) -> ActionGroup {
+        match command.arguments[0].as_str() {
+            "add" => if command.arguments.len() < 3 {
+                self.usage(command)
+
+            } else {
+                self.add(
+                    &command,
+                    &command.arguments[1],
+                    &command.arguments[2..]
+                )
+            },
+            "remove" => self.remove(
+                &command,
+                &command.arguments[1],
+            ),
+            _ => self.usage(command)
+        }
+    }
 
     fn usage(&self, command: Command) -> ActionGroup {
         self.delete_and_send(command.message, MessageActions::Send::private(
@@ -17,20 +38,23 @@ impl CommandImpl {
         ))
     }
 
+}
+
+impl Handler {
+
     fn add(
         &self,
-        server: &Server,
         command: &Command,
         alias: &str,
         effect_names: &[String]
 
     ) -> ActionGroup {
-        if server.has_alias(alias) {
+        if command.server.has_alias(alias) {
             self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!(
                     "An alias named `{}` already exists on {}.",
-                    alias, server.name
+                    alias, command.server.name
                 )
             ))
 
@@ -43,19 +67,13 @@ impl CommandImpl {
         }
     }
 
-    fn remove(
-        &self,
-        server: &Server,
-        command: &Command,
-        alias: &str
-
-    ) -> ActionGroup {
-        if server.has_alias(alias) {
+    fn remove(&self, command: &Command, alias: &str) -> ActionGroup {
+        if command.server.has_alias(alias) {
             self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
                 format!(
                     "An alias named `{}` does not exist on {}.",
-                    alias, server.name
+                    alias, command.server.name
                 )
             ))
 
@@ -65,48 +83,6 @@ impl CommandImpl {
                 alias.to_string()
             ))
         }
-    }
-
-}
-
-impl CommandHandler for CommandImpl {
-
-    fn run(
-        &self,
-        command: Command,
-        server: &Server,
-        _: &Member,
-        _: &BotConfig
-
-    ) -> ActionGroup {
-        if !command.message.has_unique_server() {
-            self.requires_unique_server(command)
-
-        } else if command.arguments.len() < 2 {
-            self.usage(command)
-
-        } else {
-            match command.arguments[0].as_str() {
-                "add" => if command.arguments.len() < 3 {
-                    self.usage(command)
-
-                } else {
-                    self.add(
-                        server,
-                        &command,
-                        &command.arguments[1],
-                        &command.arguments[2..]
-                    )
-                },
-                "remove" => self.remove(
-                    server,
-                    &command,
-                    &command.arguments[1],
-                ),
-                _ => self.usage(command)
-            }
-        }
-
     }
 
 }

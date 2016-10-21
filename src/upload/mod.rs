@@ -53,7 +53,7 @@ pub struct Upload {
 // Public Interface -----------------------------------------------------------
 impl Upload {
 
-    pub fn new(
+    pub fn from_message(
         attachment: Attachment,
         message: Message
 

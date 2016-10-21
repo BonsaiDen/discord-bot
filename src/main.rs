@@ -33,6 +33,7 @@ use discord::model::ServerId;
 mod action;
 mod audio;
 mod bot;
+#[macro_use]
 mod command;
 mod core;
 mod effect;

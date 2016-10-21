@@ -1,6 +1,4 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, MessageActions};
 
@@ -46,18 +44,11 @@ Also, a effect with the same name may not yet exist.";
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        _: &Server,
-        _: &Member,
-        _: &BotConfig
-
-    ) -> ActionGroup {
+    fn run(&self, command: Command) -> ActionGroup {
         vec![
             MessageActions::Delete::new(command.message),
             MessageActions::Send::private(&command.message, HELP_TEXT_ONE.to_string()),

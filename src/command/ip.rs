@@ -8,30 +8,21 @@ use hyper::header::Connection;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        _: &Server,
-        member: &Member,
-        _: &BotConfig
-
-    ) -> ActionGroup {
+    fn run(&self, command: Command) -> ActionGroup {
 
         let response = match resolve_ip() {
             Ok(ip) => format!(
                 "{} has requested my public IP address which is: {}.",
-                member.nickname,
+                command.member.nickname,
                 ip
             ),
             Err(_) => "{} has requested my public IP address, but the lookup failed.".to_string()

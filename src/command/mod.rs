@@ -2,6 +2,44 @@
 use std::fmt;
 
 
+// Macros ---------------------------------------------------------------------
+#[macro_export]
+macro_rules! require_unique_server {
+    () => (
+        fn require_unique_server(&self) -> bool {
+            true
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! require_server_admin {
+    () => (
+        fn require_server_admin(&self) -> bool {
+            true
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! require_min_arguments {
+    ($count:expr) => (
+        fn require_min_arguments(&self) -> usize {
+            $count
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! require_exact_arguments {
+    ($count:expr) => (
+        fn require_exact_arguments(&self) -> Option<usize> {
+            Some($count)
+        }
+    );
+}
+
+
 // Modules --------------------------------------------------------------------
 mod alias;
 mod aliases;
@@ -28,63 +66,101 @@ use ::action::{Action, ActionGroup, MessageActions};
 
 
 // Command Abstraction --------------------------------------------------------
-#[derive(Debug)]
-pub struct Command {
+pub struct Command<'a> {
     pub name: String,
     pub arguments: Vec<String>,
-    pub message: Message
+    pub message: Message,
+    pub server: &'a Server,
+    pub member: &'a Member,
+    pub config: &'a BotConfig
 }
 
 
 // Public Interface -----------------------------------------------------------
-impl Command {
+impl<'a> Command<'a> {
 
-    pub fn new(
+    pub fn from_parts(
         name: String,
         arguments: Vec<String>,
         message: Message,
+        server: &'a Server,
+        member: &'a Member,
+        config: &'a BotConfig
 
-    ) -> Command {
+    ) -> Command<'a> {
         Command {
             name: name,
             arguments: arguments,
-            message: message
+            message: message,
+            server: server,
+            member: member,
+            config: config
         }
     }
 
-    pub fn parse(
-        self,
-        server: &Server,
-        member: &Member,
-        config: &BotConfig
+    fn run<T: CommandHandler>(self, handler: T) -> ActionGroup {
 
-    ) -> ActionGroup {
+        let argc = self.arguments.len();
 
-        if member.is_banned {
-            return vec![];
+        if handler.require_unique_server() && !self.message.has_unique_server() {
+            vec![MessageActions::Send::private(
+                &self.message,
+                format!(
+                    "The command `{}` requires a unique server as its target.
+                    Since you are a member of at least two bot-enabled servers,
+                    the command cannot be invoked from a private channel.
+                    Please re-issue the command from a public channels of the target server.",
+                    self.name
+                )
+            )]
+
+        } else if handler.require_server_admin() && !self.member.is_admin {
+            vec![MessageActions::Send::private(
+                &self.message,
+                format!(
+                    "The command `{}` requires bot admin rights on the current server.",
+                    self.name
+                )
+            )]
+
+        } else if argc < handler.require_min_arguments() {
+            handler.usage(self)
+
+        } else if argc != handler.require_exact_arguments().unwrap_or(argc) {
+            handler.usage(self)
+
+        } else {
+            handler.run(self)
         }
 
-        let command: Box<CommandHandler> = match self.name.as_str() {
-            "s" => Box::new(play::CommandImpl::instant()),
-            "q" => Box::new(play::CommandImpl::queued()),
-            "delete" => Box::new(delete::CommandImpl),
-            "rename" => Box::new(rename::CommandImpl),
-            "sounds" => Box::new(sounds::CommandImpl),
-            "silence" => Box::new(silence::CommandImpl),
-            "alias" => Box::new(alias::CommandImpl),
-            "aliases" => Box::new(aliases::CommandImpl),
-            "greeting" => Box::new(greeting::CommandImpl),
-            "greetings" => Box::new(greetings::CommandImpl),
-            "ban" => Box::new(ban::CommandImpl),
-            "bans" => Box::new(bans::CommandImpl),
-            "ip" => Box::new(ip::CommandImpl),
-            "leave" => Box::new(leave::CommandImpl),
-            "reload" => Box::new(reload::CommandImpl),
-            "help" => Box::new(help::CommandImpl),
-            _ => Box::new(not_found::CommandImpl)
-        };
+    }
 
-        command.run(self, server, member, config)
+    pub fn process(self) -> ActionGroup {
+
+        if self.member.is_banned {
+            return vec![];
+
+        } else {
+            match self.name.as_str() {
+                "s" => self.run(play::Handler::instant()),
+                "q" => self.run(play::Handler::queued()),
+                "delete" => self.run(delete::Handler),
+                "rename" => self.run(rename::Handler),
+                "sounds" => self.run(sounds::Handler),
+                "silence" => self.run(silence::Handler),
+                "alias" => self.run(alias::Handler),
+                "aliases" => self.run(aliases::Handler),
+                "greeting" => self.run(greeting::Handler),
+                "greetings" => self.run(greetings::Handler),
+                "ban" => self.run(ban::Handler),
+                "bans" => self.run(bans::Handler),
+                "ip" => self.run(ip::Handler),
+                "leave" => self.run(leave::Handler),
+                "reload" => self.run(reload::Handler),
+                "help" => self.run(help::Handler),
+                _ => self.run(not_found::Handler)
+            }
+        }
 
     }
 
@@ -92,7 +168,7 @@ impl Command {
 
 
 // Traits  --------------------------------------------------------------------
-impl fmt::Display for Command {
+impl<'a> fmt::Display for Command<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f, "[Command \"{}\" with arguments <{}> from user #{} on #{}]",
@@ -107,36 +183,26 @@ impl fmt::Display for Command {
 // Command Implementation Trait -----------------------------------------------
 pub trait CommandHandler {
 
-    fn run(
-        &self,
-        _: Command,
-        _: &Server,
-        _: &Member,
-        _: &BotConfig
+    fn run(&self, _: Command) -> ActionGroup;
 
-    ) -> ActionGroup;
-
-    fn requires_unique_server(&self, command: Command) -> ActionGroup {
-        vec![MessageActions::Send::private(
-            &command.message,
-            format!(
-                "The command `{}` requires a unique server as its target.
-                Since you are a member of at least two bot-enabled servers,
-                the command cannot be invoked from a private channel.
-                Please re-issue the command from a public channels of the target server.",
-                command.name
-            )
-        )]
+    fn usage(&self, _: Command) -> ActionGroup {
+        vec![]
     }
 
-    fn requires_admin(&self, command: Command) -> ActionGroup {
-        vec![MessageActions::Send::private(
-            &command.message,
-            format!(
-                "The command `{}` requires bot admin rights on the current server.",
-                command.name
-            )
-        )]
+    fn require_unique_server(&self) -> bool {
+        false
+    }
+
+    fn require_server_admin(&self) -> bool {
+        false
+    }
+
+    fn require_min_arguments(&self) -> usize {
+        0
+    }
+
+    fn require_exact_arguments(&self) -> Option<usize> {
+        None
     }
 
     fn delete_and_send(&self, message: Message, action: Box<Action>) -> ActionGroup {

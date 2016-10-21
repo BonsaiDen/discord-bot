@@ -271,7 +271,7 @@ impl Bot {
         id: MessageId, channel_id: ChannelId,
         content: String, author: DiscordUser,
         attachments: Vec<Attachment>,
-        config: &BotConfig
+        bot_config: &BotConfig
 
     ) -> ActionGroup {
 
@@ -294,14 +294,7 @@ impl Bot {
             );
 
             message.parse_contents(content, attachments).into_iter().flat_map(|content| {
-                match content {
-                    MessageContent::Command(command) => {
-                        self.command_event(command, config)
-                    },
-                    MessageContent::Upload(upload) => {
-                        self.upload_event(upload, config)
-                    }
-                }
+                self.parse_content(content, bot_config)
 
             }).collect()
 
@@ -311,23 +304,42 @@ impl Bot {
 
     }
 
-    fn command_event(&mut self, command: Command, config: &BotConfig) -> ActionGroup {
-        info!("[Bot] Potential {} received...", command);
-        if let Some((server, member)) = self.get_server_and_member(&command.message) {
-            command.parse(server, member, config)
+    fn parse_content(
+        &self,
+        content: MessageContent,
+        bot_config: &BotConfig
 
-        } else {
-            vec![]
-        }
-    }
+    ) -> ActionGroup {
+        match content {
+            MessageContent::Command(name, arguments, message) => {
+                if let Some((
+                    server,
+                    member
 
-    fn upload_event(&mut self, upload: Upload, config: &BotConfig) -> ActionGroup {
-        info!("[Bot] Potential {} received...", upload);
-        if let Some((server, member)) = self.get_server_and_member(&upload.message) {
-            upload.process(server, member, config)
+                )) = self.get_server_and_member(&message) {
+                    Command::from_parts(
+                        name, arguments, message,
+                        server, member, bot_config
 
-        } else {
-            vec![]
+                    ).process()
+
+                } else {
+                    vec![]
+                }
+            },
+            MessageContent::Upload(attachment, message) => {
+                if let Some((
+                    server,
+                    member
+
+                )) = self.get_server_and_member(&message) {
+                    Upload::from_message(attachment, message)
+                           .process(server, member, bot_config)
+
+                } else {
+                    vec![]
+                }
+            }
         }
     }
 

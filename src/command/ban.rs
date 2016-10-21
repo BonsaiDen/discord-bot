@@ -1,14 +1,24 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, BanActions, MessageActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandImpl {
+impl CommandHandler for Handler {
+
+    require_unique_server!();
+    require_server_admin!();
+    require_min_arguments!(2);
+
+    fn run(&self, command: Command) -> ActionGroup {
+        match command.arguments[0].as_str() {
+            "add" => self.add(&command, &command.arguments[1]),
+            "remove" => self.remove(&command, &command.arguments[1]),
+            _ => self.usage(command)
+        }
+    }
 
     fn usage(&self, command: Command) -> ActionGroup {
         self.delete_and_send(command.message, MessageActions::Send::private(
@@ -17,17 +27,18 @@ impl CommandImpl {
         ))
     }
 
-    fn add(
-        &self,
-        server: &Server,
-        command: &Command,
-        nickname: &str,
+}
 
-    ) -> ActionGroup {
-        if !server.has_member_with_nickname(nickname) {
+impl Handler {
+
+    fn add(&self, command: &Command, nickname: &str) -> ActionGroup {
+        if !command.server.has_member_with_nickname(nickname) {
             self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
-                format!("The user `{}` is not a member of {}.", nickname, server.name)
+                format!(
+                    "The user `{}` is not a member of {}.",
+                    nickname, command.server.name
+                )
             ))
 
         } else {
@@ -38,11 +49,14 @@ impl CommandImpl {
         }
     }
 
-    fn remove(&self, server: &Server, command: &Command, nickname: &str) -> ActionGroup {
-        if !server.has_member_with_nickname(nickname) {
+    fn remove(&self, command: &Command, nickname: &str) -> ActionGroup {
+        if !command.server.has_member_with_nickname(nickname) {
             self.delete_and_send(command.message, MessageActions::Send::private(
                 &command.message,
-                format!("The user `{}` is not a member of {}.", nickname, server.name)
+                format!(
+                    "The user `{}` is not a member of {}.",
+                    nickname, command.server.name
+                )
             ))
 
         } else {
@@ -51,45 +65,6 @@ impl CommandImpl {
                 nickname.to_string()
             ))
         }
-    }
-
-}
-
-impl CommandHandler for CommandImpl {
-
-    fn run(
-        &self,
-        command: Command,
-        server: &Server,
-        member: &Member,
-        _: &BotConfig
-
-    ) -> ActionGroup {
-        if !command.message.has_unique_server() {
-            self.requires_unique_server(command)
-
-        } else if !member.is_admin {
-            self.requires_admin(command)
-
-        } else if command.arguments.len() < 2 {
-            self.usage(command)
-
-        } else {
-            match command.arguments[0].as_str() {
-                "add" => self.add(
-                    server,
-                    &command,
-                    &command.arguments[1],
-                ),
-                "remove" => self.remove(
-                    server,
-                    &command,
-                    &command.arguments[1],
-                ),
-                _ => self.usage(command)
-            }
-        }
-
     }
 
 }

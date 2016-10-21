@@ -1,34 +1,22 @@
 // Internal Dependencies ------------------------------------------------------
-use ::bot::BotConfig;
-use ::core::{Member, Server};
 use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, EffectActions};
 
 
 // Command Implementation -----------------------------------------------------
-pub struct CommandImpl;
+pub struct Handler;
 
-impl CommandHandler for CommandImpl {
+impl CommandHandler for Handler {
 
-    fn run(
-        &self,
-        command: Command,
-        _: &Server,
-        _: &Member,
-        _: &BotConfig
+    require_unique_server!();
 
-    ) -> ActionGroup {
-        if !command.message.has_unique_server() {
-            self.requires_unique_server(command)
+    fn run(&self, command: Command) -> ActionGroup {
+        self.delete_and_send(command.message, if command.arguments.is_empty() {
+            EffectActions::List::all(command.message)
 
         } else {
-            self.delete_and_send(command.message, if command.arguments.is_empty() {
-                EffectActions::List::all(command.message)
-
-            } else {
-                EffectActions::List::matching(command.message, command.arguments)
-            })
-        }
+            EffectActions::List::matching(command.message, command.arguments)
+        })
     }
 
 }
