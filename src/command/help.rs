@@ -20,6 +20,7 @@ static HELP_TEXT_ONE: &'static str = "
 - `!bans` - Show a list of all banned users for the current server.
 - `!ban <add|remove> <user#ident>` - Add or remove user bans.
 - `!leave` - Makes the bot leave its current voice channel.
+- `!pin` - Pins the bot to its current voice channel.
 - `!ip` - Posts the bot's the public IP onto the current channel.
 - `!reload` - Reloads the sound list from the on disk flac files.
 - `!help` - Displays this help text.

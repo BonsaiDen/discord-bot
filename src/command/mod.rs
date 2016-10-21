@@ -61,6 +61,7 @@ mod help;
 mod ip;
 mod leave;
 mod not_found;
+mod pin;
 mod play;
 mod reload;
 mod rename;
@@ -170,6 +171,7 @@ impl<'a> Command<'a> {
                 "greetings" => self.run(greetings::Handler),
                 "ban" => self.run(ban::Handler),
                 "bans" => self.run(bans::Handler),
+                "pin" => self.run(pin::Handler),
                 "ip" => self.run(ip::Handler),
                 "leave" => self.run(leave::Handler),
                 "reload" => self.run(reload::Handler),

@@ -64,7 +64,7 @@ pub struct Server {
 
     effects: EffectRegistry,
     voice_channel_id: Option<ChannelId>,
-    // pinned_channel_id: Option<ChannelId>, TODO allow for channel pinning
+    pinned_channel_id: Option<ChannelId>,
     voice_status: ServerVoiceStatus,
     mixer_queue: MixerQueue,
 
@@ -101,6 +101,7 @@ impl Server {
                     config: ServerConfig::new(&server_id, bot_config),
                     effects: EffectRegistry::new(),
                     voice_channel_id: None,
+                    pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
                     mixer_queue: EmptyMixerQueue::create(),
                     channels: HashMap::new(),
@@ -118,6 +119,7 @@ impl Server {
                     config: ServerConfig::new(&live_server.id, bot_config),
                     effects: EffectRegistry::new(),
                     voice_channel_id: None,
+                    pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
                     mixer_queue: EmptyMixerQueue::create(),
                     channels: HashMap::new(),
@@ -199,6 +201,15 @@ impl Server {
             }
         }
 
+        // Check if pinned to a specific voice channel
+        if let Some(pinned_channel_id) = self.pinned_channel_id {
+            // Allow re-join of current pinnted voice channel in case of disconnect
+            if *channel_id != pinned_channel_id {
+                info!("{} Pinned to the current voice channel", self);
+                return;
+            }
+        }
+
         if let Some(channel) = self.channels.get(channel_id) {
             info!("{} {} Joining voice", self, channel);
         }
@@ -238,6 +249,17 @@ impl Server {
         }
     }
 
+    pub fn is_in_voice(&self) -> bool {
+        self.voice_status == ServerVoiceStatus::Joined
+    }
+
+    pub fn pin_to_voice(&mut self) {
+        if let Some(channel_id) = self.voice_channel_id {
+            info!("{} Pinned to voice channel", self);
+            self.pinned_channel_id = Some(channel_id);
+        }
+    }
+
     fn joined_voice(&mut self, channel_id: ChannelId) {
         if self.voice_status == ServerVoiceStatus::Pending {
             info!("{} Joined voice channel", self);
@@ -250,6 +272,7 @@ impl Server {
         if self.voice_status == ServerVoiceStatus::Joined {
             info!("{} Left voice channel", self);
             self.voice_status = ServerVoiceStatus::Left;
+            self.pinned_channel_id = None;
             self.voice_channel_id = None;
         }
     }
@@ -327,7 +350,6 @@ impl Server {
         self.store_config().expect("add_greeting failed to store config.");
     }
 
-
     pub fn remove_greeting(&mut self, nickname: &str) {
         self.config.greetings.remove(nickname);
         self.store_config().expect("remove_greeting failed to store config.");
@@ -396,14 +418,29 @@ impl Server {
     ) {
 
         let has_channel = if let Some(channel) = self.channels.get(channel_id) {
-            info!("{} {} playing {} effect(s)...", self, channel, effects.len());
-            true
+
+            // When pinned, only play effects for the pinned channel
+            if let Some(pinned_channel_id) = self.pinned_channel_id {
+                if *channel_id == pinned_channel_id {
+                    info!("{} {} playing {} effect(s)...", self, channel, effects.len());
+                    true
+
+                } else {
+                    info!("{} {} not playing effect(s), pinned to another channel.", self, channel);
+                    false
+                }
+
+            } else {
+                info!("{} {} playing {} effect(s)...", self, channel, effects.len());
+                true
+            }
 
         } else {
             false
         };
 
         if has_channel {
+
 
             self.join_voice(channel_id, queue);
 
