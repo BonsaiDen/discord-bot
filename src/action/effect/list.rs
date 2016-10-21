@@ -84,7 +84,7 @@ fn list_effects(
     effects_names.sort();
 
     list_words(title, effects_names, 100, 4).into_iter().map(|text| {
-        MessageActions::Send::private(message, text) as Box<Action>
+        MessageActions::Send::single_private(message, text) as Box<Action>
 
     }).collect()
 

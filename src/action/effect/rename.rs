@@ -32,22 +32,22 @@ impl Action for ActionImpl {
         if let Some(server) = bot.get_server(&self.message.server_id) {
             if let Err(err) = server.rename_effect(&self.effect, &self.name) {
                 warn!("{} Renaming failed: {}", self, err);
-                vec![MessageActions::Send::public(
+                MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Failed to rename sound effect `{}` to `{}`.",
                         self.effect.name, self.name
                     )
-                )]
+                )
 
             } else {
-                vec![MessageActions::Send::public(
+                MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Sound effect `{}` was renamed to `{}`.",
                         self.effect.name, self.name
                     )
-                )]
+                )
             }
 
         } else {

@@ -11,17 +11,18 @@ impl CommandHandler for Handler {
     require_unique_server!();
     require_server_admin!();
     require_exact_arguments!(2);
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         if command.server.has_effect(&command.arguments[1]) {
-            self.delete_and_send(command.message, MessageActions::Send::public(
+            MessageActions::Send::public(
                 &command.message,
                 format!(
                     "A sound effect named `{}` already exist on {}.",
                     command.arguments[1],
                     command.server.name
                 )
-            ))
+            )
 
         } else if let Some(effect) = command.server.get_effect(&command.arguments[0]) {
             vec![EffectActions::Rename::new(
@@ -31,22 +32,22 @@ impl CommandHandler for Handler {
             )]
 
         } else {
-            self.delete_and_send(command.message, MessageActions::Send::public(
+            MessageActions::Send::public(
                 &command.message,
                 format!(
                     "A sound effect named `{}` does not exist on {}.",
                     command.arguments[0],
                     command.server.name
                 )
-            ))
+            )
         }
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, MessageActions::Send::public(
+        MessageActions::Send::public(
             &command.message,
             "Usage: `!rename <old_effect_name> <new_effect_name>`".to_string()
-        ))
+        )
     }
 
 }

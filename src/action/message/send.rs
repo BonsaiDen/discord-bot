@@ -21,7 +21,11 @@ pub struct ActionImpl {
 
 impl ActionImpl {
 
-    pub fn private(message: &Message, content: String) -> Box<ActionImpl> {
+    pub fn private(message: &Message, content: String) -> ActionGroup {
+        vec![ActionImpl::single_private(message, content)]
+    }
+
+    pub fn single_private(message: &Message, content: String) -> Box<ActionImpl> {
         Box::new(ActionImpl {
             user_id: Some(message.user_id),
             channel_id: None,
@@ -29,7 +33,11 @@ impl ActionImpl {
         })
     }
 
-    pub fn public(message: &Message, content: String) -> Box<ActionImpl> {
+    pub fn public(message: &Message, content: String) -> ActionGroup {
+        vec![ActionImpl::single_public(message, content)]
+    }
+
+    pub fn single_public(message: &Message, content: String) -> Box<ActionImpl> {
         Box::new(ActionImpl {
             user_id: None,
             channel_id: Some(message.channel_id),

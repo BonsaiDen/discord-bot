@@ -11,30 +11,28 @@ impl CommandHandler for Handler {
     require_unique_server!();
     require_server_admin!();
     require_exact_arguments!(1);
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         if let Some(effect) = command.server.get_effect(&command.arguments[0]) {
-            vec![EffectActions::Delete::new(
-                command.message,
-                effect
-            )]
+            vec![EffectActions::Delete::new(command.message, effect)]
 
         } else {
-            self.delete_and_send(command.message, MessageActions::Send::public(
+            MessageActions::Send::public(
                 &command.message,
                 format!(
                     "Sound effect `{}` does not exist and thus cannot be deleted.",
                     command.arguments[0]
                 )
-            ))
+            )
         }
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, MessageActions::Send::public(
+        MessageActions::Send::public(
             &command.message,
             "Usage: `!delete <effect_name>`".to_string()
-        ))
+        )
     }
 
 }

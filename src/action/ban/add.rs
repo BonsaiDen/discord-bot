@@ -28,22 +28,22 @@ impl Action for ActionImpl {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             if server.add_ban(&self.nickname) {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     format!(
                         "The user `{}` is now banned on {}.",
                         self.nickname, server.name
                     )
-                )]
+                )
 
             } else {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     format!(
                         "The user `{}` is already banned on {}.",
                         self.nickname, server.name
                     )
-                )]
+                )
             }
 
         } else {

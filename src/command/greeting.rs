@@ -10,6 +10,7 @@ impl CommandHandler for Handler {
 
     require_unique_server!();
     require_min_arguments!(2);
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         match command.arguments[0].as_str() {
@@ -29,10 +30,10 @@ impl CommandHandler for Handler {
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, MessageActions::Send::private(
+        MessageActions::Send::private(
             &command.message,
             "Usage: `!greeting add <user#ident> <effect_name>` or `!greeting remove <user#ident>`".to_string()
-        ))
+        )
     }
 
 }
@@ -47,65 +48,62 @@ impl Handler {
 
     ) -> ActionGroup {
         if !command.server.has_member_with_nickname(nickname) {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "The user `{}` is not a member of {}.",
                     nickname, command.server.name
                 )
-            ))
+            )
 
         } else if command.server.has_greeting(nickname) {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "A greeting for the user `{}` already exists on {}, please remove it first.",
                     nickname, command.server.name
                 )
-            ))
+            )
 
         } else if command.server.has_matching_effects(effect_name, command.config) {
-            self.delete_and_send(command.message, GreetingActions::Add::new(
+            vec![GreetingActions::Add::new(
                 command.message,
                 nickname.to_string(),
                 effect_name.to_string()
-            ))
+            )]
 
         } else {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "Cannot add a greeting when there are no effects matching `{}` on {}.",
                     nickname, command.server.name
                 )
-            ))
+            )
         }
     }
 
     fn remove(&self, command: &Command, nickname: &str) -> ActionGroup {
         if !command.server.has_member_with_nickname(nickname) {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "The user `{}` is not a member of {}.",
                     nickname, command.server.name
                 )
-            ))
+            )
 
         } else if command.server.has_greeting(nickname) {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "A greeting for the user `{}` does not exist on {}.",
                     nickname, command.server.name
                 )
-            ))
+            )
 
         } else {
-            self.delete_and_send(command.message, GreetingActions::Remove::new(
-                command.message,
-                nickname.to_string()
-            ))
+            vec![GreetingActions::Remove::new(command.message, nickname.to_string())]
         }
     }
 

@@ -9,14 +9,15 @@ pub struct Handler;
 impl CommandHandler for Handler {
 
     require_unique_server!();
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, if command.arguments.is_empty() {
-            EffectActions::List::all(command.message)
+        if command.arguments.is_empty() {
+            vec![EffectActions::List::all(command.message)]
 
         } else {
-            EffectActions::List::matching(command.message, command.arguments)
-        })
+            vec![EffectActions::List::matching(command.message, command.arguments)]
+        }
     }
 
 }

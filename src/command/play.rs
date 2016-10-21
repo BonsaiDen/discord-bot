@@ -27,10 +27,11 @@ impl Handler {
 impl CommandHandler for Handler {
 
     require_unique_server!();
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         if command.arguments.is_empty() {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!("Usage: `!{} <effect_name>`", if self.queued {
                     "q"
@@ -38,7 +39,7 @@ impl CommandHandler for Handler {
                 } else {
                     "s"
                 })
-            ))
+            )
 
         } else {
 
@@ -52,17 +53,17 @@ impl CommandHandler for Handler {
 
                 let similiar = command.server.map_similiar_effects(&command.arguments[..]);
                 if similiar.is_empty() {
-                    self.delete_and_send(command.message, MessageActions::Send::private(
+                    MessageActions::Send::private(
                         &command.message,
                         format!(
                             "No effect(s) matching `{}` were found on {}.",
                             command.arguments.join("`, `"),
                             command.server.name
                         )
-                    ))
+                    )
 
                 } else {
-                    self.delete_and_send(command.message, MessageActions::Send::private(
+                    MessageActions::Send::private(
                         &command.message,
                         format!(
                             "No effect(s) matching `{}` were found on {}.\n\n**Perhaps meant one of the following:**\n\n`{}`",
@@ -70,25 +71,25 @@ impl CommandHandler for Handler {
                             command.server.name,
                             similiar.join("`, `")
                         )
-                    ))
+                    )
                 }
 
             } else if let Some(channel_id) = command.member.voice_channel_id {
-                self.delete_and_send(command.message, EffectActions::Play::new(
+                vec![EffectActions::Play::new(
                     command.message.server_id,
                     channel_id,
                     effects,
                     self.queued
-                ))
+                )]
 
             } else {
-                self.delete_and_send(command.message, MessageActions::Send::private(
+                MessageActions::Send::private(
                     &command.message,
                     format!(
                         "You must be in a voice channel on {} in order to play sound effects.",
                         command.server.name
                     )
-                ))
+                )
             }
 
         }

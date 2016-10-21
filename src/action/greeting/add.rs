@@ -30,10 +30,10 @@ impl Action for ActionImpl {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.add_greeting(&self.nickname, &self.effect_name);
-            vec![MessageActions::Send::private(&self.message, format!(
+            MessageActions::Send::private(&self.message, format!(
                 "Greeting for `{}` has been set to `{}` on {}.",
                 self.nickname, self.effect_name, server.name
-            ))]
+            ))
 
         } else {
             vec![]

@@ -39,6 +39,15 @@ macro_rules! require_exact_arguments {
     );
 }
 
+#[macro_export]
+macro_rules! delete_command_message {
+    () => (
+        fn delete_command_message(&self) -> bool {
+            true
+        }
+    );
+}
+
 
 // Modules --------------------------------------------------------------------
 mod alias;
@@ -62,7 +71,7 @@ mod silence;
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
 use ::core::{Member, Message, Server};
-use ::action::{Action, ActionGroup, MessageActions};
+use ::action::{ActionGroup, MessageActions};
 
 
 // Command Abstraction --------------------------------------------------------
@@ -101,9 +110,14 @@ impl<'a> Command<'a> {
     fn run<T: CommandHandler>(self, handler: T) -> ActionGroup {
 
         let argc = self.arguments.len();
+        let mut actions: ActionGroup = vec![];
+
+        if handler.delete_command_message() {
+            actions.push(MessageActions::Delete::new(self.message));
+        }
 
         if handler.require_unique_server() && !self.message.has_unique_server() {
-            vec![MessageActions::Send::private(
+            actions.push(MessageActions::Send::single_private(
                 &self.message,
                 format!(
                     "The command `{}` requires a unique server as its target.
@@ -112,26 +126,28 @@ impl<'a> Command<'a> {
                     Please re-issue the command from a public channels of the target server.",
                     self.name
                 )
-            )]
+            ));
 
         } else if handler.require_server_admin() && !self.member.is_admin {
-            vec![MessageActions::Send::private(
+            actions.push(MessageActions::Send::single_private(
                 &self.message,
                 format!(
                     "The command `{}` requires bot admin rights on the current server.",
                     self.name
                 )
-            )]
+            ));
 
         } else if argc < handler.require_min_arguments() {
-            handler.usage(self)
+            actions.append(&mut handler.usage(self));
 
         } else if argc != handler.require_exact_arguments().unwrap_or(argc) {
-            handler.usage(self)
+            actions.append(&mut handler.usage(self));
 
         } else {
-            handler.run(self)
+            actions.append(&mut handler.run(self));
         }
+
+        actions
 
     }
 
@@ -205,11 +221,8 @@ pub trait CommandHandler {
         None
     }
 
-    fn delete_and_send(&self, message: Message, action: Box<Action>) -> ActionGroup {
-        vec![
-            MessageActions::Delete::new(message),
-            action
-        ]
+    fn delete_command_message(&self) -> bool {
+        false
     }
 
 }

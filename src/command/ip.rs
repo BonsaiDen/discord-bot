@@ -17,6 +17,8 @@ pub struct Handler;
 
 impl CommandHandler for Handler {
 
+    delete_command_message!();
+
     fn run(&self, command: Command) -> ActionGroup {
 
         let response = match resolve_ip() {
@@ -28,10 +30,10 @@ impl CommandHandler for Handler {
             Err(_) => "{} has requested my public IP address, but the lookup failed.".to_string()
         };
 
-        self.delete_and_send(command.message, MessageActions::Send::public(
+        MessageActions::Send::public(
             &command.message,
             response
-        ))
+        )
 
     }
 

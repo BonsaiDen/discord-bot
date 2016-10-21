@@ -30,10 +30,10 @@ impl Action for ActionImpl {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.add_alias(&self.name, &self.effect_names);
-            vec![MessageActions::Send::private(&self.message, format!(
+            MessageActions::Send::private(&self.message, format!(
                 "`{}` is now an alias for `{}` on {}.",
                 self.name, self.effect_names.join("`, `"), server.name
-            ))]
+            ))
 
         } else {
             vec![]

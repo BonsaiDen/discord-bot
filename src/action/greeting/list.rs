@@ -36,14 +36,14 @@ impl Action for ActionImpl {
             }).collect();
 
             if aliases.is_empty() {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     format!("No user greetings found on {}.", server.name)
-                )]
+                )
 
             } else {
                 list_lines("User Greetings", aliases, 25).into_iter().map(|text| {
-                    MessageActions::Send::private(&self.message, text) as Box<Action>
+                    MessageActions::Send::single_private(&self.message, text) as Box<Action>
 
                 }).collect()
             }

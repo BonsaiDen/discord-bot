@@ -10,6 +10,7 @@ impl CommandHandler for Handler {
 
     require_unique_server!();
     require_min_arguments!(2);
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         match command.arguments[0].as_str() {
@@ -32,10 +33,10 @@ impl CommandHandler for Handler {
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
-        self.delete_and_send(command.message, MessageActions::Send::private(
+        MessageActions::Send::private(
             &command.message,
             "Usage: `!alias add <alias_name> <effect_name>...` or `!alias remove <alias_name>`".to_string()
-        ))
+        )
     }
 
 }
@@ -50,38 +51,35 @@ impl Handler {
 
     ) -> ActionGroup {
         if command.server.has_alias(alias) {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "An alias named `{}` already exists on {}.",
                     alias, command.server.name
                 )
-            ))
+            )
 
         } else {
-            self.delete_and_send(command.message, AliasActions::Add::new(
+            vec![AliasActions::Add::new(
                 command.message,
                 alias.to_string(),
                 effect_names.iter().map(|e| e.to_string()).collect()
-            ))
+            )]
         }
     }
 
     fn remove(&self, command: &Command, alias: &str) -> ActionGroup {
         if command.server.has_alias(alias) {
-            self.delete_and_send(command.message, MessageActions::Send::private(
+            MessageActions::Send::private(
                 &command.message,
                 format!(
                     "An alias named `{}` does not exist on {}.",
                     alias, command.server.name
                 )
-            ))
+            )
 
         } else {
-            self.delete_and_send(command.message, AliasActions::Remove::new(
-                command.message,
-                alias.to_string()
-            ))
+            vec![AliasActions::Remove::new(command.message, alias.to_string())]
         }
     }
 

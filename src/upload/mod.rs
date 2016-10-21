@@ -88,42 +88,42 @@ impl Upload {
     ) -> ActionGroup {
 
         if !member.is_uploader {
-            vec![MessageActions::Send::private(
+            MessageActions::Send::private(
                 &self.message,
                 "Only white listed users can upload sound effects.".to_string()
-            )]
+            )
 
         } else if !self.message.has_unique_server() {
-            vec![MessageActions::Send::private(
+            MessageActions::Send::private(
                 &self.message,
                 "FLAC uploads require a unique server as their target.
                 Since you are a member of at least two bot-enabled servers,
                 the command cannot be invoked from a private channel.
                 Please re-issue the command from a public channels of the target server.".to_string()
-            )]
+            )
 
         } else if let Some(flac_info) = self.flac_info {
             if flac_info.file_size > config.flac_max_file_size {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     "Uploaded FLAC file exceeds 2 MiB.".to_string()
-                )]
+                )
 
             } else if flac_info.sample_rate != config.flac_sample_rate {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     "Uploaded FLAC file does not have a valid sample rate of 48000hz.".to_string()
-                )]
+                )
 
             } else if flac_info.bits_per_sample != config.flac_bits_per_sample {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     "Uploaded FLAC file does not feature 16 bits per sample.".to_string()
-                )]
+                )
 
             } else {
                 vec![
-                    MessageActions::Send::public(
+                    MessageActions::Send::single_public(
                         &self.message,
                         "FLAC download to server started...".to_string()
                     ),

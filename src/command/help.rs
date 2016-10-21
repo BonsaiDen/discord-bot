@@ -48,11 +48,16 @@ pub struct Handler;
 
 impl CommandHandler for Handler {
 
+    delete_command_message!();
+
     fn run(&self, command: Command) -> ActionGroup {
         vec![
-            MessageActions::Delete::new(command.message),
-            MessageActions::Send::private(&command.message, HELP_TEXT_ONE.to_string()),
-            MessageActions::Send::private(&command.message, HELP_TEXT_TWO.to_string())
+            MessageActions::Send::single_private(
+                &command.message, HELP_TEXT_ONE.to_string()
+            ),
+            MessageActions::Send::single_private(
+                &command.message, HELP_TEXT_TWO.to_string()
+            )
         ]
     }
 

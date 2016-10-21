@@ -28,10 +28,10 @@ impl Action for ActionImpl {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.remove_greeting(&self.nickname);
-            vec![MessageActions::Send::private(&self.message, format!(
+            MessageActions::Send::private(&self.message, format!(
                 "Greeting for `{}` has been removed on {}.",
                 self.nickname, server.name
-            ))]
+            ))
 
         } else {
             vec![]

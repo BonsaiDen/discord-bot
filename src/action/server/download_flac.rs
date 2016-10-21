@@ -39,13 +39,13 @@ impl Action for ActionImpl {
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
             if server.has_effect(&self.effect_name) {
-                vec![MessageActions::Send::public(
+                MessageActions::Send::public(
                     &self.message,
                     format!(
                         "A sound effect with the name `{}` already exists on the server.",
                         self.effect_name
                     )
-                )]
+                )
 
             } else {
 
@@ -57,23 +57,23 @@ impl Action for ActionImpl {
                     &self.uploader
                 ) {
                     warn!("{} Download failed: {}", self, err);
-                    vec![MessageActions::Send::public(
+                    MessageActions::Send::public(
                         &self.message,
                         format!(
                             "Download of the sound effect `{}` failed, please try again.",
                             self.effect_name
                         )
-                    )]
+                    )
 
                 } else {
                     info!("{} Download successful.", self);
-                    vec![MessageActions::Send::public(
+                    MessageActions::Send::public(
                         &self.message,
                         format!(
                             "The sound effect was successfully downloaded to the server and is now available as `{}`!",
                             self.effect_name
                         )
-                    )]
+                    )
                 }
 
             }

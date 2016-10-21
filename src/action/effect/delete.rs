@@ -29,26 +29,24 @@ impl Action for ActionImpl {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
-
-
             if let Err(err) = server.delete_effect(&self.effect) {
                 warn!("{} Deletion failed: {}", self, err);
-                vec![MessageActions::Send::public(
+                MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Failed to delete sound effect `{}`.",
                         self.effect.name
                     )
-                )]
+                )
 
             } else {
-                vec![MessageActions::Send::public(
+                MessageActions::Send::public(
                     &self.message,
                     format!(
                         "Sound effect `{}` was deleted.",
                         self.effect.name
                     )
-                )]
+                )
             }
 
         } else {

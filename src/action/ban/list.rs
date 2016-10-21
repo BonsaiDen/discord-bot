@@ -31,15 +31,15 @@ impl Action for ActionImpl {
             bans.sort();
 
             if bans.is_empty() {
-                vec![MessageActions::Send::private(
+                MessageActions::Send::private(
                     &self.message,
                     format!("There are currently no banned users on {}.", server.name)
-                )]
+                )
 
             } else {
                 let title = format!("Banned Users on {}", server.name);
                 list_lines(&title, bans, 25).into_iter().map(|text| {
-                    MessageActions::Send::private(&self.message, text) as Box<Action>
+                    MessageActions::Send::single_private(&self.message, text) as Box<Action>
 
                 }).collect()
             }

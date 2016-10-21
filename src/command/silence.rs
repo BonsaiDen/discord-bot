@@ -9,12 +9,12 @@ pub struct Handler;
 impl CommandHandler for Handler {
 
     require_unique_server!();
+    delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         vec![
             EffectActions::Silence::new(command.message),
-            MessageActions::Delete::new(command.message),
-            MessageActions::Send::public(
+            MessageActions::Send::single_public(
                 &command.message,
                 format!(
                     "{} has requested me to stay quiet.",
