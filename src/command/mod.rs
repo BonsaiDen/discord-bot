@@ -138,10 +138,9 @@ impl<'a> Command<'a> {
                 )
             ));
 
-        } else if argc < handler.require_min_arguments() {
-            actions.append(&mut handler.usage(self));
+        } else if argc < handler.require_min_arguments()
+               || argc != handler.require_exact_arguments().unwrap_or(argc) {
 
-        } else if argc != handler.require_exact_arguments().unwrap_or(argc) {
             actions.append(&mut handler.usage(self));
 
         } else {
