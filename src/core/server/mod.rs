@@ -522,6 +522,19 @@ impl Server {
         )
     }
 
+    pub fn download_transcript(
+        &mut self,
+        effect_name: &str,
+        upload_url: &str
+
+    ) -> Result<(), String> {
+        self.effects.download_transcript(
+            &self.config,
+            effect_name,
+            upload_url
+        )
+    }
+
 }
 
 

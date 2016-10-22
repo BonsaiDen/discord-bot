@@ -28,7 +28,7 @@ pub struct Effect {
     path: PathBuf,
     last_played: u64,
     uploader: Option<String>,
-    transcript: Option<Vec<String>>
+    transcript: Option<String>
 }
 
 impl Effect {
@@ -36,8 +36,7 @@ impl Effect {
     fn new(
         name: &str,
         path: PathBuf,
-        uploader: Option<String>,
-        transcript: Option<Vec<String>>
+        uploader: Option<String>
 
     ) -> Effect {
         Effect {
@@ -45,13 +44,26 @@ impl Effect {
             path: path,
             last_played: 0,
             uploader: uploader,
-            // TODO add commands to show and set effect transcriptions
-            transcript: transcript
+            transcript: None
         }
+    }
+
+    fn with_transcript(mut self) -> Effect {
+        self.transcript = load_transcript(self.transcript_path());
+        self
     }
 
     pub fn to_path_str(&self) -> &str {
         self.path.to_str().unwrap_or("")
+    }
+
+    fn transcript_path(&self) -> PathBuf {
+        if self.uploader.is_some() {
+            self.path.with_extension("").with_extension("txt")
+
+        } else {
+            self.path.with_extension("txt")
+        }
     }
 
 }
@@ -178,24 +190,29 @@ impl EffectRegistry {
 
     ) -> Result<(), String> {
 
-        let mut new_path = config.effects_path.clone();
+        let mut new_effect_path = config.effects_path.clone();
+        let mut new_transcript_path = config.effects_path.clone();
 
         if let Some(ref uploader) = effect.uploader {
-            new_path.push(format!(
+            new_effect_path.push(format!(
                 "{}.{}.flac",
                 effect_name,
                 uploader.replace("#", "_")
             ))
 
         } else {
-            new_path.push(effect_name);
-            new_path.set_extension("flac");
+            new_effect_path.push(effect_name);
+            new_effect_path.set_extension("flac");
         }
 
-        fs::rename(effect.path.clone(), new_path).map_err(|err| {
+        new_transcript_path.push(effect_name);
+        new_transcript_path.set_extension("txt");
+
+        fs::rename(effect.path.clone(), new_effect_path).map_err(|err| {
             err.to_string()
 
         }).and_then(|_| {
+            fs::rename(effect.transcript_path(), new_transcript_path).ok();
             self.reload(config);
             Ok(())
         })
@@ -212,6 +229,7 @@ impl EffectRegistry {
             err.to_string()
 
         }).and_then(|_| {
+            fs::remove_file(effect.transcript_path()).ok();
             self.reload(config);
             Ok(())
         })
@@ -229,8 +247,30 @@ impl EffectRegistry {
             config.effects_path.clone(),
             effect_name,
             upload_url,
-            uploader,
+            Some(uploader),
             "flac"
+
+        ).map_err(|err| {
+            err.to_string()
+
+        }).and_then(|_| {
+            Ok(self.reload(config))
+        })
+    }
+
+    pub fn download_transcript(
+        &mut self,
+        config: &ServerConfig,
+        effect_name: &str,
+        upload_url: &str
+
+    ) -> Result<(), String> {
+        download_file(
+            config.effects_path.clone(),
+            effect_name,
+            upload_url,
+            None,
+            "txt"
 
         ).map_err(|err| {
             err.to_string()
@@ -337,36 +377,35 @@ impl EffectRegistry {
 
         filter_dir(&config.effects_path, "flac", |name, path| {
 
-            let transcript = load_transcript(path.clone());
             let descriptor: Vec<&str> = name.split('.').collect();
             let effect = match *descriptor.as_slice() {
                 [name, uploader] => {
                     Effect::new(
                         name,
                         path,
-                        Some(uploader.replace("_", "#")),
-                        transcript
+                        Some(uploader.replace("_", "#"))
                     )
                 },
                 [name] => {
                     Effect::new(
                         name,
                         path,
-                        None,
-                        transcript
+                        None
                     )
                 },
                 _ => unreachable!()
             };
 
-            self.effects.insert(effect.name.clone(), effect);
+            self.effects.insert(
+                effect.name.clone(),
+                effect.with_transcript()
+            );
 
         });
 
         info!("{} Effects loaded.", self);
 
     }
-
 
 }
 
@@ -499,7 +538,7 @@ fn filter_dir<F: FnMut(String, PathBuf)>(
     }
 }
 
-fn load_transcript(mut flac_path: PathBuf) -> Option<Vec<String>> {
+fn load_transcript(mut flac_path: PathBuf) -> Option<String> {
 
     flac_path.set_extension("txt");
 
@@ -528,7 +567,7 @@ fn load_transcript(mut flac_path: PathBuf) -> Option<Vec<String>> {
 
         parts.dedup();
 
-        Some(parts)
+        Some(parts.join(" "))
 
     } else {
         None
@@ -540,12 +579,17 @@ fn download_file(
     mut directory: PathBuf,
     effect_name: &str,
     url: &str,
-    nickname: &str,
+    nickname: Option<&str>,
     ext: &str
 
 ) -> Result<(), String> {
 
-    directory.push(&format!("{}.{}.{}", effect_name, nickname, ext));
+    if let Some(nickname) = nickname {
+        directory.push(&format!("{}.{}.{}", effect_name, nickname, ext));
+
+    } else {
+        directory.push(&format!("{}.{}", effect_name, ext));
+    }
 
     let client = Client::new();
     client.get(url)

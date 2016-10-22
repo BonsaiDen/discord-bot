@@ -329,12 +329,12 @@ impl Bot {
             },
             MessageContent::Upload(attachment, message) => {
                 if let Some((
-                    server,
+                    _,
                     member
 
                 )) = self.get_server_and_member(&message) {
                     Upload::from_message(attachment, message)
-                           .process(server, member, bot_config)
+                           .process(member, bot_config)
 
                 } else {
                     vec![]

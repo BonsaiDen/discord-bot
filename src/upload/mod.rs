@@ -18,25 +18,19 @@ use flac::{ByteStream, Stream};
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::{Member, Message, Server};
+use ::core::{Member, Message};
 use ::action::{ActionGroup, ServerActions, MessageActions};
 
 
-// Flac File Information ------------------------------------------------------
+// Upload File Information ----------------------------------------------------
 #[derive(Debug)]
-pub struct FlacInfo {
-    file_size: u64,
-    sample_rate: u32,
-    bits_per_sample: u8
-}
-
-impl fmt::Display for FlacInfo {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f, "{} bytes, {}hz @ {}bit",
-            self.file_size, self.sample_rate, self.bits_per_sample
-        )
-    }
+enum FileInfo {
+    Flac {
+        file_size: u64,
+        sample_rate: u32,
+        bits_per_sample: u8
+    },
+    Text
 }
 
 
@@ -44,9 +38,9 @@ impl fmt::Display for FlacInfo {
 #[derive(Debug)]
 pub struct Upload {
     pub name: String,
+    message: Message,
     url: String,
-    flac_info: Option<FlacInfo>,
-    pub message: Message
+    info: Option<FileInfo>
 }
 
 
@@ -62,14 +56,15 @@ impl Upload {
         let path = Path::new(attachment.filename.as_str());
         let name = os_str_to_string(path.file_stem()).replace(".", "_");
         let ext = os_str_to_string(path.extension());
-        let valid_name = name.is_ascii() && name.len() >= 2 && ext == "flac";
 
-        // TODO extract upload comments and use it as the transcription
         Upload {
             name: name.to_string(),
             url: attachment.url.to_string(),
-            flac_info: if valid_name {
+            info: if name.is_ascii() && name.len() >= 2 && ext == "flac" {
                 retrieve_flac_info(attachment.url).ok()
+
+            } else if name.is_ascii() && name.len() >= 2 && ext == "txt" {
+                Some(FileInfo::Text)
 
             } else {
                 None
@@ -81,7 +76,6 @@ impl Upload {
 
     pub fn process(
         self,
-        _: &Server,
         member: &Member,
         config: &BotConfig
 
@@ -102,20 +96,25 @@ impl Upload {
                 Please re-issue the command from a public channels of the target server.".to_string()
             )
 
-        } else if let Some(flac_info) = self.flac_info {
-            if flac_info.file_size > config.flac_max_file_size {
+        } else if let Some(FileInfo::Flac {
+            file_size,
+            sample_rate,
+            bits_per_sample
+
+        }) = self.info {
+            if file_size > config.flac_max_file_size {
                 MessageActions::Send::private(
                     &self.message,
                     "Uploaded FLAC file exceeds 2 MiB.".to_string()
                 )
 
-            } else if flac_info.sample_rate != config.flac_sample_rate {
+            } else if sample_rate != config.flac_sample_rate {
                 MessageActions::Send::private(
                     &self.message,
                     "Uploaded FLAC file does not have a valid sample rate of 48000hz.".to_string()
                 )
 
-            } else if flac_info.bits_per_sample != config.flac_bits_per_sample {
+            } else if bits_per_sample != config.flac_bits_per_sample {
                 MessageActions::Send::private(
                     &self.message,
                     "Uploaded FLAC file does not feature 16 bits per sample.".to_string()
@@ -136,8 +135,20 @@ impl Upload {
                 ]
             }
 
+        } else if let Some(FileInfo::Text) = self.info {
+            vec![
+                MessageActions::Send::single_public(
+                    &self.message,
+                    "Transcript download to server started...".to_string()
+                ),
+                ServerActions::DownloadTranscript::new(
+                    self.message,
+                    self.name,
+                    self.url
+                )
+            ]
+
         } else {
-            // Ignore non-FLAC uploads
             vec![]
         }
 
@@ -149,10 +160,16 @@ impl Upload {
 // Traits  --------------------------------------------------------------------
 impl fmt::Display for Upload {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(ref flac) = self.flac_info {
+        if let Some(FileInfo::Flac { .. }) = self.info {
             write!(
-                f, "[FLAC upload \"{}\" with {} from user #{} on server #{}]",
-                self.name, flac, self.message.user_id, self.message.server_id
+                f, "[FLAC upload \"{}\" from user #{} on server #{}]",
+                self.name, self.message.user_id, self.message.server_id
+            )
+
+        } else if let Some(FileInfo::Text) = self.info {
+            write!(
+                f, "[Text upload \"{}\" from user #{} on server #{}]",
+                self.name, self.message.user_id, self.message.server_id
             )
         } else {
 
@@ -174,7 +191,7 @@ fn os_str_to_string(os_str: Option<&OsStr>) -> String {
 }
 
 
-fn retrieve_flac_info(url: String) -> Result<FlacInfo, String> {
+fn retrieve_flac_info(url: String) -> Result<FileInfo, String> {
 
     let client = Client::new();
     client.get(&url)
@@ -194,7 +211,7 @@ fn retrieve_flac_info(url: String) -> Result<FlacInfo, String> {
                 .map_err(|_| "Failed to parse FLAC header.".to_string())
                 .map(|stream| {
                     let stream_info = stream.info();
-                    FlacInfo {
+                    FileInfo::Flac {
                         file_size: length,
                         sample_rate: stream_info.sample_rate,
                         bits_per_sample: stream_info.bits_per_sample
