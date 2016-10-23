@@ -1,4 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
+use std::thread;
+use std::time::Duration;
 use std::collections::VecDeque;
 
 
@@ -41,6 +43,7 @@ impl EventQueue {
 
             ).expect("[EL] Initial connection failed.")
         }
+
     }
 
     pub fn events(&mut self) -> Vec<Event> {
@@ -68,6 +71,9 @@ impl EventQueue {
                 } else if let Error::Closed(..) = err {
                     warn!("[EL] [Receiver] Connection closed.");
                     self.events.push_back(Event::Disconnected);
+
+                } else {
+                    thread::sleep(Duration::from_millis(250));
                 }
             }
 
@@ -157,12 +163,15 @@ impl DiscordHandle {
         }));
 
         match discord.connect() {
-            Ok((conn, ready)) => Ok(DiscordHandle {
-                token: token,
-                discord: discord,
-                connection: conn,
-                state: State::new(ready)
-            }),
+            Ok((mut conn, ready)) => {
+                conn.set_non_blocking(true);
+                Ok(DiscordHandle {
+                    token: token,
+                    discord: discord,
+                    connection: conn,
+                    state: State::new(ready)
+                })
+            },
             Err(err) => Err(err.to_string())
         }
 
