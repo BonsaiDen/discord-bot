@@ -1,6 +1,8 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::cmp;
+use std::thread;
+use std::time::Duration;
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 
@@ -75,7 +77,8 @@ impl Mixer {
 
     fn update_sources(&mut self) {
 
-        if self.active_sources.len() < MAX_PARALLEL_SOURCES {
+        let active_sources = self.active_sources.len();
+        if active_sources < MAX_PARALLEL_SOURCES {
 
             // Pop the next command from the queue
             if let Some(command) = {
