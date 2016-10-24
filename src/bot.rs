@@ -102,17 +102,25 @@ impl Bot {
                 };
 
                 // Run resulting Actions
+                let mut delayed_actions = vec![];
                 while !actions.is_empty() {
 
                     let mut next_actions = Vec::new();
-                    for action in actions.drain(0..) {
-                        info!("[Bot] Running {}...", action);
-                        next_actions.extend(action.run(&mut self, &config, &mut queue));
+                    for mut action in actions.drain(0..) {
+                        if action.ready() {
+                            info!("[Bot] Running {}...", action);
+                            next_actions.extend(action.run(&mut self, &config, &mut queue));
+
+                        } else {
+                            delayed_actions.push(action);
+                        }
                     }
 
                     actions.extend(next_actions);
 
                 }
+
+                actions.extend(delayed_actions);
 
             }
 

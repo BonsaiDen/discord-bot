@@ -13,6 +13,7 @@ use clock_ticks;
 use rand::{thread_rng, Rng};
 use hyper::Client;
 use hyper::header::Connection;
+use flac::{ByteStream, Stream};
 use edit_distance::edit_distance;
 
 
@@ -27,6 +28,7 @@ pub struct Effect {
     pub name: String,
     path: PathBuf,
     last_played: u64,
+    duration: u64,
     uploader: Option<String>,
     transcript: Option<String>
 }
@@ -36,6 +38,7 @@ impl Effect {
     fn new(
         name: &str,
         path: PathBuf,
+        duration: u64,
         uploader: Option<String>
 
     ) -> Effect {
@@ -43,6 +46,7 @@ impl Effect {
             name: name.to_string(),
             path: path,
             last_played: 0,
+            duration: duration,
             uploader: uploader,
             transcript: None
         }
@@ -74,6 +78,7 @@ impl Clone for Effect {
             name: self.name.to_string(),
             path: self.path.clone(),
             last_played: self.last_played,
+            duration: self.duration,
             uploader: self.uploader.clone(),
             transcript: None
         }
@@ -375,14 +380,17 @@ impl EffectRegistry {
 
     fn load_effects(&mut self, config: &ServerConfig) {
 
+        let start = clock_ticks::precise_time_ms();
         filter_dir(&config.effects_path, "flac", |name, path| {
 
+            let duration = get_flac_duration(path.clone()).unwrap_or(0);
             let descriptor: Vec<&str> = name.split('.').collect();
             let effect = match *descriptor.as_slice() {
                 [name, uploader] => {
                     Effect::new(
                         name,
                         path,
+                        duration,
                         Some(uploader.replace("_", "#"))
                     )
                 },
@@ -390,6 +398,7 @@ impl EffectRegistry {
                     Effect::new(
                         name,
                         path,
+                        duration,
                         None
                     )
                 },
@@ -403,7 +412,11 @@ impl EffectRegistry {
 
         });
 
-        info!("{} Effects loaded.", self);
+        info!(
+            "{} Effects loaded in {}ms.",
+            self,
+            clock_ticks::precise_time_ms() - start
+        );
 
     }
 
@@ -573,6 +586,25 @@ fn load_transcript(mut flac_path: PathBuf) -> Option<String> {
         None
     }
 
+}
+
+fn get_flac_duration(flac_path: PathBuf) -> Result<u64, String> {
+    File::open(flac_path.clone())
+        .map_err(|err| err.to_string())
+        .and_then(|mut file| {
+            let mut header: [u8; 256] = [0; 256];
+            file.read_exact(&mut header)
+                .map_err(|err| err.to_string())
+                .map(|_| header)
+
+        }).and_then(|header| {
+            Stream::<ByteStream>::from_buffer(&header[..])
+                .map_err(|_| "Failed to parse FLAC header.".to_string())
+                .map(|stream| {
+                    let stream_info = stream.info();
+                    stream_info.total_samples / stream_info.sample_rate as u64
+                })
+        })
 }
 
 fn download_file(

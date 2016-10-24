@@ -39,7 +39,7 @@ impl ActionImpl {
 }
 
 impl Action for ActionImpl {
-    fn run(&self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
+    fn run(&mut self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.server_id) {
             server.play_effects(
                 &self.channel_id,

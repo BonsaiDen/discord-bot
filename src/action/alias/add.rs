@@ -26,7 +26,7 @@ impl ActionImpl {
 }
 
 impl Action for ActionImpl {
-    fn run(&self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
+    fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
             server.add_alias(&self.name, &self.effect_names);

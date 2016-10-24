@@ -22,7 +22,7 @@ impl ActionImpl {
 }
 
 impl Action for ActionImpl {
-    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
+    fn run(&mut self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         info!("{} Deleting...", self);
         queue.delete_message(self.message.id, self.message.channel_id);
         vec![]

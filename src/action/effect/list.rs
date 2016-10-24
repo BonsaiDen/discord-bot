@@ -35,7 +35,7 @@ impl ActionImpl {
 }
 
 impl Action for ActionImpl {
-    fn run(&self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
+    fn run(&mut self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 

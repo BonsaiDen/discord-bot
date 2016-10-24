@@ -48,7 +48,7 @@ impl ActionImpl {
 }
 
 impl Action for ActionImpl {
-    fn run(&self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
+    fn run(&mut self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
 
         if let Some(user_id) = self.user_id.as_ref() {
             queue.send_message_to_user(user_id, self.content.clone());
