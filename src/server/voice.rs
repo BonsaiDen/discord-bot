@@ -1,10 +1,14 @@
+// STD Dependencies -----------------------------------------------------------
+use std::sync::mpsc;
+
+
 // Discord Dependencies -------------------------------------------------------
 use discord::model::ChannelId;
 use discord::model::permissions::{VOICE_CONNECT, VOICE_SPEAK};
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::audio::Mixer;
+use ::audio::{MixerCommand, Mixer};
 use ::core::EventQueue;
 use super::{Server, ServerVoiceStatus};
 
@@ -47,11 +51,13 @@ impl Server {
             info!("{} {} Joining voice", self, channel);
         }
 
-        let mixer_queue = self.mixer_queue.clone();
+        // Setup voice connection and mixer
+        let (sender, receiver) = mpsc::channel::<MixerCommand>();
         queue.connect_server_voice(self.id, *channel_id, move |conn| {
-            conn.play(Box::new(Mixer::new(mixer_queue)));
+            conn.play(Box::new(Mixer::new(receiver)));
         });
 
+        self.mixer_queue = Some(sender);
         self.voice_status = ServerVoiceStatus::Pending;
 
     }

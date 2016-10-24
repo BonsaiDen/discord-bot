@@ -1,6 +1,7 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::fs::File;
+use std::sync::mpsc;
 use std::io::{Read, Write};
 use std::collections::HashMap;
 
@@ -22,7 +23,7 @@ use clock_ticks;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::audio::{MixerQueue, EmptyMixerQueue};
+use ::audio::MixerCommand;
 use ::bot::BotConfig;
 use ::core::{Channel, EventQueue, Member};
 use ::effect::EffectRegistry;
@@ -66,7 +67,7 @@ pub struct Server {
     voice_channel_id: Option<ChannelId>,
     pinned_channel_id: Option<ChannelId>,
     voice_status: ServerVoiceStatus,
-    mixer_queue: MixerQueue,
+    mixer_queue: Option<mpsc::Sender<MixerCommand>>,
 
     channels: HashMap<ChannelId, Channel>,
     members: HashMap<UserId, Member>
@@ -103,7 +104,7 @@ impl Server {
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
-                    mixer_queue: EmptyMixerQueue::create(),
+                    mixer_queue: None,
                     channels: HashMap::new(),
                     members: HashMap::new()
                 }
@@ -121,7 +122,7 @@ impl Server {
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
-                    mixer_queue: EmptyMixerQueue::create(),
+                    mixer_queue: None,
                     channels: HashMap::new(),
                     members: HashMap::new()
                 };

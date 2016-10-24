@@ -1,9 +1,8 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::cmp;
-use std::thread;
-use std::time::Duration;
 use std::sync::{Arc, Mutex};
+use std::sync::mpsc::Receiver;
 use std::collections::VecDeque;
 
 
@@ -34,22 +33,15 @@ pub enum MixerCommand {
 
 pub type MixerQueue = Arc<Mutex<VecDeque<MixerCommand>>>;
 
-pub struct EmptyMixerQueue;
-
-impl EmptyMixerQueue {
-    pub fn create() -> MixerQueue {
-        Arc::new(Mutex::new(VecDeque::new()))
-    }
-}
-
 
 // Audio Playback Mixer Abstraction -------------------------------------------
 pub struct Mixer {
     id: u64,
-    command_queue: MixerQueue,
-    audio_buffer: [i16; 960 * 2],
+    command_queue: Receiver<MixerCommand>,
+    command_buffer: VecDeque<MixerCommand>,
     active_sources: Vec<MixerList>,
     queued_sources: VecDeque<MixerList>,
+    audio_buffer: [i16; 960 * 2],
     delay: u64
 }
 
@@ -57,14 +49,15 @@ pub struct Mixer {
 // Public Interface -----------------------------------------------------------
 impl Mixer {
 
-    pub fn new(command_queue: MixerQueue) -> Mixer {
+    pub fn new(command_queue: Receiver<MixerCommand>) -> Mixer {
 
         let mut rng = thread_rng();
         let mixer = Mixer {
-            command_queue: command_queue.clone(),
-            audio_buffer: [0; 960 * 2],
+            command_queue: command_queue,
+            command_buffer: VecDeque::new(),
             active_sources: Vec::new(),
             queued_sources: VecDeque::new(),
+            audio_buffer: [0; 960 * 2],
             delay: MIXER_DELAY_MILLIS,
             id: rng.next_u64()
         };
@@ -77,14 +70,27 @@ impl Mixer {
 
     fn update_sources(&mut self) {
 
-        let active_sources = self.active_sources.len();
-        if active_sources < MAX_PARALLEL_SOURCES {
+        // Pull commands from receiver
+        while let Ok(command) = self.command_queue.try_recv() {
+            match command {
 
-            // Pop the next command from the queue
-            if let Some(command) = {
-                self.command_queue.lock().expect("No command queue lock.").pop_front()
+                // Always clear queue if requested
+                MixerCommand::ClearQueue => {
+                    info!("{} List queues cleared", self);
+                    self.active_sources.clear();
+                    self.queued_sources.clear();
+                },
 
-            } {
+                // Push other commands into the buffer
+                _ => self.command_buffer.push_back(command)
+
+            }
+        }
+
+        if self.active_sources.len() < MAX_PARALLEL_SOURCES {
+
+            // Pop the next available command from the queue
+            if let Some(command) = self.command_buffer.pop_front() {
                 match command {
                     MixerCommand::PlayEffects(effects) => {
                         info!("{} Playing effects list...", self);
@@ -109,13 +115,6 @@ impl Mixer {
                 }
             }
 
-        } else if let Some(&MixerCommand::ClearQueue) = {
-            self.command_queue.lock().expect("No command queue lock.").front()
-        } {
-            info!("{} List queues cleared", self);
-            self.command_queue.lock().expect("No command queue lock.").pop_front();
-            self.active_sources.clear();
-            self.queued_sources.clear();
         }
 
     }

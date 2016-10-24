@@ -47,12 +47,12 @@ impl Server {
 
             self.join_voice(channel_id, queue);
 
-            if let Ok(mut queue) = self.mixer_queue.lock() {
+            if let Some(queue) = self.mixer_queue.as_mut() {
                 if queued {
-                    queue.push_back(MixerCommand::QueueEffects(effects.to_vec()));
+                    queue.send(MixerCommand::QueueEffects(effects.to_vec())).ok();
 
                 } else {
-                    queue.push_back(MixerCommand::PlayEffects(effects.to_vec()));
+                    queue.send(MixerCommand::PlayEffects(effects.to_vec())).ok();
                 }
             }
 
@@ -61,8 +61,8 @@ impl Server {
     }
 
     pub fn silence_active_effects(&mut self) {
-        if let Ok(mut queue) = self.mixer_queue.lock() {
-            queue.push_back(MixerCommand::ClearQueue);
+        if let Some(queue) = self.mixer_queue.as_mut() {
+            queue.send(MixerCommand::ClearQueue).ok();
         }
     }
 
