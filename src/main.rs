@@ -32,13 +32,15 @@ use discord::model::ServerId;
 // Internal Dependencies ------------------------------------------------------
 mod action;
 mod audio;
-mod bot;
 #[macro_use]
 mod command;
 mod core;
 mod effect;
-mod logger;
+mod server;
 mod upload;
+
+mod bot;
+mod logger;
 mod text_util;
 
 

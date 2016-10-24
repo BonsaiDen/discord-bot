@@ -28,9 +28,7 @@ use clock_ticks;
 // Internal Dependencies ------------------------------------------------------
 use ::audio::{Mixer, MixerCommand, MixerQueue, EmptyMixerQueue};
 use ::bot::BotConfig;
-use ::core::event::EventQueue;
-use ::core::member::Member;
-use ::core::channel::Channel;
+use ::core::{Channel, EventQueue, Member};
 use ::effect::{Effect, EffectRegistry};
 use ::action::{ActionGroup, EffectActions};
 

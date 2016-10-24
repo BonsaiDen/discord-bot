@@ -71,7 +71,8 @@ mod silence;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::{Member, Message, Server};
+use ::server::Server;
+use ::core::{Member, Message};
 use ::action::{ActionGroup, MessageActions};
 
 

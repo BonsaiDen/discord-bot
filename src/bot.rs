@@ -16,12 +16,12 @@ use discord::model::{
 use upload::Upload;
 use command::Command;
 use action::ActionGroup;
+use server::Server;
 use core::{
     Channel,
     Event, EventQueue,
     Member,
-    Message, MessageContent,
-    Server
+    Message, MessageContent
 };
 
 

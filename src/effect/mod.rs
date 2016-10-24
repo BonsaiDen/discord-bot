@@ -19,7 +19,7 @@ use edit_distance::edit_distance;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
-use ::core::ServerConfig;
+use ::server::ServerConfig;
 
 
 // Effect Abstraction ---------------------------------------------------------
