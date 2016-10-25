@@ -66,7 +66,7 @@ impl CommandHandler for Handler {
                     MessageActions::Send::private(
                         &command.message,
                         format!(
-                            "No effect(s) matching `{}` were found on {}.\n\n**Perhaps meant one of the following:**\n\n`{}`",
+                            "No effect(s) matching `{}` were found on {}.\n\n**Perhaps you meant one of the following:**\n\n`{}`",
                             command.arguments.join("`, `"),
                             command.server.name,
                             similiar.join("`, `")

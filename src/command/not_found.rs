@@ -14,8 +14,7 @@ impl CommandHandler for Handler {
         MessageActions::Send::private(
             &command.message,
             format!(
-                "The command `{}` does not exist, please type
-                `!help` for a list of all available commands.",
+                "The command `{}` does not exist, please type `!help` for a list of all available commands.",
                 command.name
             )
         )

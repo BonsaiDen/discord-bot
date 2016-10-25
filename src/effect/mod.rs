@@ -305,7 +305,7 @@ impl EffectRegistry {
             match_effect_pattern(
                 effect,
                 pattern,
-                !match_all,
+                match_all,
                 config.effect_playback_separation_ms
             )
 
@@ -492,7 +492,7 @@ fn match_effect_pattern(
 }
 
 fn was_recently_played(effect: &Effect, threshold: u64) -> bool {
-    effect.last_played + threshold < clock_ticks::precise_time_ms()
+    effect.last_played + threshold > clock_ticks::precise_time_ms()
 }
 
 fn match_alias_pattern(alias: &str, pattern: &str) -> bool {

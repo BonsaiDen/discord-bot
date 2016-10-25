@@ -41,17 +41,40 @@ impl Action for ActionImpl {
 
             if let Some(ref patterns) = self.patterns {
                 let title = format!(
-                    "Sound Effect matching \"{}\"",
-                    patterns.join("\", \"")
+                    "Sound Effect matching `{}`",
+                    patterns.join("`, `")
                 );
 
                 let effects = server.map_effects(&patterns[..], true, config);
-                list_effects(&self.message, title.as_str(), effects)
+                if effects.is_empty() {
+                    MessageActions::Send::private(
+                        &self.message,
+                        format!(
+                            "There are no sound effects matching `{}` on {}.",
+                            patterns.join("`, `"),
+                            server.name
+                        )
+                    )
+
+                } else {
+                    list_effects(&self.message, title.as_str(), effects)
+                }
 
             } else {
                 let patterns = vec![String::from("*")];
                 let effects = server.map_effects(&patterns[..], true, config);
-                list_effects(&self.message, "Sound Effects", effects)
+                if effects.is_empty() {
+                    MessageActions::Send::private(
+                        &self.message,
+                        format!(
+                            "There are no sound effects available on {}.",
+                            server.name
+                        )
+                    )
+
+                } else {
+                    list_effects(&self.message, "Sound Effects", effects)
+                }
             }
 
         } else {

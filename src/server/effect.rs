@@ -91,7 +91,10 @@ impl Server {
 
     ) -> Vec<&Effect> {
         self.effects.map_patterns(
-            patterns, Some(&self.config.aliases), match_all, bot_config
+            patterns,
+            Some(&self.config.aliases),
+            match_all,
+            bot_config
         )
     }
 

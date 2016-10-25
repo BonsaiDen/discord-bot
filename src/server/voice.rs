@@ -23,10 +23,9 @@ impl Server {
         if !permissions.contains(VOICE_CONNECT | VOICE_SPEAK) {
             info!("{} No permissions to join voice channel", self);
             return;
-        }
 
         // Check if already pending
-        if self.voice_status == ServerVoiceStatus::Pending {
+        } else if self.voice_status == ServerVoiceStatus::Pending {
             info!("{} Already joining a voice channel", self);
             return;
 

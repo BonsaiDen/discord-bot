@@ -79,15 +79,15 @@ impl Server {
 
                 if self.voice_channel_id.is_some() {
                     if voice_state.channel_id.is_some() {
-                        self.member_left_voice();
-                        self.member_joined_voice(voice_state.channel_id.unwrap());
+                        self.bot_left_voice();
+                        self.bot_joined_voice(voice_state.channel_id.unwrap());
 
                     } else {
-                        self.member_left_voice();
+                        self.bot_left_voice();
                     }
 
                 } else if voice_state.channel_id.is_some() {
-                    self.member_joined_voice(voice_state.channel_id.unwrap());
+                    self.bot_joined_voice(voice_state.channel_id.unwrap());
                 }
 
                 vec![]
@@ -189,23 +189,6 @@ impl Server {
 
     }
 
-    fn member_joined_voice(&mut self, channel_id: ChannelId) {
-        if self.voice_status == ServerVoiceStatus::Pending {
-            info!("{} Joined voice channel", self);
-            self.voice_status = ServerVoiceStatus::Joined;
-            self.voice_channel_id = Some(channel_id);
-        }
-    }
-
-    fn member_left_voice(&mut self) {
-        if self.voice_status == ServerVoiceStatus::Joined {
-            info!("{} Left voice channel", self);
-            self.voice_status = ServerVoiceStatus::Left;
-            self.pinned_channel_id = None;
-            self.voice_channel_id = None;
-        }
-    }
-
     fn greet_member(
         &mut self,
         voice_state: &DiscordVoiceState,
@@ -245,6 +228,23 @@ impl Server {
             vec![]
         }
 
+    }
+
+    fn bot_joined_voice(&mut self, channel_id: ChannelId) {
+        if self.voice_status == ServerVoiceStatus::Pending {
+            info!("{} Joined voice channel", self);
+            self.voice_status = ServerVoiceStatus::Joined;
+            self.voice_channel_id = Some(channel_id);
+        }
+    }
+
+    fn bot_left_voice(&mut self) {
+        if self.voice_status == ServerVoiceStatus::Joined {
+            info!("{} Left voice channel", self);
+            self.voice_status = ServerVoiceStatus::Left;
+            self.pinned_channel_id = None;
+            self.voice_channel_id = None;
+        }
     }
 
 }
