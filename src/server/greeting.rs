@@ -18,6 +18,8 @@ impl Server {
 
     ) -> Option<Vec<&Effect>> {
         if let Some(member) = self.members.get(member_id) {
+
+            // User specific greeting
             if let Some(effect_name) = self.config.greetings.get(&member.nickname) {
                 Some(self.map_effects(
                     &[effect_name.to_string()],
@@ -25,7 +27,8 @@ impl Server {
                     bot_config
                 ))
 
-            } else if let Some(effect_name) = self.config.greetings.get("effect") {
+            // Default greeting
+            } else if let Some(effect_name) = self.config.greetings.get("default") {
                 Some(self.map_effects(
                     &[effect_name.to_string()],
                     false,
