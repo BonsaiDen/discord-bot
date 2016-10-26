@@ -63,6 +63,7 @@ mod leave;
 mod not_found;
 mod pin;
 mod play;
+mod record;
 mod reload;
 mod rename;
 mod sounds;
@@ -175,6 +176,7 @@ impl<'a> Command<'a> {
                 "ip" => self.run(ip::Handler),
                 "leave" => self.run(leave::Handler),
                 "reload" => self.run(reload::Handler),
+                "record" => self.run(record::Handler),
                 "help" => self.run(help::Handler),
                 _ => self.run(not_found::Handler)
             }

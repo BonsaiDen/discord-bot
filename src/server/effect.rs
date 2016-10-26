@@ -45,14 +45,19 @@ impl Server {
 
         if has_channel {
 
-            self.join_voice(channel_id, queue);
+            // See if we're actually in the requested channel or if we're going
+            // to switch there.
+            //
+            // We want to prevent playing greetings from other channels in case
+            // we are pinned to another channel already.
+            if self.join_voice(channel_id, queue) {
+                if let Some(queue) = self.mixer_queue.as_mut() {
+                    if queued {
+                        queue.send(MixerCommand::QueueEffects(effects.to_vec())).ok();
 
-            if let Some(queue) = self.mixer_queue.as_mut() {
-                if queued {
-                    queue.send(MixerCommand::QueueEffects(effects.to_vec())).ok();
-
-                } else {
-                    queue.send(MixerCommand::PlayEffects(effects.to_vec())).ok();
+                    } else {
+                        queue.send(MixerCommand::PlayEffects(effects.to_vec())).ok();
+                    }
                 }
             }
 

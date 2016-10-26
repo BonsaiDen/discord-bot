@@ -52,6 +52,12 @@ pub enum ServerVoiceStatus {
     Left
 }
 
+#[derive(Debug, PartialEq)]
+pub enum ServerRecordingStatus {
+    Recording,
+    Stopped
+}
+
 
 // Server Abstraction ---------------------------------------------------------
 pub struct Server {
@@ -67,6 +73,7 @@ pub struct Server {
     voice_channel_id: Option<ChannelId>,
     pinned_channel_id: Option<ChannelId>,
     voice_status: ServerVoiceStatus,
+    recording_status: ServerRecordingStatus,
     mixer_queue: Option<mpsc::Sender<MixerCommand>>,
 
     channels: HashMap<ChannelId, Channel>,
@@ -104,6 +111,7 @@ impl Server {
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
+                    recording_status: ServerRecordingStatus::Stopped,
                     mixer_queue: None,
                     channels: HashMap::new(),
                     members: HashMap::new()
@@ -122,6 +130,7 @@ impl Server {
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
+                    recording_status: ServerRecordingStatus::Stopped,
                     mixer_queue: None,
                     channels: HashMap::new(),
                     members: HashMap::new()

@@ -1,9 +1,9 @@
 // Modules --------------------------------------------------------------------
-mod mixer;
-mod recorder;
+mod start;
+mod stop;
 
 
 // Re-Exports -----------------------------------------------------------------
-pub use self::mixer::{Mixer, MixerCommand};
-pub use self::recorder::Recorder;
+pub use self::start::ActionImpl as Start;
+pub use self::stop::ActionImpl as Stop;
 

@@ -16,7 +16,7 @@ use clock_ticks;
 use ::bot::BotConfig;
 use ::action::{ActionGroup, EffectActions};
 use ::core::{EventQueue, Member};
-use super::{Server, ServerVoiceStatus};
+use super::{Server, ServerRecordingStatus, ServerVoiceStatus};
 
 
 // Server Member Interface ----------------------------------------------------
@@ -242,6 +242,7 @@ impl Server {
         if self.voice_status == ServerVoiceStatus::Joined {
             info!("{} Left voice channel", self);
             self.voice_status = ServerVoiceStatus::Left;
+            self.recording_status = ServerRecordingStatus::Stopped;
             self.pinned_channel_id = None;
             self.voice_channel_id = None;
         }

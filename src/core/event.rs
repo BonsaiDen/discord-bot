@@ -95,6 +95,15 @@ impl EventQueue {
         callback(voice_connection);
     }
 
+    pub fn with_server_voice<C: FnOnce(&mut VoiceConnection)>(
+        &mut self,
+        server_id: ServerId,
+        callback: C
+    ) {
+        let voice_connection = self.receiver.connection.voice(Some(server_id));
+        callback(voice_connection);
+    }
+
     pub fn disconnect_server_voice(&mut self, server_id: ServerId) {
         info!("[EL] Dropping voice connection for Server#{}", server_id);
         self.receiver.connection.drop_voice(Some(server_id));

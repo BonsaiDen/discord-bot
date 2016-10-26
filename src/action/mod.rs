@@ -13,6 +13,7 @@ pub mod ban;
 pub mod effect;
 pub mod greeting;
 pub mod message;
+pub mod recording;
 pub mod server;
 pub mod timed;
 
@@ -23,6 +24,7 @@ pub use self::ban as BanActions;
 pub use self::effect as EffectActions;
 pub use self::greeting as GreetingActions;
 pub use self::message as MessageActions;
+pub use self::recording as RecordingActions;
 pub use self::server as ServerActions;
 pub use self::timed::Delayed as DelayedAction;
 
