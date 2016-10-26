@@ -1,7 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::cmp;
-use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Receiver;
 use std::collections::VecDeque;
 
@@ -14,17 +13,17 @@ use discord::voice::AudioSource;
 use rand::{thread_rng, Rng};
 
 
-// Internal Dependencies ------------------------------------------------------
-use ::effect::Effect;
-
-
 // Modules --------------------------------------------------------------------
 mod list;
 mod source;
 
 
+// Internal Dependencies ------------------------------------------------------
+use ::effect::Effect;
+use self::list::MixerList;
+
+
 // Re-Exports -----------------------------------------------------------------
-pub use self::list::MixerList;
 pub use self::source::MixerSource;
 
 
@@ -33,14 +32,12 @@ static MAX_PARALLEL_SOURCES: usize = 2;
 static MIXER_DELAY_MILLIS: u64 = 500;
 
 
-// Mixer Queue  ---------------------------------------------------------------
+// Mixer Commands -------------------------------------------------------------
 pub enum MixerCommand {
     PlayEffects(Vec<Effect>),
     QueueEffects(Vec<Effect>),
     ClearQueue
 }
-
-pub type MixerQueue = Arc<Mutex<VecDeque<MixerCommand>>>;
 
 
 // Audio Playback Mixer Abstraction -------------------------------------------
