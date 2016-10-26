@@ -15,8 +15,17 @@ use rand::{thread_rng, Rng};
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::MixerList;
 use ::effect::Effect;
+
+
+// Modules --------------------------------------------------------------------
+mod list;
+mod source;
+
+
+// Re-Exports -----------------------------------------------------------------
+pub use self::list::MixerList;
+pub use self::source::MixerSource;
 
 
 // Statics --------------------------------------------------------------------
