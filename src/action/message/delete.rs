@@ -9,19 +9,19 @@ use ::action::{ActionHandler, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     message: Message
 }
 
-impl ActionImpl {
-    pub fn new(message: Message) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+impl Action {
+    pub fn new(message: Message) -> Box<Action> {
+        Box::new(Action {
             message: message
         })
     }
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         info!("{} Deleting...", self);
         queue.delete_message(self.message.id, self.message.channel_id);
@@ -29,7 +29,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [DeleteMessage] {}", self.message)
     }

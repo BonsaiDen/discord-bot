@@ -10,15 +10,15 @@ use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     message: Message,
     effect: Effect,
     name: String
 }
 
-impl ActionImpl {
-    pub fn new(message: Message, effect: &Effect, name: String) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+impl Action {
+    pub fn new(message: Message, effect: &Effect, name: String) -> Box<Action> {
+        Box::new(Action {
             message: message,
             effect: effect.clone(),
             name: name
@@ -26,7 +26,7 @@ impl ActionImpl {
     }
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -57,7 +57,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [RenameEffect] {} to \"{}\"", self.effect, self.name)
     }

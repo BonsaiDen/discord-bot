@@ -9,19 +9,19 @@ use ::action::{ActionHandler, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     message: Message
 }
 
-impl ActionImpl {
-    pub fn new(message: Message) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+impl Action {
+    pub fn new(message: Message) -> Box<Action> {
+        Box::new(Action {
             message: message
         })
     }
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.message.server_id) {
             info!("{} Pinning to current voice channel...", self);
@@ -31,7 +31,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

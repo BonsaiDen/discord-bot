@@ -9,15 +9,15 @@ use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     message: Message,
     name: String,
     effect_names: Vec<String>
 }
 
-impl ActionImpl {
-    pub fn new(message: Message, name: String, effect_names: Vec<String>) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+impl Action {
+    pub fn new(message: Message, name: String, effect_names: Vec<String>) -> Box<Action> {
+        Box::new(Action {
             message: message,
             name: name,
             effect_names: effect_names
@@ -25,7 +25,7 @@ impl ActionImpl {
     }
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -42,7 +42,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

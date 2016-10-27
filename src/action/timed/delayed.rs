@@ -13,16 +13,16 @@ use clock_ticks;
 
 
 // Delayed Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     delay_until: u64,
     action: Option<Box<ActionHandler>>
 }
 
 
-impl ActionImpl {
+impl Action {
 
-    fn new(delay_millis: u64, action: Box<ActionHandler>) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    fn new(delay_millis: u64, action: Box<ActionHandler>) -> Box<Action> {
+        Box::new(Action {
             delay_until: clock_ticks::precise_time_ms() + delay_millis,
             action: Some(action)
         })
@@ -30,7 +30,7 @@ impl ActionImpl {
 
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
 
     fn ready(&self) -> bool {
         clock_ticks::precise_time_ms() > self.delay_until
@@ -47,7 +47,7 @@ impl ActionHandler for ActionImpl {
 
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[DelayedAction] {}", self.action.as_ref().unwrap())
     }

@@ -11,22 +11,22 @@ use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     message: Message,
     patterns: Option<Vec<String>>
 }
 
-impl ActionImpl {
+impl Action {
 
-    pub fn all(message: Message) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    pub fn all(message: Message) -> Box<Action> {
+        Box::new(Action {
             message: message,
             patterns: None
         })
     }
 
-    pub fn matching(message: Message, patterns: Vec<String>) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    pub fn matching(message: Message, patterns: Vec<String>) -> Box<Action> {
+        Box::new(Action {
             message: message,
             patterns: Some(patterns)
         })
@@ -34,7 +34,7 @@ impl ActionImpl {
 
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -84,7 +84,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [ListEffects]")
     }

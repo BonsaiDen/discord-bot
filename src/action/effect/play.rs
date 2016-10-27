@@ -14,22 +14,22 @@ use ::action::{ActionHandler, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     server_id: ServerId,
     channel_id: ChannelId,
     effects: Vec<Effect>,
     queued: bool
 }
 
-impl ActionImpl {
+impl Action {
     pub fn new(
         server_id: ServerId,
         channel_id: ChannelId,
         effects: Vec<&Effect>,
         queued: bool
 
-    ) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    ) -> Box<Action> {
+        Box::new(Action {
             server_id: server_id,
             channel_id: channel_id,
             effects: effects.iter().map(|e| (*e).clone()).collect(),
@@ -38,7 +38,7 @@ impl ActionImpl {
     }
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.server_id) {
             server.play_effects(
@@ -55,7 +55,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Action] [PlayEffects]")
     }

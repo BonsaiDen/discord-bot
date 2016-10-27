@@ -9,22 +9,22 @@ use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     message: Message,
     effect_name: String,
     upload_url: String,
     uploader: String
 }
 
-impl ActionImpl {
+impl Action {
     pub fn new(
         message: Message,
         effect_name: String,
         upload_url: String,
         uploader: String
 
-    ) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    ) -> Box<Action> {
+        Box::new(Action {
             message: message,
             effect_name: effect_name,
             upload_url: upload_url,
@@ -33,7 +33,7 @@ impl ActionImpl {
     }
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -85,7 +85,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

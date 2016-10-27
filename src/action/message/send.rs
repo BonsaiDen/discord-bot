@@ -13,20 +13,20 @@ use ::action::{ActionHandler, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
-pub struct ActionImpl {
+pub struct Action {
     user_id: Option<UserId>,
     channel_id: Option<ChannelId>,
     content: String
 }
 
-impl ActionImpl {
+impl Action {
 
     pub fn private(message: &Message, content: String) -> ActionGroup {
-        vec![ActionImpl::single_private(message, content)]
+        vec![Action::single_private(message, content)]
     }
 
-    pub fn single_private(message: &Message, content: String) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    pub fn single_private(message: &Message, content: String) -> Box<Action> {
+        Box::new(Action {
             user_id: Some(message.user_id),
             channel_id: None,
             content: content
@@ -34,11 +34,11 @@ impl ActionImpl {
     }
 
     pub fn public(message: &Message, content: String) -> ActionGroup {
-        vec![ActionImpl::single_public(message, content)]
+        vec![Action::single_public(message, content)]
     }
 
-    pub fn single_public(message: &Message, content: String) -> Box<ActionImpl> {
-        Box::new(ActionImpl {
+    pub fn single_public(message: &Message, content: String) -> Box<Action> {
+        Box::new(Action {
             user_id: None,
             channel_id: Some(message.channel_id),
             content: content
@@ -47,7 +47,7 @@ impl ActionImpl {
 
 }
 
-impl ActionHandler for ActionImpl {
+impl ActionHandler for Action {
     fn run(&mut self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
 
         if let Some(user_id) = self.user_id.as_ref() {
@@ -62,7 +62,7 @@ impl ActionHandler for ActionImpl {
     }
 }
 
-impl fmt::Display for ActionImpl {
+impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(user_id) = self.user_id {
             write!(f, "[Action] [SendMessage] To User#{}", user_id)

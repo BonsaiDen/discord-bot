@@ -3,5 +3,5 @@ mod delayed;
 
 
 // Re-Exports -----------------------------------------------------------------
-pub use self::delayed::ActionImpl as Delayed;
+pub use self::delayed::Action as Delayed;
 
