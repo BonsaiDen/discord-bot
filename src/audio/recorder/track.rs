@@ -14,6 +14,10 @@ use clock_ticks;
 use discord::model::UserId;
 
 
+// Internal Dependencies ------------------------------------------------------
+use super::{AudioWriter, Chunk, OggWriter, VoicePacket};
+
+
 // Audio Recording Track Implementation ---------------------------------------
 pub struct Track {
     source_id: u32,
@@ -22,11 +26,14 @@ pub struct Track {
     chunk_duration: u32,
     recording_directory: PathBuf,
     track_file: Option<File>,
+    writer: Option<Box<AudioWriter>>,
     voice_packets: Vec<VoicePacket>,
     start_timestamp: u64,
     oldest_packet_timestamp: Option<u32>
 }
 
+
+// Public Interface -----------------------------------------------------------
 impl Track {
 
     pub fn new(
@@ -43,6 +50,7 @@ impl Track {
             chunk_duration: chunk_duration,
             recording_directory: recording_directory,
             track_file: None,
+            writer: None,
             voice_packets: Vec::new(),
             start_timestamp: 0,
             oldest_packet_timestamp: None
@@ -95,6 +103,12 @@ impl Track {
             self.write_chunk(chunk);
         }
     }
+
+}
+
+
+// Internal Interface ---------------------------------------------------------
+impl Track {
 
     fn create_chunk(&mut self, minimum_duration: u32) -> Option<Chunk> {
 
@@ -179,26 +193,30 @@ impl Track {
         // Append to opened file
         if self.track_file.is_some() {
             if let Some(file) = self.track_file.as_mut() {
-                // TODO write chunk data
-                // TODO mix down voice packets into mono
+                if let Some(writer) = self.writer.as_mut() {
+                    writer.write_chunk(file, chunk);
+                }
             }
 
         // Create file if it does not exist yet
         } else if self.user_id.is_some() {
 
-            // TODO IW: Clean up
             let mut path = self.recording_directory.clone();
-
             if let Ok(_) = fs::create_dir_all(path.clone()) {
 
-                path.push(format!("{}.{}.track", self.user_id.unwrap(), self.source_id));
+                path.push(
+                    format!("{}.{}.track", self.user_id.unwrap(), self.source_id)
+                );
 
                 info!("{} Opening track file \"{:?}\"...", self, path);
+
                 match File::create(path) {
-                    Ok(file) => {
+                    Ok(mut file) => {
+                        let mut writer = Box::new(OggWriter);
+                        writer.write_header(&mut file, self);
+                        writer.write_chunk(&mut file, chunk);
+                        self.writer = Some(writer);
                         self.track_file = Some(file);
-                        // TODO write track header
-                        self.write_chunk(chunk);
                     },
                     Err(err) => warn!("Failed to open track file: {:?}", err)
                 }
@@ -211,7 +229,7 @@ impl Track {
 
 }
 
-
+// Traits ---------------------------------------------------------------------
 impl fmt::Display for Track {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(user_id) = self.user_id {
@@ -231,34 +249,6 @@ impl fmt::Display for Track {
                 self.voice_packets.len()
             )
         }
-    }
-}
-
-struct VoicePacket {
-    sequence: u16,
-    timestamp: u32,
-    received: u64,
-    channels: usize,
-    data: Vec<i16>
-}
-
-struct Chunk {
-    duration: u32,
-    track_offset: u64,
-    channels: usize,
-    voice_packets: Vec<VoicePacket>
-}
-
-impl fmt::Display for Chunk {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[Chunk {}ms ({} offset) ({} channels) ({} packets)]",
-            self.duration,
-            self.track_offset,
-            self.channels,
-            self.voice_packets.len()
-        )
     }
 }
 

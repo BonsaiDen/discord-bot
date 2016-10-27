@@ -9,8 +9,12 @@ use clock_ticks;
 
 
 // Modules --------------------------------------------------------------------
+mod chunk;
 mod track;
-use self::track::Track;
+mod writer;
+pub use self::chunk::{Chunk, VoicePacket};
+pub use self::track::Track;
+pub use self::writer::{AudioWriter, OggWriter};
 
 
 // Discord Dependencies -------------------------------------------------------
