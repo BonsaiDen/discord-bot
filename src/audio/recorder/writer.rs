@@ -18,11 +18,11 @@ pub struct OggWriter;
 
 impl AudioWriter for OggWriter {
 
-    fn write_header(&mut self, file: &mut File, track: &Track) {
+    fn write_header(&mut self, _: &mut File, _: &Track) {
 
     }
 
-    fn write_chunk(&mut self, file: &mut File, chunk: Chunk) {
+    fn write_chunk(&mut self, _: &mut File, _: Chunk) {
 
     }
 
