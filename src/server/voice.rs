@@ -123,10 +123,14 @@ impl Server {
 
         if self.voice_status != ServerVoiceStatus::Left {
             if self.recording_status == ServerRecordingStatus::Stopped {
+
+                let path = self.config.recordings_path.clone();
                 queue.with_server_voice(self.id, move |conn| {
-                    conn.set_receiver(Box::new(Recorder::new(1000)));
+                    conn.set_receiver(Box::new(Recorder::new(path, 1000)));
                 });
+
                 self.recording_status = ServerRecordingStatus::Recording;
+
                 info!("{} Voice recording started", self);
                 true
 

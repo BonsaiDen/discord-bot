@@ -21,6 +21,7 @@ use ::bot::BotConfig;
 pub struct ServerConfig {
     pub config_path: PathBuf,
     pub effects_path: PathBuf,
+    pub recordings_path: PathBuf,
     pub aliases: HashMap<String, Vec<String>>,
     pub greetings: HashMap<String, String>,
     pub uploaders: Vec<String>,
@@ -41,9 +42,14 @@ impl ServerConfig {
         effects_path.push(server_id.0.to_string());
         effects_path.push("effects");
 
+        let mut recordings_path = bot_config.config_path.clone();
+        recordings_path.push(server_id.0.to_string());
+        recordings_path.push("recordings");
+
         ServerConfig {
             config_path: config_path,
             effects_path: effects_path,
+            recordings_path: recordings_path,
             aliases: HashMap::new(),
             greetings: HashMap::new(),
             admins: Vec::new(),
