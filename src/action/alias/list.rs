@@ -6,7 +6,7 @@ use std::fmt;
 use ::bot::{Bot, BotConfig};
 use ::text_util::list_lines;
 use ::core::{EventQueue, Message};
-use ::action::{Action, ActionGroup, MessageActions};
+use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
@@ -22,7 +22,7 @@ impl ActionImpl {
     }
 }
 
-impl Action for ActionImpl {
+impl ActionHandler for ActionImpl {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -43,7 +43,7 @@ impl Action for ActionImpl {
 
             } else {
                 list_lines("Effect Aliases", aliases, 25).into_iter().map(|text| {
-                    MessageActions::Send::single_private(&self.message, text) as Box<Action>
+                    MessageActions::Send::single_private(&self.message, text) as Box<ActionHandler>
 
                 }).collect()
             }

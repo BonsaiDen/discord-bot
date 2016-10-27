@@ -5,7 +5,7 @@ use std::fmt;
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
 use ::core::{EventQueue, Message};
-use ::action::{Action, ActionGroup, MessageActions};
+use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
@@ -23,7 +23,7 @@ impl ActionImpl {
     }
 }
 
-impl Action for ActionImpl {
+impl ActionHandler for ActionImpl {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {

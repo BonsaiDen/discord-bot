@@ -5,7 +5,7 @@ use std::fmt;
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
 use ::core::EventQueue;
-use ::action::{Action, ActionGroup};
+use ::action::{ActionHandler, ActionGroup};
 
 
 // External Dependencies ------------------------------------------------------
@@ -15,13 +15,13 @@ use clock_ticks;
 // Delayed Action Implementation ------------------------------------------------------
 pub struct ActionImpl {
     delay_until: u64,
-    action: Option<Box<Action>>
+    action: Option<Box<ActionHandler>>
 }
 
 
 impl ActionImpl {
 
-    fn new(delay_millis: u64, action: Box<Action>) -> Box<ActionImpl> {
+    fn new(delay_millis: u64, action: Box<ActionHandler>) -> Box<ActionImpl> {
         Box::new(ActionImpl {
             delay_until: clock_ticks::precise_time_ms() + delay_millis,
             action: Some(action)
@@ -30,7 +30,7 @@ impl ActionImpl {
 
 }
 
-impl Action for ActionImpl {
+impl ActionHandler for ActionImpl {
 
     fn ready(&self) -> bool {
         clock_ticks::precise_time_ms() > self.delay_until

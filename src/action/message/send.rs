@@ -9,7 +9,7 @@ use discord::model::{ChannelId, UserId};
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
 use ::core::{EventQueue, Message};
-use ::action::{Action, ActionGroup};
+use ::action::{ActionHandler, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
@@ -47,7 +47,7 @@ impl ActionImpl {
 
 }
 
-impl Action for ActionImpl {
+impl ActionHandler for ActionImpl {
     fn run(&mut self, _: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
 
         if let Some(user_id) = self.user_id.as_ref() {

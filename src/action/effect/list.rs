@@ -7,7 +7,7 @@ use ::effect::Effect;
 use ::bot::{Bot, BotConfig};
 use ::text_util::list_words;
 use ::core::{EventQueue, Message};
-use ::action::{Action, ActionGroup, MessageActions};
+use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Action Implementation ------------------------------------------------------
@@ -34,7 +34,7 @@ impl ActionImpl {
 
 }
 
-impl Action for ActionImpl {
+impl ActionHandler for ActionImpl {
     fn run(&mut self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
@@ -107,7 +107,7 @@ fn list_effects(
     effects_names.sort();
 
     list_words(title, effects_names, 100, 4).into_iter().map(|text| {
-        MessageActions::Send::single_private(message, text) as Box<Action>
+        MessageActions::Send::single_private(message, text) as Box<ActionHandler>
 
     }).collect()
 

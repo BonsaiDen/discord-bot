@@ -10,7 +10,7 @@ use discord::model::{ChannelId, ServerId};
 use ::effect::Effect;
 use ::core::EventQueue;
 use ::bot::{Bot, BotConfig};
-use ::action::{Action, ActionGroup};
+use ::action::{ActionHandler, ActionGroup};
 
 
 // Action Implementation ------------------------------------------------------
@@ -38,7 +38,7 @@ impl ActionImpl {
     }
 }
 
-impl Action for ActionImpl {
+impl ActionHandler for ActionImpl {
     fn run(&mut self, bot: &mut Bot, _: &BotConfig, queue: &mut EventQueue) -> ActionGroup {
         if let Some(server) = bot.get_server(&self.server_id) {
             server.play_effects(
