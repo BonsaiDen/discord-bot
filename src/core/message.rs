@@ -55,14 +55,20 @@ impl Message {
 
         if content.starts_with('!') {
 
-            let mut split = content.split(' ');
-            let command_name = split.next().unwrap_or("!");
+            let mut split = content.trim().split(' ');
+            let command = split.next().unwrap_or("!");
+            let command_name = command[1..].to_string();
 
-            vec![MessageContent::Command(
-                command_name[1..].to_string(),
-                split.map(|s| s.to_string()).collect(),
-                self
-            )]
+            if command_name.is_empty() {
+                vec![]
+
+            } else {
+                vec![MessageContent::Command(
+                    command_name,
+                    split.map(|s| s.to_string()).filter(|s| !s.is_empty()).collect(),
+                    self
+                )]
+            }
 
         } else {
             attachments.into_iter().map(|attachment| {
