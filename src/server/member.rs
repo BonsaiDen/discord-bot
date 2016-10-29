@@ -14,6 +14,7 @@ use clock_ticks;
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
+use ::audio::MixerCommand;
 use ::action::{ActionGroup, EffectActions};
 use ::core::{EventQueue, Member};
 use super::{Server, ServerRecordingStatus, ServerVoiceStatus};
@@ -235,6 +236,9 @@ impl Server {
             info!("{} Joined voice channel", self);
             self.voice_status = ServerVoiceStatus::Joined;
             self.voice_channel_id = Some(channel_id);
+            if let Some(queue) = self.mixer_queue.as_mut() {
+                queue.send(MixerCommand::ClearDelay).ok();
+            }
         }
     }
 

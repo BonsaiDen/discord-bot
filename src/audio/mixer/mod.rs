@@ -29,13 +29,14 @@ pub use self::source::MixerSource;
 
 // Statics --------------------------------------------------------------------
 static MAX_PARALLEL_SOURCES: usize = 2;
-static MIXER_DELAY_MILLIS: u64 = 500;
+static MIXER_DELAY_MILLIS: u64 = 5000;
 
 
 // Mixer Commands -------------------------------------------------------------
 pub enum MixerCommand {
     PlayEffects(Vec<Effect>),
     QueueEffects(Vec<Effect>),
+    ClearDelay,
     ClearQueue
 }
 
@@ -76,23 +77,6 @@ impl Mixer {
 
     fn update_sources(&mut self) {
 
-        // Pull commands from receiver
-        while let Ok(command) = self.command_queue.try_recv() {
-            match command {
-
-                // Always clear queue if requested
-                MixerCommand::ClearQueue => {
-                    info!("{} List queues cleared", self);
-                    self.active_sources.clear();
-                    self.queued_sources.clear();
-                },
-
-                // Push other commands into the buffer
-                _ => self.command_buffer.push_back(command)
-
-            }
-        }
-
         if self.active_sources.len() < MAX_PARALLEL_SOURCES {
 
             // Pop the next available command from the queue
@@ -110,7 +94,8 @@ impl Mixer {
                         info!("{} List queues cleared", self);
                         self.active_sources.clear();
                         self.queued_sources.clear();
-                    }
+                    },
+                    _ => unreachable!()
                 }
 
             // If there is no next command in the queue and we currently have no
@@ -126,6 +111,30 @@ impl Mixer {
     }
 
     fn mix(&mut self, buffer: &mut [i16]) -> usize {
+
+        // Pull commands from receiver
+        while let Ok(command) = self.command_queue.try_recv() {
+            match command {
+
+                // Clear audio delay once we joined the channel
+                MixerCommand::ClearDelay => {
+                    info!("{} Delay cleared", self);
+                    self.delay = 0;
+                },
+
+                // Always clear queue if requested
+                MixerCommand::ClearQueue => {
+                    info!("{} List queues cleared", self);
+                    self.active_sources.clear();
+                    self.queued_sources.clear();
+                },
+
+                // Push other commands into the buffer
+                _ => self.command_buffer.push_back(command)
+
+            }
+        }
+
         if self.delay == 0 {
             self.update_sources();
             self.mix_sources(buffer)
