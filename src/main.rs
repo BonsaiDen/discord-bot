@@ -12,8 +12,6 @@ extern crate hyper;
 extern crate chrono;
 extern crate dotenv;
 extern crate discord;
-#[macro_use]
-extern crate lazy_static;
 extern crate clock_ticks;
 extern crate edit_distance;
 

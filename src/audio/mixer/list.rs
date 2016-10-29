@@ -1,17 +1,18 @@
 // Internal Dependencies ------------------------------------------------------
-use super::MixerSource;
+use ::action::ActionOption;
 use ::effect::Effect;
+use super::MixerSource;
 
 
 // Mixer Source List Implementation -------------------------------------------
 pub struct MixerList {
-    effects: Vec<(Effect, usize)>,
+    effects: Vec<(Effect, ActionOption)>,
     source: Option<MixerSource>
 }
 
 impl MixerList {
 
-    pub fn new(effects: Vec<(Effect, usize)>) -> MixerList {
+    pub fn new(effects: Vec<(Effect, ActionOption)>) -> MixerList {
 
         let mut list = MixerList {
             effects: effects,
@@ -24,7 +25,7 @@ impl MixerList {
 
     }
 
-    pub fn clear(&mut self) -> Vec<(Effect, usize)> {
+    pub fn clear(&mut self) -> Vec<(Effect, ActionOption)> {
         self.effects.drain(0..).collect()
     }
 
@@ -32,7 +33,7 @@ impl MixerList {
         self.source.as_mut()
     }
 
-    pub fn udpate_and_complete(&mut self) -> Option<(Effect, usize)> {
+    pub fn udpate_and_complete(&mut self) -> Option<(Effect, ActionOption)> {
 
         let mut completed_effect = None;
 

@@ -31,8 +31,9 @@ pub use self::timed::Delayed as DelayedAction;
 
 // General Action Abstraction -------------------------------------------------
 pub type ActionGroup = Vec<Box<ActionHandler>>;
+pub type ActionOption = Option<Box<ActionHandler>>;
 
-pub trait ActionHandler: fmt::Display {
+pub trait ActionHandler: fmt::Display + Send {
 
     fn ready(&self) -> bool {
         true

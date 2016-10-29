@@ -3,7 +3,8 @@ use discord::model::ChannelId;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::audio::{Mixer, MixerCommand};
+use ::audio::MixerCommand;
+use ::action::ActionHandler;
 use ::bot::BotConfig;
 use ::core::EventQueue;
 use ::effect::Effect;
@@ -18,7 +19,8 @@ impl Server {
         channel_id: &ChannelId,
         effects: &[Effect],
         queued: bool,
-        queue: &mut EventQueue
+        queue: &mut EventQueue,
+        complete_action: Option<Box<ActionHandler>>
     ) {
 
         let has_channel = if let Some(channel) = self.channels.get(channel_id) {
@@ -51,15 +53,22 @@ impl Server {
         if has_channel && self.join_voice(channel_id, queue) {
 
             // Add playback IDs to list of effects
-            let effects = effects.into_iter().map(|effect| {
-                (effect.clone(), Mixer::next_effect_id())
+            let mut effects: Vec<(Effect, Option<Box<ActionHandler>>)> = effects.into_iter().map(|effect| {
+                (effect.clone(), None)
 
             }).collect();
 
+            // Attach completion action to last effect
+            if let Some(last_effect) = effects.last_mut() {
+                last_effect.1 = complete_action;
+            }
+
             if let Some(queue) = self.mixer_commands.as_mut() {
-                queue.send(match queued {
-                    true => MixerCommand::QueueEffects(effects),
-                    false => MixerCommand::PlayEffects(effects)
+                queue.send(if queued {
+                    MixerCommand::QueueEffects(effects)
+
+                } else {
+                    MixerCommand::PlayEffects(effects)
 
                 }).ok();
             }

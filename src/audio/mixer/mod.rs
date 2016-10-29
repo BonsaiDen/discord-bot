@@ -3,7 +3,6 @@ use std::fmt;
 use std::cmp;
 use std::collections::VecDeque;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 
 // Discord Dependencies -------------------------------------------------------
@@ -21,6 +20,7 @@ mod source;
 
 // Internal Dependencies ------------------------------------------------------
 use ::effect::Effect;
+use ::action::ActionOption;
 use self::list::MixerList;
 
 
@@ -31,25 +31,21 @@ pub use self::source::MixerSource;
 // Statics --------------------------------------------------------------------
 static MAX_PARALLEL_SOURCES: usize = 2;
 static MIXER_DELAY_MILLIS: u64 = 5000;
-lazy_static! {
-    static ref EFFECT_PLAYBACK_ID: AtomicUsize = AtomicUsize::new(0);
-}
 
 
 // Mixer Commands -------------------------------------------------------------
 pub enum MixerCommand {
-    PlayEffects(Vec<(Effect, usize)>),
-    QueueEffects(Vec<(Effect, usize)>),
+    PlayEffects(Vec<(Effect, ActionOption)>),
+    QueueEffects(Vec<(Effect, ActionOption)>),
     ClearDelay,
     ClearQueue
 }
 
 
 // Mixer Events ---------------------------------------------------------------
-#[derive(Debug)]
 pub enum MixerEvent {
-    Completed(Effect, usize),
-    Canceled(Effect, usize)
+    Completed(Effect, ActionOption),
+    Canceled(Effect, ActionOption)
 }
 
 
@@ -93,10 +89,6 @@ impl Mixer {
 
     }
 
-    pub fn next_effect_id() -> usize {
-        EFFECT_PLAYBACK_ID.fetch_add(1, Ordering::SeqCst)
-    }
-
 }
 
 
@@ -118,7 +110,6 @@ impl Mixer {
                         info!("{} Queueing effects list...", self);
                         self.queued_source_lists.push_back(MixerList::new(effects));
                     },
-                    MixerCommand::ClearQueue => self.clear(),
                     _ => unreachable!()
                 }
 

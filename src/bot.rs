@@ -307,8 +307,21 @@ impl Bot {
         _: &mut EventQueue
 
     ) -> ActionGroup {
-        info!("[Bot] MixerEvent: {:?}", event);
-        vec![]
+        match event {
+            MixerEvent::Completed(effect, mut action) => {
+                info!("[Bot] MixerEvent effect playback completed: {:?}", effect);
+                if let Some(action) = action.take() {
+                    vec![action]
+
+                } else {
+                    vec![]
+                }
+            },
+            MixerEvent::Canceled(effect, _) => {
+                info!("[Bot] MixerEvent effect playback canceled: {:?}", effect);
+                vec![]
+            }
+        }
     }
 
     fn message_event(

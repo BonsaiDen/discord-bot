@@ -7,6 +7,7 @@ use flac;
 
 
 // Internal Dependencies ------------------------------------------------------
+use ::action::ActionOption;
 use ::effect::Effect;
 
 
@@ -15,20 +16,24 @@ pub struct MixerSource {
     active: bool,
     channels: usize,
     effect: Option<Effect>,
-    playback_id: usize,
+    action: ActionOption,
     stream: flac::StreamIter<flac::ReadStream<File>, i64>,
 }
 
 impl MixerSource {
 
-    pub fn new(effect: Effect, playback_id: usize) -> Result<MixerSource, ()> {
+    pub fn new(
+        effect: Effect,
+        action: ActionOption
+
+    ) -> Result<MixerSource, ()> {
         let filename = effect.to_path_str().to_string();
         if let Ok(stream) = flac::StreamReader::<File>::from_file(&filename) {
             Ok(MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
                 effect: Some(effect),
-                playback_id: playback_id,
+                action: action,
                 stream: flac::StreamIter::new(stream)
             })
 
@@ -37,8 +42,8 @@ impl MixerSource {
         }
     }
 
-    pub fn into_effect(mut self) -> (Effect, usize) {
-        (self.effect.take().unwrap(), self.playback_id)
+    pub fn into_effect(mut self) -> (Effect, ActionOption) {
+        (self.effect.take().unwrap(), self.action.take())
     }
 
     pub fn is_active(&self) -> bool {

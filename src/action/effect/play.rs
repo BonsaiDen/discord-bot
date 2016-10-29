@@ -19,7 +19,7 @@ pub struct Action {
     channel_id: ChannelId,
     effects: Vec<Effect>,
     queued: bool,
-    action: Option<Box<Action>>
+    action: Option<Box<ActionHandler>>
 }
 
 impl Action {
@@ -28,7 +28,7 @@ impl Action {
         channel_id: ChannelId,
         effects: Vec<&Effect>,
         queued: bool,
-        action: Option<Box<Action>>
+        action: Option<Box<ActionHandler>>
 
     ) -> Box<Action> {
         Box::new(Action {
@@ -48,7 +48,8 @@ impl ActionHandler for Action {
                 &self.channel_id,
                 &self.effects,
                 self.queued,
-                queue
+                queue,
+                self.action.take()
             );
             vec![]
 
