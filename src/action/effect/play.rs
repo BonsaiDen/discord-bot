@@ -18,7 +18,8 @@ pub struct Action {
     server_id: ServerId,
     channel_id: ChannelId,
     effects: Vec<Effect>,
-    queued: bool
+    queued: bool,
+    action: Option<Box<Action>>
 }
 
 impl Action {
@@ -26,14 +27,16 @@ impl Action {
         server_id: ServerId,
         channel_id: ChannelId,
         effects: Vec<&Effect>,
-        queued: bool
+        queued: bool,
+        action: Option<Box<Action>>
 
     ) -> Box<Action> {
         Box::new(Action {
             server_id: server_id,
             channel_id: channel_id,
             effects: effects.iter().map(|e| (*e).clone()).collect(),
-            queued: queued
+            queued: queued,
+            action: action
         })
     }
 }

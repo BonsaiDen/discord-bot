@@ -1,8 +1,9 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
 use std::cmp;
-use std::sync::mpsc::Receiver;
 use std::collections::VecDeque;
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 
 // Discord Dependencies -------------------------------------------------------
@@ -30,14 +31,24 @@ pub use self::source::MixerSource;
 // Statics --------------------------------------------------------------------
 static MAX_PARALLEL_SOURCES: usize = 2;
 static MIXER_DELAY_MILLIS: u64 = 5000;
+lazy_static! {
+    static ref EFFECT_PLAYBACK_ID: AtomicUsize = AtomicUsize::new(0);
+}
 
 
 // Mixer Commands -------------------------------------------------------------
 pub enum MixerCommand {
-    PlayEffects(Vec<Effect>),
-    QueueEffects(Vec<Effect>),
+    PlayEffects(Vec<(Effect, usize)>),
+    QueueEffects(Vec<(Effect, usize)>),
     ClearDelay,
     ClearQueue
+}
+
+
+// Mixer Events ---------------------------------------------------------------
+#[derive(Debug)]
+pub enum MixerEvent {
+    Completed(Effect, usize)
 }
 
 
@@ -46,8 +57,9 @@ pub struct Mixer {
     id: u64,
     command_queue: Receiver<MixerCommand>,
     command_buffer: VecDeque<MixerCommand>,
-    active_sources: Vec<MixerList>,
-    queued_sources: VecDeque<MixerList>,
+    event_queue: Sender<MixerEvent>,
+    active_source_lists: Vec<MixerList>,
+    queued_source_lists: VecDeque<MixerList>,
     audio_buffer: [i16; 960 * 2],
     delay: u64
 }
@@ -56,14 +68,19 @@ pub struct Mixer {
 // Public Interface -----------------------------------------------------------
 impl Mixer {
 
-    pub fn new(command_queue: Receiver<MixerCommand>) -> Mixer {
+    pub fn new(
+        command_queue: Receiver<MixerCommand>,
+        event_queue: Sender<MixerEvent>
+
+    ) -> Mixer {
 
         let mut rng = thread_rng();
         let mixer = Mixer {
             command_queue: command_queue,
             command_buffer: VecDeque::new(),
-            active_sources: Vec::new(),
-            queued_sources: VecDeque::new(),
+            event_queue: event_queue,
+            active_source_lists: Vec::new(),
+            queued_source_lists: VecDeque::new(),
             audio_buffer: [0; 960 * 2],
             delay: MIXER_DELAY_MILLIS,
             id: rng.next_u64()
@@ -75,34 +92,44 @@ impl Mixer {
 
     }
 
+    pub fn next_effect_id() -> usize {
+        EFFECT_PLAYBACK_ID.fetch_add(1, Ordering::SeqCst)
+    }
+
+}
+
+
+// Internal Interface ---------------------------------------------------------
+impl Mixer {
+
     fn update_sources(&mut self) {
 
-        if self.active_sources.len() < MAX_PARALLEL_SOURCES {
+        if self.active_source_lists.len() < MAX_PARALLEL_SOURCES {
 
             // Pop the next available command from the queue
             if let Some(command) = self.command_buffer.pop_front() {
                 match command {
                     MixerCommand::PlayEffects(effects) => {
                         info!("{} Playing effects list...", self);
-                        self.active_sources.push(MixerList::new(effects));
+                        self.active_source_lists.push(MixerList::new(effects));
                     },
                     MixerCommand::QueueEffects(effects) => {
                         info!("{} Queueing effects list...", self);
-                        self.queued_sources.push_back(MixerList::new(effects));
+                        self.queued_source_lists.push_back(MixerList::new(effects));
                     },
                     MixerCommand::ClearQueue => {
                         info!("{} List queues cleared", self);
-                        self.active_sources.clear();
-                        self.queued_sources.clear();
+                        self.active_source_lists.clear();
+                        self.queued_source_lists.clear();
                     },
                     _ => unreachable!()
                 }
 
             // If there is no next command in the queue and we currently have no
             // active sources, pop a source from the queued stack and make it active
-            } else if self.active_sources.is_empty() {
-                if let Some(source) = self.queued_sources.pop_front() {
-                    self.active_sources.push(source);
+            } else if self.active_source_lists.is_empty() {
+                if let Some(source) = self.queued_source_lists.pop_front() {
+                    self.active_source_lists.push(source);
                 }
             }
 
@@ -125,8 +152,8 @@ impl Mixer {
                 // Always clear queue if requested
                 MixerCommand::ClearQueue => {
                     info!("{} List queues cleared", self);
-                    self.active_sources.clear();
-                    self.queued_sources.clear();
+                    self.active_source_lists.clear();
+                    self.queued_source_lists.clear();
                 },
 
                 // Push other commands into the buffer
@@ -159,7 +186,7 @@ impl Mixer {
 
         // Mix Samples from all active sources into the buffer
         let mut mixed = 0;
-        for list in &mut self.active_sources {
+        for list in &mut self.active_source_lists {
 
             if let Some(source) = list.get_active_source() {
 
@@ -192,12 +219,19 @@ impl Mixer {
 
             }
 
-            list.update();
+            // Update the list to play the next effect and return any previously
+            // finished effect
+            if let Some(effect) = list.udpate_and_complete() {
+                self.event_queue.send(
+                    MixerEvent::Completed(effect.0, effect.1)
+
+                ).ok();
+            }
 
         }
 
-        // Remove inactive sources once they are done
-        self.active_sources.retain(|list| list.is_active());
+        // Remove inactive sources once they have completed playing
+        self.active_source_lists.retain(|list| list.is_active());
 
         mixed
 

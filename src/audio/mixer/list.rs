@@ -5,13 +5,13 @@ use ::effect::Effect;
 
 // Mixer Source List Implementation -------------------------------------------
 pub struct MixerList {
-    effects: Vec<Effect>,
+    effects: Vec<(Effect, usize)>,
     source: Option<MixerSource>
 }
 
 impl MixerList {
 
-    pub fn new(effects: Vec<Effect>) -> MixerList {
+    pub fn new(effects: Vec<(Effect, usize)>) -> MixerList {
 
         let mut list = MixerList {
             effects: effects,
@@ -19,7 +19,7 @@ impl MixerList {
         };
 
         list.effects.reverse();
-        list.update();
+        list.udpate_and_complete();
         list
 
     }
@@ -28,22 +28,32 @@ impl MixerList {
         self.source.as_mut()
     }
 
-    pub fn update(&mut self) {
+    pub fn udpate_and_complete(&mut self) -> Option<(Effect, usize)> {
 
-        // Check if there is either no current source or the current source has ended
+        let mut completed_effect = None;
+
+        // Check whether there is either no current source or the current source
+        // has completed playback
         if !self.is_active() {
 
-            // Check if there is another, valid file which should be played
+            // Extract effect from the last source that completed playback
+            if let Some(source) = self.source.take() {
+                completed_effect = Some(source.into_effect());
+            }
+
+            // Check if there is another, valid effect which should be played
             while let Some(effect) = self.effects.pop() {
 
                 // Use the first valid file as the next source
-                if let Ok(source) = MixerSource::new(effect) {
+                if let Ok(source) = MixerSource::new(effect.0, effect.1) {
                     self.source = Some(source);
                     break;
                 }
 
             }
         }
+
+        completed_effect
 
     }
 

@@ -3,7 +3,7 @@ use discord::model::ChannelId;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::audio::MixerCommand;
+use ::audio::{Mixer, MixerCommand};
 use ::bot::BotConfig;
 use ::core::EventQueue;
 use ::effect::Effect;
@@ -49,20 +49,27 @@ impl Server {
         // We want to prevent playing greetings from other channels in case
         // we are pinned to another channel already.
         if has_channel && self.join_voice(channel_id, queue) {
-            if let Some(queue) = self.mixer_queue.as_mut() {
-                if queued {
-                    queue.send(MixerCommand::QueueEffects(effects.to_vec())).ok();
 
-                } else {
-                    queue.send(MixerCommand::PlayEffects(effects.to_vec())).ok();
-                }
+            // Add playback IDs to list of effects
+            let effects = effects.into_iter().map(|effect| {
+                (effect.clone(), Mixer::next_effect_id())
+
+            }).collect();
+
+            if let Some(queue) = self.mixer_commands.as_mut() {
+                queue.send(match queued {
+                    true => MixerCommand::QueueEffects(effects),
+                    false => MixerCommand::PlayEffects(effects)
+
+                }).ok();
             }
+
         }
 
     }
 
     pub fn silence_active_effects(&mut self) {
-        if let Some(queue) = self.mixer_queue.as_mut() {
+        if let Some(queue) = self.mixer_commands.as_mut() {
             queue.send(MixerCommand::ClearQueue).ok();
         }
     }

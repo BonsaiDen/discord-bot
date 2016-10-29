@@ -14,23 +14,31 @@ use ::effect::Effect;
 pub struct MixerSource {
     active: bool,
     channels: usize,
-    stream: flac::StreamIter<flac::ReadStream<File>, i64>
+    effect: Option<Effect>,
+    playback_id: usize,
+    stream: flac::StreamIter<flac::ReadStream<File>, i64>,
 }
 
 impl MixerSource {
 
-    pub fn new(effect: Effect) -> Result<MixerSource, ()> {
-        let file = effect.to_path_str();
-        if let Ok(stream) = flac::StreamReader::<File>::from_file(file) {
+    pub fn new(effect: Effect, playback_id: usize) -> Result<MixerSource, ()> {
+        let filename = effect.to_path_str().to_string();
+        if let Ok(stream) = flac::StreamReader::<File>::from_file(&filename) {
             Ok(MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
+                effect: Some(effect),
+                playback_id: playback_id,
                 stream: flac::StreamIter::new(stream)
             })
 
         } else {
             Err(())
         }
+    }
+
+    pub fn into_effect(mut self) -> (Effect, usize) {
+        (self.effect.take().unwrap(), self.playback_id)
     }
 
     pub fn is_active(&self) -> bool {

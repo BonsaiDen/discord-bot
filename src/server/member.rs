@@ -219,7 +219,13 @@ impl Server {
                 &voice_state.user_id,
                 bot_config
             ) {
-                vec![EffectActions::Play::new(self.id, channel_id, effects, false)]
+                vec![EffectActions::Play::new(
+                    self.id,
+                    channel_id,
+                    effects,
+                    false,
+                    None
+                )]
 
             } else {
                 vec![]
@@ -233,12 +239,16 @@ impl Server {
 
     fn bot_joined_voice(&mut self, channel_id: ChannelId) {
         if self.voice_status == ServerVoiceStatus::Pending {
+
             info!("{} Joined voice channel", self);
             self.voice_status = ServerVoiceStatus::Joined;
             self.voice_channel_id = Some(channel_id);
-            if let Some(queue) = self.mixer_queue.as_mut() {
+
+            // Allow effects to be played once we actually joined the channel
+            if let Some(queue) = self.mixer_commands.as_mut() {
                 queue.send(MixerCommand::ClearDelay).ok();
             }
+
         }
     }
 

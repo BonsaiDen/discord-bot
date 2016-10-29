@@ -15,6 +15,7 @@ toml = "0.1"
 rand = "*"
 log = "*"
 clippy = { version = "*", optional = true }
+lazy_static = "*"
 
 [features]
 lint = ["clippy"]

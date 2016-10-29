@@ -16,6 +16,7 @@ use discord::model::{
 use upload::Upload;
 use command::Command;
 use action::ActionGroup;
+use audio::MixerEvent;
 use server::Server;
 use core::{
     Channel,
@@ -98,6 +99,9 @@ impl Bot {
                     Event::Received(event) => {
                         self.discord_event(event, &config, &mut queue)
                     },
+                    Event::Timer => {
+                        self.timer_event(&config, &mut queue)
+                    },
                     _ => self.event(event)
                 };
 
@@ -109,7 +113,9 @@ impl Bot {
                     for mut action in actions.drain(0..) {
                         if action.ready() {
                             info!("[Bot] Running {}...", action);
-                            next_actions.extend(action.run(&mut self, &config, &mut queue));
+                            next_actions.extend(
+                                action.run(&mut self, &config, &mut queue)
+                            );
 
                         } else {
                             delayed_actions.push(action);
@@ -272,6 +278,37 @@ impl Bot {
 
         vec![]
 
+    }
+
+    fn timer_event(
+        &mut self,
+        config: &BotConfig,
+        queue: &mut EventQueue
+
+    ) -> ActionGroup {
+
+        // Fetch mixer events from all servers
+        let events: Vec<MixerEvent> = self.servers.values().map(|server| {
+            server.events()
+
+        }).flat_map(|e| e).collect();
+
+        events.into_iter().flat_map(|event| {
+            self.mixer_event(event, config, queue)
+
+        }).collect()
+
+    }
+
+    fn mixer_event(
+        &mut self,
+        event: MixerEvent,
+        _: &BotConfig,
+        _: &mut EventQueue
+
+    ) -> ActionGroup {
+        info!("[Bot] MixerEvent: {:?}", event);
+        vec![]
     }
 
     fn message_event(

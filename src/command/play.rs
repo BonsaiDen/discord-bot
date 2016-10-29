@@ -79,7 +79,8 @@ impl CommandHandler for Handler {
                     command.message.server_id,
                     channel_id,
                     effects,
-                    self.queued
+                    self.queued,
+                    None
                 )]
 
             } else {

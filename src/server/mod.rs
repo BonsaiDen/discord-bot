@@ -23,7 +23,7 @@ use clock_ticks;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::audio::MixerCommand;
+use ::audio::{MixerCommand, MixerEvent};
 use ::bot::BotConfig;
 use ::core::{Channel, EventQueue, Member};
 use ::effect::EffectRegistry;
@@ -74,7 +74,9 @@ pub struct Server {
     pinned_channel_id: Option<ChannelId>,
     voice_status: ServerVoiceStatus,
     recording_status: ServerRecordingStatus,
-    mixer_queue: Option<mpsc::Sender<MixerCommand>>,
+
+    mixer_commands: Option<mpsc::Sender<MixerCommand>>,
+    mixer_events: Option<mpsc::Receiver<MixerEvent>>,
 
     channels: HashMap<ChannelId, Channel>,
     members: HashMap<UserId, Member>
@@ -112,7 +114,8 @@ impl Server {
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
                     recording_status: ServerRecordingStatus::Stopped,
-                    mixer_queue: None,
+                    mixer_commands: None,
+                    mixer_events: None,
                     channels: HashMap::new(),
                     members: HashMap::new()
                 }
@@ -131,7 +134,8 @@ impl Server {
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
                     recording_status: ServerRecordingStatus::Stopped,
-                    mixer_queue: None,
+                    mixer_commands: None,
+                    mixer_events: None,
                     channels: HashMap::new(),
                     members: HashMap::new()
                 };
@@ -203,6 +207,18 @@ impl Server {
 
     }
 
+    pub fn events(&self) -> Vec<MixerEvent> {
+        if let Some(ref mixer_events) = self.mixer_events {
+            let mut events = Vec::new();
+            while let Ok(event) = mixer_events.try_recv() {
+                events.push(event)
+            }
+            events
+
+        } else {
+            vec![]
+        }
+    }
 
 }
 

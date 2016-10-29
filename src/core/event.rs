@@ -19,6 +19,7 @@ use discord::model::{
 pub enum Event {
     Reconnected,
     Disconnected,
+    Timer,
     Received(DiscordEvent),
     SendMessageFailure(ChannelId, String),
     DeleteMessageFailure(ChannelId, MessageId)
@@ -73,7 +74,8 @@ impl EventQueue {
                     self.events.push_back(Event::Disconnected);
 
                 } else {
-                    thread::sleep(Duration::from_millis(250));
+                    self.events.push_back(Event::Timer);
+                    thread::sleep(Duration::from_millis(100));
                 }
             }
 

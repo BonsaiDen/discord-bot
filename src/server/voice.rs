@@ -8,7 +8,7 @@ use discord::model::permissions::{VOICE_CONNECT, VOICE_SPEAK};
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::audio::{MixerCommand, Mixer, Recorder};
+use ::audio::{Mixer, MixerCommand, MixerEvent, Recorder};
 use ::core::EventQueue;
 use super::{Server, ServerRecordingStatus, ServerVoiceStatus};
 
@@ -62,13 +62,15 @@ impl Server {
         }
 
         // Setup voice connection and mixer
-        let (sender, receiver) = mpsc::channel::<MixerCommand>();
+        let (c_sender, c_receiver) = mpsc::channel::<MixerCommand>();
+        let (e_sender, e_receiver) = mpsc::channel::<MixerEvent>();
         queue.connect_server_voice(self.id, *channel_id, move |conn| {
             conn.clear_receiver();
-            conn.play(Box::new(Mixer::new(receiver)));
+            conn.play(Box::new(Mixer::new(c_receiver, e_sender)));
         });
 
-        self.mixer_queue = Some(sender);
+        self.mixer_commands = Some(c_sender);
+        self.mixer_events = Some(e_receiver);
         self.voice_status = ServerVoiceStatus::Pending;
 
         true
