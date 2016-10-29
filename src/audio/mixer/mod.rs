@@ -48,7 +48,8 @@ pub enum MixerCommand {
 // Mixer Events ---------------------------------------------------------------
 #[derive(Debug)]
 pub enum MixerEvent {
-    Completed(Effect, usize)
+    Completed(Effect, usize),
+    Canceled(Effect, usize)
 }
 
 
@@ -117,11 +118,7 @@ impl Mixer {
                         info!("{} Queueing effects list...", self);
                         self.queued_source_lists.push_back(MixerList::new(effects));
                     },
-                    MixerCommand::ClearQueue => {
-                        info!("{} List queues cleared", self);
-                        self.active_source_lists.clear();
-                        self.queued_source_lists.clear();
-                    },
+                    MixerCommand::ClearQueue => self.clear(),
                     _ => unreachable!()
                 }
 
@@ -150,11 +147,7 @@ impl Mixer {
                 },
 
                 // Always clear queue if requested
-                MixerCommand::ClearQueue => {
-                    info!("{} List queues cleared", self);
-                    self.active_source_lists.clear();
-                    self.queued_source_lists.clear();
-                },
+                MixerCommand::ClearQueue => self.clear(),
 
                 // Push other commands into the buffer
                 _ => self.command_buffer.push_back(command)
@@ -234,6 +227,30 @@ impl Mixer {
         self.active_source_lists.retain(|list| list.is_active());
 
         mixed
+
+    }
+
+    fn clear(&mut self) {
+
+        info!("{} Clearing list queues...", self);
+
+        for mut list in self.active_source_lists.drain(0..) {
+            for effect in list.clear() {
+                self.event_queue.send(
+                    MixerEvent::Canceled(effect.0, effect.1)
+
+                ).ok();
+            }
+        }
+
+        for mut list in self.queued_source_lists.drain(0..) {
+            for effect in list.clear() {
+                self.event_queue.send(
+                    MixerEvent::Canceled(effect.0, effect.1)
+
+                ).ok();
+            }
+        }
 
     }
 

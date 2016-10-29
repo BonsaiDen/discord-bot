@@ -24,6 +24,10 @@ impl MixerList {
 
     }
 
+    pub fn clear(&mut self) -> Vec<(Effect, usize)> {
+        self.effects.drain(0..).collect()
+    }
+
     pub fn get_active_source(&mut self) -> Option<&mut MixerSource> {
         self.source.as_mut()
     }
