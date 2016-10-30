@@ -19,7 +19,7 @@ pub struct Action {
     channel_id: ChannelId,
     effects: Vec<Effect>,
     queued: bool,
-    action: Option<Box<ActionHandler>>
+    complete_action: Option<Box<ActionHandler>>
 }
 
 impl Action {
@@ -28,7 +28,7 @@ impl Action {
         channel_id: ChannelId,
         effects: Vec<&Effect>,
         queued: bool,
-        action: Option<Box<ActionHandler>>
+        complete_action: Option<Box<ActionHandler>>
 
     ) -> Box<Action> {
         Box::new(Action {
@@ -36,7 +36,7 @@ impl Action {
             channel_id: channel_id,
             effects: effects.iter().map(|e| (*e).clone()).collect(),
             queued: queued,
-            action: action
+            complete_action: complete_action
         })
     }
 }
@@ -49,7 +49,7 @@ impl ActionHandler for Action {
                 &self.effects,
                 self.queued,
                 queue,
-                self.action.take()
+                self.complete_action.take()
             );
             vec![]
 

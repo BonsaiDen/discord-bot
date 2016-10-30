@@ -6,6 +6,7 @@ authors = ["Ivo Wetzel <ivo.wetzel@googlemail.com>"]
 [dependencies]
 discord = { git = "https://github.com/bonsaiden/discord-rs.git", rev = "master" }
 flac = { git = "https://github.com/bonsaiden/flac.git", rev = "master" }
+vorbis-enc = { git="https://github.com/BonsaiDen/vorbis-enc.git", rev = "master" }
 edit-distance = "1.0.0"
 clock_ticks = "*"
 dotenv = "*"

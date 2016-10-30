@@ -12,6 +12,7 @@ extern crate hyper;
 extern crate chrono;
 extern crate dotenv;
 extern crate discord;
+extern crate vorbis_enc;
 extern crate clock_ticks;
 extern crate edit_distance;
 

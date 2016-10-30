@@ -1,13 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
-use std::fs;
 use std::cmp;
-use std::fmt;
-use std::fs::File;
-use std::path::PathBuf;
-
-
-// External Dependencies ------------------------------------------------------
-use clock_ticks;
+use std::sync::mpsc::Sender;
 
 
 // Discord Dependencies -------------------------------------------------------
@@ -15,123 +8,66 @@ use discord::model::UserId;
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::{AudioWriter, Chunk, OggWriter, VoicePacket};
+use ::audio::mixer::compress;
 
 
-// Audio Recording Track Implementation ---------------------------------------
+// Audio Track Implementation -------------------------------------------------
 pub struct Track {
-    source_id: u32,
     user_id: Option<UserId>,
-    offset: u64,
     chunk_duration: u32,
-    recording_directory: PathBuf,
-    track_file: Option<File>,
-    writer: Option<Box<AudioWriter>>,
+    write_queue: Sender<Option<Chunk>>,
+    started: u64,
     voice_packets: Vec<VoicePacket>,
-    start_timestamp: u64,
-    oldest_packet_timestamp: Option<u32>
+    start_timestamp: Option<u32>,
+    last_chunk_timestamp: u32
 }
 
-
-// Public Interface -----------------------------------------------------------
 impl Track {
 
     pub fn new(
-        source_id: u32,
+        started: u64,
         chunk_duration: u32,
-        offset: u64,
-        recording_directory: PathBuf
+        write_queue: Sender<Option<Chunk>>
 
     ) -> Track {
         Track {
-            source_id: source_id,
             user_id: None,
-            offset: offset,
             chunk_duration: chunk_duration,
-            recording_directory: recording_directory,
-            track_file: None,
-            writer: None,
+            write_queue: write_queue,
+            started: started,
             voice_packets: Vec::new(),
-            start_timestamp: 0,
-            oldest_packet_timestamp: None
+            last_chunk_timestamp: 0,
+            start_timestamp: None
         }
     }
 
     pub fn set_user_id(&mut self, user_id: &UserId) {
-        if self.user_id.is_none() {
-            info!("{} user set", self);
-            self.user_id = Some(*user_id)
-        }
+        self.user_id = Some(*user_id) ;
     }
 
-    pub fn add_voice_packet(
-        &mut self,
-        sequence: u16,
-        timestamp: u32,
-        received: u64,
-        channels: usize,
-        data: &[i16]
-    ) {
-
-        let packet = VoicePacket {
-            sequence: sequence,
-            timestamp: timestamp / 48,
-            received: clock_ticks::precise_time_ms(),
-            channels: channels,
-            data: data.to_vec()
-        };
-
-        // Remember the oldest server timestamp for the oldest received packet
-        if packet.timestamp <= self.oldest_packet_timestamp.unwrap_or(packet.timestamp) {
-            self.oldest_packet_timestamp = Some(packet.timestamp);
-            self.start_timestamp = packet.received;
-        }
-
-        // Insert packet
+    pub fn add_voice_packet(&mut self, packet: VoicePacket) {
         self.voice_packets.push(packet);
-
-        let minimal_chunk_length = (self.chunk_duration as f32 * 1.5) as u32;
-        while let Some(chunk) = self.create_chunk(minimal_chunk_length) {
-            self.write_chunk(chunk);
-        }
-
+        self.write_chunks(1000);
     }
 
     pub fn flush(&mut self) {
-        info!("{} Flushing remaining packets...", self);
-        while let Some(chunk) = self.create_chunk(0) {
-            self.write_chunk(chunk);
+        self.write_chunks(0);
+    }
+
+    fn write_chunks(&mut self, split_duration: u32) {
+        if self.user_id.is_some() {
+            while let Some(chunk) = self.get_chunk(split_duration) {
+                self.write_queue.send(Some(chunk)).ok();
+            }
         }
     }
 
-}
+    fn get_chunk(&mut self, split_duration: u32) -> Option<Chunk> {
 
+        let min_split_packets = (((split_duration / 20) as f32) * 1.5) as usize;
+        if !self.voice_packets.is_empty() && self.voice_packets.len() > min_split_packets {
 
-// Internal Interface ---------------------------------------------------------
-impl Track {
-
-    fn create_chunk(&mut self, minimum_duration: u32) -> Option<Chunk> {
-
-        // Make sure we got a user ID for the track file
-        if self.user_id.is_none() {
-            None
-
-        // Require a minimum amount of voice packets
-        } else if self.voice_packets.len() < (minimum_duration / 20) as usize {
-            None
-
-        // Also check we have at least one voice packet this simplifies the
-        // logic below
-        } else if self.voice_packets.is_empty() {
-            None
-
-        } else {
-
-            // Now sort all voice packets by their sequence number
-            // Each sequence increase corresponds to 20ms so there are about 21
-            // minutes within the 16bit sequence number space.
-            // Which is the reason why we should not run into any sorting issues
-            // here.
+            // Sort voice packets
             self.voice_packets.sort_by(|a, b| {
                 if a.sequence == b.sequence {
                     cmp::Ordering::Equal
@@ -144,119 +80,128 @@ impl Track {
                 }
             });
 
-            // Get timestamp of the first packet, we'll use it to calculate the
-            // actual timestamp offsets for the rest of the packets
-            let packet_channels = self.voice_packets.first().unwrap().channels;
-            let oldest_packet_timestamp = self.voice_packets.first().unwrap().timestamp;
-            let oldest_packet_received = self.voice_packets.first().unwrap().received;
+            // Extract timing from oldest voice packet in chunk
+            let (oldest_received, oldest_timestamp) = {
+                let oldest = self.voice_packets.first().unwrap();
+                (oldest.received, oldest.timestamp)
+            };
+            assert!(oldest_received > self.started);
 
-            let mut chunk_duration = 0;
-            let mut chunk_packet_count = 0;
+            if let Some(start_timestamp) = self.start_timestamp {
+                assert!(start_timestamp < oldest_timestamp);
 
+            } else {
+                // Convert local u64 receival into remote timestamp value
+                self.last_chunk_timestamp = oldest_timestamp - (oldest_received - self.started) as u32;
+                self.start_timestamp = Some(oldest_timestamp);
+            }
+
+            // Collect voice packets for the requested chunk duration
+            let mut last_packet_end = 0;
+            let mut chunk_packets = Vec::new();
             for packet in &mut self.voice_packets {
 
                 // Calculate offset from initial packet
-                let offset = (packet.timestamp - oldest_packet_timestamp) as u32;
+                let offset = (packet.timestamp - oldest_timestamp) as u32;
 
                 // Break out once we collected `chunk_duration` packets
                 if offset >= self.chunk_duration {
                     break;
 
-                // Otherwise append packet to the chunk and correct packet timestamp
-                // with the `real timestamp` and the `offset` form the first packet
                 } else {
-                    chunk_duration = offset + 20; // Use the end of the packet
-                    packet.timestamp = oldest_packet_timestamp + offset;
-                    chunk_packet_count += 1;
+                    // There tends to be too much silence detected between
+                    // adjacents the packets which produces a lot of stutter
+                    // in the recording, so we want to "smooth" it out by removing
+                    // up to 80ms of additional silence
+                    let silence = cmp::max(((offset - last_packet_end) as i32) - 80, 0) as u32;
+                    last_packet_end = offset + 20;
+                    chunk_packets.push(ChunkPacket {
+                        silence: silence,
+                        offset: offset,
+                        channels: packet.channels,
+                        data: packet.data.take().expect("Missing sample data for voice packet.")
+                    });
                 }
 
             }
 
-            // Create a new chunk
+            // Remove consumed voice packets
+            self.voice_packets.drain(0..chunk_packets.len()).count();
+
+            // Create chunk from collected voice packets
             let chunk = Chunk {
-                track_offset: oldest_packet_received - self.start_timestamp,
-                duration: chunk_duration,
-                channels: packet_channels,
-                voice_packets: self.voice_packets.drain(0..chunk_packet_count).collect()
+                user_id: self.user_id.unwrap(),
+                silence: cmp::max(((oldest_timestamp - self.last_chunk_timestamp) as i32) - 80, 0) as u32,
+                duration: last_packet_end,
+                offset: oldest_timestamp - self.start_timestamp.unwrap(),
+                packets: chunk_packets
             };
 
-            info!("{} Created chunk {}", self, chunk);
+            self.last_chunk_timestamp += chunk.silence + chunk.duration;
 
             Some(chunk)
 
-        }
-
-    }
-
-    fn write_chunk(&mut self, chunk: Chunk) {
-
-        // Append to opened file
-        if self.track_file.is_some() {
-            if let Some(file) = self.track_file.as_mut() {
-                if let Some(writer) = self.writer.as_mut() {
-                    writer.write_chunk(file, chunk);
-                }
-            }
-
-        // Create file if it does not exist yet
-        } else if self.user_id.is_some() {
-
-            let mut path = self.recording_directory.clone();
-            if let Ok(_) = fs::create_dir_all(path.clone()) {
-
-                path.push(
-                    format!("{}.{}.track", self.user_id.unwrap(), self.source_id)
-                );
-
-                info!("{} Opening track file \"{:?}\"...", self, path);
-
-                match File::create(path) {
-                    Ok(mut file) => {
-                        let mut writer = Box::new(OggWriter);
-                        writer.write_header(&mut file, self);
-                        writer.write_chunk(&mut file, chunk);
-                        self.writer = Some(writer);
-                        self.track_file = Some(file);
-                    },
-                    Err(err) => warn!("Failed to open track file: {:?}", err)
-                }
-
-            }
-
+        } else {
+            None
         }
 
     }
 
 }
 
-// Traits ---------------------------------------------------------------------
-impl fmt::Display for Track {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(user_id) = self.user_id {
-            write!(
-                f,
-                "[Track for User#{}({}) {} packets]",
-                user_id,
-                self.source_id,
-                self.voice_packets.len()
-            )
+pub struct Chunk {
+    pub user_id: UserId,
+    pub silence: u32,
+    pub duration: u32,
+    pub offset: u32,
+    pub packets: Vec<ChunkPacket>
+}
 
-        } else {
-            write!(
-                f,
-                "[Track for ? ({}) {} packets]",
-                self.source_id,
-                self.voice_packets.len()
-            )
+pub struct ChunkPacket {
+    pub silence: u32,
+    pub offset: u32,
+    pub channels: usize,
+    pub data: Vec<i16>
+}
+
+impl ChunkPacket {
+
+    pub fn mix_to_mono(&mut self) -> &[i16] {
+
+        let channels = self.channels;
+        let mono_samples = self.data.len() / channels;
+        let max_sample_value = i16::max_value() as f32;
+
+        for e in 0..mono_samples {
+            let i = e * channels;
+            if channels == 2 {
+                let s = (self.data[i] + self.data[i + 1]) as f32;
+                self.data[e] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
+
+            } else {
+                self.data[e] = self.data[i];
+            }
         }
+
+        &self.data[0..mono_samples]
+
     }
+
+}
+
+pub struct VoicePacket {
+    pub sequence: u16,
+    pub timestamp: u32,
+    pub received: u64,
+    pub channels: usize,
+    pub data: Option<Vec<i16>>
 }
 
 
 // Helpers --------------------------------------------------------------------
 const MAX_SEQ_NUMBER: u16 = 65535;
 
-pub fn seq_is_more_recent(a: u16, b: u16) -> bool {
+fn seq_is_more_recent(a: u16, b: u16) -> bool {
     (a > b) && (a - b <= MAX_SEQ_NUMBER / 2) ||
     (b > a) && (b - a >  MAX_SEQ_NUMBER / 2)
 }

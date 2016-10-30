@@ -22,7 +22,7 @@ impl CommandHandler for Handler {
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
-        MessageActions::Send::public(
+        MessageActions::Send::private(
             &command.message,
             "Usage: `!record [start|stop]`".to_string()
         )
