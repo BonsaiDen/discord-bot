@@ -12,6 +12,7 @@ extern crate hyper;
 extern crate chrono;
 extern crate dotenv;
 extern crate discord;
+extern crate app_dirs;
 extern crate vorbis_enc;
 extern crate clock_ticks;
 extern crate edit_distance;
@@ -19,11 +20,11 @@ extern crate edit_distance;
 
 // STD Dependencies -----------------------------------------------------------
 use std::env;
-use std::path::PathBuf;
 
 
 // External Dependencies ------------------------------------------------------
 use dotenv::dotenv;
+use app_dirs::{AppInfo, AppDataType};
 
 
 // Discord Dependencies -------------------------------------------------------
@@ -45,6 +46,13 @@ mod logger;
 mod text_util;
 
 
+// Statics --------------------------------------------------------------------
+const APP_INFO: AppInfo = AppInfo {
+    name: "discord-bot",
+    author: "BonsaiDen"
+};
+
+
 // Main -----------------------------------------------------------------------
 fn main() {
 
@@ -63,9 +71,7 @@ fn main() {
             }).collect::<Vec<ServerId>>())
 
         }).unwrap_or_else(Vec::new),
-        config_path: PathBuf::from(
-            env::var_os("CONFIG_DIRECTORY").unwrap_or("".into())
-        ),
+        config_path: app_dirs::app_root(AppDataType::UserConfig, &APP_INFO).expect("Failed to retrieve configuration directory."),
         effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or("".into()).parse().unwrap_or(10000),
         greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or("".into()).parse().unwrap_or(30000),
         flac_max_file_size: env::var("FLAC_MAX_FILE_SIZE").unwrap_or("".into()).parse().unwrap_or(2048 * 1024),

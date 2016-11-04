@@ -1,8 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
-use std::fs::File;
 use std::sync::mpsc;
-use std::io::{Read, Write};
 use std::collections::HashMap;
 
 
@@ -18,7 +16,6 @@ use discord::model::{
 
 
 // External Dependencies ------------------------------------------------------
-use toml;
 use clock_ticks;
 
 
@@ -231,46 +228,17 @@ impl Server {
     }
 
     fn load_config(&mut self) -> Result<(), String> {
-        self.config.ensure_directory()
-            .and_then(|_| {
-                File::open(self.config.config_path.clone())
-                    .map_err(|err| err.to_string())
-                    .and_then(|mut file| {
-                        let mut buffer = String::new();
-                        file.read_to_string(&mut buffer)
-                            .map_err(|err| err.to_string())
-                            .map(|_| buffer)
-
-                    })
-            })
-            .and_then(|buffer| {
-                toml::Parser::new(&buffer)
-                    .parse()
-                    .map_or_else(|| {
-                        Err("Failed to parse configuration toml.".to_string())
-
-                    }, |value| {
-                        self.config.decode_from_toml(value);
-                        self.sync_config();
-                        Ok(())
-                    })
-            })
+        let server_name = format!("{}", self);
+        self.config.load(&server_name).and_then(|_| {
+            self.sync_config();
+            Ok(())
+        })
     }
 
     fn store_config(&mut self) -> Result<(), String> {
-
+        let server_name = format!("{}", self);
         self.sync_config();
-
-        self.config.ensure_directory()
-            .and_then(|_| {
-                File::create(self.config.config_path.clone())
-                    .map_err(|err| err.to_string())
-                    .and_then(|mut file| {
-                        write!(file, "{}", self.config.encode_to_toml())
-                            .map_err(|err| err.to_string())
-                    })
-            })
-
+        self.config.store(&server_name)
     }
 
     fn sync_config(&mut self) {

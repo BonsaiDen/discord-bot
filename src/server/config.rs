@@ -1,6 +1,8 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fs;
+use std::fs::File;
 use std::path::PathBuf;
+use std::io::{Read, Write};
 use std::collections::{HashMap, BTreeMap};
 
 
@@ -19,7 +21,7 @@ use ::bot::BotConfig;
 // Server Configuration Abstraction -------------------------------------------
 #[derive(Debug)]
 pub struct ServerConfig {
-    pub config_path: PathBuf,
+    config_path: PathBuf,
     pub effects_path: PathBuf,
     pub recordings_path: PathBuf,
     pub aliases: HashMap<String, Vec<String>>,
@@ -59,14 +61,88 @@ impl ServerConfig {
 
     }
 
-    pub fn ensure_directory(&self) -> Result<(), String> {
-        fs::create_dir_all(
-            self.config_path.clone().parent().expect("Invalid config directory.")
+    pub fn load(&mut self, server_name: &str) -> Result<(), String> {
+        self.ensure_defaults(server_name)
+            .and_then(|_| {
+                info!(
+                    "{} Reading configuration toml: {}",
+                    server_name,
+                    self.config_path.to_str().unwrap()
+                );
+                File::open(self.config_path.clone())
+                    .map_err(|err| err.to_string())
+                    .and_then(|mut file| {
+                        let mut buffer = String::new();
+                        file.read_to_string(&mut buffer)
+                            .map_err(|err| err.to_string())
+                            .map(|_| buffer)
 
-        ).map_err(|err| err.to_string())
+                    })
+            })
+            .and_then(|buffer| {
+                toml::Parser::new(&buffer)
+                    .parse()
+                    .map_or_else(|| {
+                        Err("Failed to parse configuration toml.".to_string())
+
+                    }, |value| {
+                        self.decode_from_toml(value);
+                        Ok(())
+                    })
+            })
     }
 
-    pub fn encode_to_toml(&self) -> toml::Value {
+    pub fn store(&mut self, server_name: &str) -> Result<(), String> {
+        self.ensure_defaults(server_name)
+            .and_then(|config_path| {
+                info!(
+                    "{} Writing configuration toml: {}",
+                    server_name,
+                    config_path.to_str().unwrap()
+                );
+                File::create(config_path)
+                    .map_err(|err| err.to_string())
+                    .and_then(|mut file| {
+                        write!(file, "{}", self.encode_to_toml())
+                            .map_err(|err| err.to_string())
+                    })
+            })
+    }
+
+    fn ensure_defaults(&self, server_name: &str) -> Result<PathBuf, String> {
+        fs::create_dir_all(
+            self.config_path.clone().parent().expect("Could not create server configuration directory.")
+
+        ).map_err(|err| {
+            err.to_string()
+
+        }).and_then(|_| {
+            if let Ok(_) = File::open(self.config_path.clone()) {
+                Ok(self.config_path.clone())
+
+            } else {
+                match File::create(self.config_path.clone()) {
+                    Ok(_) => {
+                        info!(
+                            "[{}] Created initial configuration toml: {}",
+                            server_name,
+                            self.config_path.to_str().unwrap()
+                        );
+                        Ok(self.config_path.clone())
+                    },
+                    Err(err) => Err(
+                        format!(
+                            "Failed to create initial configuration toml ({}): {}",
+                            self.config_path.to_str().unwrap(),
+                            err.to_string()
+                        )
+                    )
+                }
+            }
+        })
+    }
+
+    fn encode_to_toml(&self) -> toml::Value {
 
         let mut toml: BTreeMap<String, toml::Value> = BTreeMap::new();
 
@@ -93,7 +169,7 @@ impl ServerConfig {
 
     }
 
-    pub fn decode_from_toml(&mut self, value: BTreeMap<String, toml::Value>) {
+    fn decode_from_toml(&mut self, value: BTreeMap<String, toml::Value>) {
 
         self.aliases.clear();
 
