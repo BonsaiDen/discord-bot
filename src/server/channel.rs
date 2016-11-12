@@ -3,7 +3,7 @@ use discord::model::ChannelId;
 
 
 // Internal Dependencies ------------------------------------------------------
-use ::core::Channel;
+use ::core::{Channel, Member};
 use super::Server;
 
 
@@ -33,6 +33,20 @@ impl Server {
     pub fn remove_channel(&mut self, channel: Channel) {
         self.channels.remove(&channel.id);
         info!("{} {} removed", self, channel);
+    }
+
+    pub fn channel_name(&self, channel_id: &ChannelId) -> Option<String> {
+        self.channels.get(channel_id).map(|channel| channel.name.to_string())
+    }
+
+    pub fn channel_voice_members(&self, channel_id: &ChannelId) -> Vec<&Member> {
+        self.channels.get(channel_id).map(|channel| {
+            channel.voice_users().iter().filter_map(|user_id| {
+                self.members.get(user_id)
+
+            }).collect()
+
+        }).unwrap_or_else(Vec::new)
     }
 
 }

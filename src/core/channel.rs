@@ -22,9 +22,9 @@ use ::core::member::Member;
 pub struct Channel {
     pub id: ChannelId,
     pub server_id: Option<ServerId>,
-    name: String,
+    pub name: String,
     is_voice: bool,
-    voice_members: Vec<UserId>,
+    voice_users: Vec<UserId>,
     permissions: Vec<PermissionOverwrite>
 }
 
@@ -42,7 +42,7 @@ impl Channel {
                         "".to_string()
 
                     }).to_string(),
-                    voice_members: Vec::new(),
+                    voice_users: Vec::new(),
                     permissions: Vec::new(),
                     is_voice: false
                 }
@@ -52,7 +52,7 @@ impl Channel {
                     id: channel.id,
                     server_id: None,
                     name: "".to_string(),
-                    voice_members: Vec::new(),
+                    voice_users: Vec::new(),
                     permissions: Vec::new(),
                     is_voice: false
                 }
@@ -62,7 +62,7 @@ impl Channel {
                     id: channel.id,
                     server_id: Some(channel.server_id),
                     name: channel.name.to_string(),
-                    voice_members: Vec::new(),
+                    voice_users: Vec::new(),
                     permissions: channel.permission_overwrites.clone(),
                     is_voice: channel.kind == ChannelType::Voice
                 }
@@ -76,17 +76,21 @@ impl Channel {
     }
 
     pub fn add_voice_member(&mut self, member_id: &UserId) {
-        if !self.voice_members.contains(member_id) {
-            self.voice_members.push(*member_id);
+        if !self.voice_users.contains(member_id) {
+            self.voice_users.push(*member_id);
         }
     }
 
     pub fn remove_voice_member(&mut self, member_id: &UserId) {
-        self.voice_members.retain(|id| id != member_id);
+        self.voice_users.retain(|id| id != member_id);
     }
 
     pub fn is_empty_voice(&self) -> bool {
-        self.voice_members.is_empty()
+        self.voice_users.is_empty()
+    }
+
+    pub fn voice_users(&self) -> &Vec<UserId> {
+        &self.voice_users
     }
 
     pub fn get_member_permissions(&self, member: &Member) -> Permissions {
@@ -126,7 +130,7 @@ impl fmt::Display for Channel {
             write!(
                 f,
                 "[Voice Channel {} {} speaker(s)]",
-                self.name, self.voice_members.len()
+                self.name, self.voice_users.len()
             )
 
         } else {

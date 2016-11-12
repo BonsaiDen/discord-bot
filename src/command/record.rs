@@ -69,8 +69,20 @@ impl Handler {
                 )
             )
 
+        } else if let Some(channel_id) = command.member.voice_channel_id {
+            vec![RecordingActions::Stop::new(
+                command.message.server_id,
+                channel_id
+            )]
+
         } else {
-            vec![RecordingActions::Stop::new(command.message.server_id)]
+            MessageActions::Send::private(
+                &command.message,
+                format!(
+                    "You must be in a voice channel on {} in order stop audio recording.",
+                    command.server.name
+                )
+            )
         }
     }
 

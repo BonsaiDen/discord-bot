@@ -33,6 +33,14 @@ impl Action {
         })
     }
 
+    pub fn user_private(user_id: UserId, content: String) -> Box<Action> {
+        Box::new(Action {
+            user_id: Some(user_id),
+            channel_id: None,
+            content: content
+        })
+    }
+
     pub fn public(message: &Message, content: String) -> ActionGroup {
         vec![Action::single_public(message, content)]
     }

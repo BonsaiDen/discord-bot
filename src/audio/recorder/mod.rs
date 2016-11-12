@@ -121,7 +121,7 @@ impl Recorder {
                     if packet.silence > 0 {
                         write_silence(&mut stream, &silence_buffer, packet.silence as usize);
                     }
-                    stream.write_samples(&packet.mix_to_mono()).ok();
+                    stream.write_samples(packet.mix_to_mono()).ok();
                 }
 
             }
