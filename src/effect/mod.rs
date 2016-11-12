@@ -27,7 +27,6 @@ use ::server::ServerConfig;
 pub struct Effect {
     pub name: String,
     path: PathBuf,
-    last_played: u64,
     duration: u64,
     uploader: Option<String>,
     transcript: Option<String>
@@ -45,7 +44,6 @@ impl Effect {
         Effect {
             name: name.to_string(),
             path: path,
-            last_played: 0,
             duration: duration,
             uploader: uploader,
             transcript: None
@@ -77,7 +75,6 @@ impl Clone for Effect {
         Effect {
             name: self.name.to_string(),
             path: self.path.clone(),
-            last_played: self.last_played,
             duration: self.duration,
             uploader: self.uploader.clone(),
             transcript: None
@@ -102,7 +99,8 @@ impl fmt::Display for Effect {
 // Effects Registration -------------------------------------------------------
 #[derive(Debug)]
 pub struct EffectRegistry {
-    effects: HashMap<String, Effect>
+    effects: HashMap<String, Effect>,
+    last_played: HashMap<String, u64>
 }
 
 
@@ -111,7 +109,8 @@ impl EffectRegistry {
 
     pub fn new() -> EffectRegistry {
         EffectRegistry {
-            effects: HashMap::new()
+            effects: HashMap::new(),
+            last_played: HashMap::new()
         }
     }
 
@@ -126,6 +125,13 @@ impl EffectRegistry {
 
     pub fn get_effect(&self, effect_name: &str) -> Option<&Effect> {
         self.effects.get(effect_name)
+    }
+
+    pub fn played_effect(&mut self, name: &str) {
+        self.last_played.insert(
+            name.to_string(),
+            clock_ticks::precise_time_ms()
+        );
     }
 
     pub fn map_patterns(
@@ -304,6 +310,7 @@ impl EffectRegistry {
         let mut matching_effects: Vec<&str> = self.effects.values().filter(|effect| {
             match_effect_pattern(
                 effect,
+                *self.last_played.get(&effect.name).unwrap_or(&0),
                 pattern,
                 match_all,
                 config.effect_playback_separation_ms
@@ -438,6 +445,7 @@ impl fmt::Display for EffectRegistry {
 // Helpers --------------------------------------------------------------------
 fn match_effect_pattern(
     effect: &Effect,
+    last_played: u64,
     pattern: &str,
     ignore_recent: bool,
     recent_threshold: u64
@@ -448,7 +456,7 @@ fn match_effect_pattern(
 
     // Name: Random
     if pattern == "*" {
-        ignore_recent || !was_recently_played(effect, recent_threshold)
+        ignore_recent || !was_recently_played(last_played, recent_threshold)
 
     // Name: Contains
     } else if len > 2 && pattern.starts_with('*') && pattern.ends_with('*') {
@@ -479,7 +487,7 @@ fn match_effect_pattern(
 
         // Name: Prefix
         } else if effect.name.starts_with(&format!("{}_", pattern)) {
-            ignore_recent || !was_recently_played(effect, recent_threshold)
+            ignore_recent || !was_recently_played(last_played, recent_threshold)
 
         } else {
             false
@@ -491,8 +499,8 @@ fn match_effect_pattern(
 
 }
 
-fn was_recently_played(effect: &Effect, threshold: u64) -> bool {
-    effect.last_played + threshold > clock_ticks::precise_time_ms()
+fn was_recently_played(last_played: u64, threshold: u64) -> bool {
+    last_played + threshold > clock_ticks::precise_time_ms()
 }
 
 fn match_alias_pattern(alias: &str, pattern: &str) -> bool {

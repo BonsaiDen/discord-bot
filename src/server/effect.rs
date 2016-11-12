@@ -54,6 +54,10 @@ impl Server {
 
             // Add playback IDs to list of effects
             let mut effects: Vec<(Effect, Option<Box<ActionHandler>>)> = effects.into_iter().map(|effect| {
+
+                // Mark effect as played
+                self.effects.played_effect(&effect.name);
+
                 (effect.clone(), None)
 
             }).collect();
