@@ -39,8 +39,9 @@ impl Effect {
 
     pub fn auto_adjust_gain(&self) -> f32 {
         if let Some(stats) = self.stats.as_ref() {
-            let db_gain_diff = -22.0 - (stats.peak_db);
-            10.0f32.powf(db_gain_diff / 20.0)
+            let db_gain_diff = -26.0 - (stats.peak_db);
+            let gain = 10.0f32.powf(db_gain_diff / 20.0) - 1.0;
+            1.0 + gain * 0.75
 
         } else {
             1.0

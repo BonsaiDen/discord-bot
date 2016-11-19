@@ -30,6 +30,7 @@ impl MixerSource {
     ) -> Result<MixerSource, ()> {
         let filename = effect.to_path_str().to_string();
         if let Ok(stream) = flac::StreamReader::<File>::from_file(&filename) {
+            info!("[Mixer] Mulitplier: {}", effect.auto_adjust_gain());
             Ok(MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
