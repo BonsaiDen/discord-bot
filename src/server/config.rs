@@ -76,7 +76,6 @@ impl ServerConfig {
                         file.read_to_string(&mut buffer)
                             .map_err(|err| err.to_string())
                             .map(|_| buffer)
-
                     })
             })
             .and_then(|buffer| {

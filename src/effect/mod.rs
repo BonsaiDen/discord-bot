@@ -13,94 +13,28 @@ use clock_ticks;
 use rand::{thread_rng, Rng};
 use hyper::Client;
 use hyper::header::Connection;
-use flac::{ByteStream, Stream};
 use edit_distance::edit_distance;
+
+
+// Modules --------------------------------------------------------------------
+mod effect;
+mod stats;
 
 
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
 use ::server::ServerConfig;
-
-
-// Effect Abstraction ---------------------------------------------------------
-#[derive(Debug)]
-pub struct Effect {
-    pub name: String,
-    path: PathBuf,
-    duration: u64,
-    uploader: Option<String>,
-    transcript: Option<String>
-}
-
-impl Effect {
-
-    fn new(
-        name: &str,
-        path: PathBuf,
-        duration: u64,
-        uploader: Option<String>
-
-    ) -> Effect {
-        Effect {
-            name: name.to_string(),
-            path: path,
-            duration: duration,
-            uploader: uploader,
-            transcript: None
-        }
-    }
-
-    fn with_transcript(mut self) -> Effect {
-        self.transcript = load_transcript(self.transcript_path());
-        self
-    }
-
-    pub fn to_path_str(&self) -> &str {
-        self.path.to_str().unwrap_or("")
-    }
-
-    fn transcript_path(&self) -> PathBuf {
-        if self.uploader.is_some() {
-            self.path.with_extension("").with_extension("txt")
-
-        } else {
-            self.path.with_extension("txt")
-        }
-    }
-
-}
-
-impl Clone for Effect {
-    fn clone(&self) -> Self {
-        Effect {
-            name: self.name.to_string(),
-            path: self.path.clone(),
-            duration: self.duration,
-            uploader: self.uploader.clone(),
-            transcript: None
-        }
-    }
-}
-
-
-// Traits ---------------------------------------------------------------------
-impl fmt::Display for Effect {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(ref uploader) = self.uploader {
-            write!(f, "[Effect {} by {}]", self.name, uploader)
-
-        } else {
-            write!(f, "[Effect {}]", self.name)
-        }
-    }
-}
+use self::stats::EffectStatCache;
+pub use self::stats::EffectStat;
+pub use self::effect::Effect as Effect;
 
 
 // Effects Registration -------------------------------------------------------
 #[derive(Debug)]
 pub struct EffectRegistry {
     effects: HashMap<String, Effect>,
-    last_played: HashMap<String, u64>
+    last_played: HashMap<String, u64>,
+    stat_cache: EffectStatCache
 }
 
 
@@ -110,7 +44,8 @@ impl EffectRegistry {
     pub fn new() -> EffectRegistry {
         EffectRegistry {
             effects: HashMap::new(),
-            last_played: HashMap::new()
+            last_played: HashMap::new(),
+            stat_cache: EffectStatCache::new()
         }
     }
 
@@ -204,7 +139,7 @@ impl EffectRegistry {
         let mut new_effect_path = config.effects_path.clone();
         let mut new_transcript_path = config.effects_path.clone();
 
-        if let Some(ref uploader) = effect.uploader {
+        if let Some(uploader) = effect.uploader() {
             new_effect_path.push(format!(
                 "{}.{}.flac",
                 effect_name,
@@ -219,7 +154,7 @@ impl EffectRegistry {
         new_transcript_path.push(effect_name);
         new_transcript_path.set_extension("txt");
 
-        fs::rename(effect.path.clone(), new_effect_path).map_err(|err| {
+        fs::rename(effect.to_path_str(), new_effect_path).map_err(|err| {
             err.to_string()
 
         }).and_then(|_| {
@@ -236,7 +171,7 @@ impl EffectRegistry {
         effect: &Effect
 
     ) -> Result<(), String> {
-        fs::remove_file(effect.path.clone()).map_err(|err| {
+        fs::remove_file(effect.to_path_str()).map_err(|err| {
             err.to_string()
 
         }).and_then(|_| {
@@ -390,22 +325,22 @@ impl EffectRegistry {
         let start = clock_ticks::precise_time_ms();
         filter_dir(&config.effects_path, "flac", |name, path| {
 
-            let duration = get_flac_duration(path.clone()).unwrap_or(0);
+            // let duration = get_flac_duration(path.clone()).unwrap_or(0);
             let descriptor: Vec<&str> = name.split('.').collect();
             let effect = match *descriptor.as_slice() {
                 [name, uploader] => {
                     Effect::new(
                         name,
-                        path,
-                        duration,
+                        path.clone(),
+                        self.stat_cache.get(config, path, name),
                         Some(uploader.replace("_", "#"))
                     )
                 },
                 [name] => {
                     Effect::new(
                         name,
-                        path,
-                        duration,
+                        path.clone(),
+                        self.stat_cache.get(config, path, name),
                         None
                     )
                 },
@@ -464,7 +399,7 @@ fn match_effect_pattern(
 
     // Transcript: Contains
     } else if len > 2 && pattern.starts_with('"') && pattern.ends_with('"') {
-        if let Some(ref transcript) = effect.transcript {
+        if let Some(transcript) = effect.transcript() {
             transcript.contains(&pattern[1..len - 1].to_string())
 
         } else {
@@ -557,62 +492,6 @@ fn filter_dir<F: FnMut(String, PathBuf)>(
             }
         }
     }
-}
-
-fn load_transcript(mut flac_path: PathBuf) -> Option<String> {
-
-    flac_path.set_extension("txt");
-
-    if let Ok(mut file) = File::open(flac_path) {
-
-        let mut text = String::new();
-        file.read_to_string(&mut text).expect("Failed to read flac transcript.");
-
-        // Remove linebreaks
-        text = text.to_lowercase().replace(|c| {
-            match c {
-                '\n' | '\r' | '\t' => true,
-                _ => false
-            }
-
-        }, " ");
-
-        // Split up into unique words
-        let mut parts: Vec<String> = text.split(' ').filter(|s| {
-            !s.trim().is_empty()
-
-        }).map(|s| {
-            s.to_string()
-
-        }).collect();
-
-        parts.dedup();
-
-        Some(parts.join(" "))
-
-    } else {
-        None
-    }
-
-}
-
-fn get_flac_duration(flac_path: PathBuf) -> Result<u64, String> {
-    File::open(flac_path.clone())
-        .map_err(|err| err.to_string())
-        .and_then(|mut file| {
-            let mut header: [u8; 256] = [0; 256];
-            file.read_exact(&mut header)
-                .map_err(|err| err.to_string())
-                .map(|_| header)
-
-        }).and_then(|header| {
-            Stream::<ByteStream>::from_buffer(&header[..])
-                .map_err(|_| "Failed to parse FLAC header.".to_string())
-                .map(|stream| {
-                    let stream_info = stream.info();
-                    stream_info.total_samples / stream_info.sample_rate as u64
-                })
-        })
 }
 
 fn download_file(
