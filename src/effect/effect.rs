@@ -37,6 +37,16 @@ impl Effect {
         }
     }
 
+    pub fn auto_adjust_gain(&self) -> f32 {
+        if let Some(stats) = self.stats.as_ref() {
+            let db_gain_diff = -22.0 - (stats.peak_db);
+            10.0f32.powf(db_gain_diff / 20.0)
+
+        } else {
+            1.0
+        }
+    }
+
     pub fn with_transcript(mut self) -> Effect {
         self.transcript = load_transcript(self.transcript_path());
         self

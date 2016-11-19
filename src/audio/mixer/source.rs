@@ -18,6 +18,7 @@ pub struct MixerSource {
     effect: Option<Effect>,
     action: ActionOption,
     stream: flac::StreamIter<flac::ReadStream<File>, i64>,
+    gain: f32
 }
 
 impl MixerSource {
@@ -32,9 +33,10 @@ impl MixerSource {
             Ok(MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
+                gain: effect.auto_adjust_gain(),
                 effect: Some(effect),
                 action: action,
-                stream: flac::StreamIter::new(stream)
+                stream: flac::StreamIter::new(stream),
             })
 
         } else {
@@ -56,9 +58,10 @@ impl MixerSource {
 
     pub fn read_frame(&mut self, buffer: &mut [i16]) -> Option<usize> {
 
+        let gain = self.gain;
         let (mut written, mut iter) = (0, &mut self.stream);
         for s in iter.take(buffer.len()).map(|s| {
-            s as i16
+            ((s as f32) * gain) as i16
 
         }) {
             buffer[written] = s;

@@ -191,32 +191,26 @@ fn anaylze_flac(flac_path: PathBuf) -> Result<EffectStat, String> {
 fn anaylze_flac_stream(stream: StreamReader<File>) -> EffectStat {
 
     let stream_info = stream.info();
+    let samples: StreamIter<ReadStream<File>, i64> = StreamIter::new(stream);
 
-    let mut peak_db = -1000.0f32;
-    let mut max_index = 0;
-    let mut last_non_silence = 0;
-    let mut first_non_silence = u64::max_value();
+    let mut sample_count = 0;
+    let sum_squares = samples.into_iter().fold(0.0f64, |acc, s| {
+        let sample = (s as f64 / 32768.0);
+        if sample > 0.01 {
+            sample_count += 1;
+            acc + sample.powf(2.0f64)
 
-    let iter: StreamIter<ReadStream<File>, i64> = StreamIter::new(stream);
-    for s in iter {
-
-        let rms = (s as f32 / 32768.0).abs();
-        let decibel = 20.0 * rms.log(10.0);
-        peak_db = peak_db.max(decibel);
-        max_index += 1;
-
-        if decibel > -38.0 {
-            last_non_silence = max_index;
-            first_non_silence = cmp::min(first_non_silence, max_index)
+        } else {
+            acc
         }
+    });
 
-    }
-
+    let rms = (sum_squares / (sample_count as f64)).sqrt();
     EffectStat {
         duration_ms: (stream_info.total_samples * 1000) / stream_info.sample_rate as u64,
-        peak_db: peak_db,
-        silent_start_samples: first_non_silence,
-        silent_end_samples: (max_index - last_non_silence)
+        peak_db: (20.0 * rms.log(10.0)) as f32,
+        silent_start_samples: 0,
+        silent_end_samples: 0
     }
 
 }
