@@ -155,6 +155,8 @@ impl Server {
                     );
                 }
 
+                server.sync_config();
+
                 server
 
             }
