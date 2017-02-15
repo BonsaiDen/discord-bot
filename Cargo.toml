@@ -5,14 +5,15 @@ authors = ["Ivo Wetzel <ivo.wetzel@googlemail.com>"]
 
 [dependencies]
 discord = { git = "https://github.com/bonsaiden/discord-rs.git", rev = "master" }
+# discord = { path = "../discord-rs", version = "0.7.0" }
 flac = { git = "https://github.com/bonsaiden/flac.git", rev = "master" }
 vorbis-enc = { git="https://github.com/BonsaiDen/vorbis-enc.git", rev = "master" }
 edit-distance = "1.0.0"
 clock_ticks = "*"
 dotenv = "*"
-chrono = "*"
+chrono = "0.3"
 hyper = "0.9"
-toml = "0.1"
+toml = "0.2"
 rand = "*"
 log = "*"
 app_dirs = "^1.1.1"

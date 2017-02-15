@@ -124,7 +124,7 @@ impl EventQueue {
 
     pub fn send_message_to_channel(&mut self, channel_id: &ChannelId, content: String) {
 
-        if let Err(_) = self.receiver.discord.send_message(channel_id, content.as_str(), "", false) {
+        if let Err(_) = self.receiver.discord.send_message(*channel_id, content.as_str(), "", false) {
             warn!("[EL] Failed to sent message.");
             self.events.push_back(Event::SendMessageFailure(*channel_id, content));
 
@@ -135,7 +135,7 @@ impl EventQueue {
     }
 
     pub fn delete_message(&mut self, message_id: MessageId, channel_id: ChannelId) {
-        if let Err(_) = self.receiver.discord.delete_message(&channel_id, &message_id) {
+        if let Err(_) = self.receiver.discord.delete_message(channel_id, message_id) {
             warn!("[EL] Failed to delete message.");
             self.events.push_back(Event::DeleteMessageFailure(channel_id, message_id));
 
@@ -151,7 +151,7 @@ impl EventQueue {
 impl EventQueue {
 
     fn private_channel_for_user(&self, user_id: &UserId) -> Option<PrivateChannel> {
-        self.receiver.discord.create_private_channel(user_id).ok()
+        self.receiver.discord.create_private_channel(*user_id).ok()
     }
 
 }

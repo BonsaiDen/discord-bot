@@ -171,8 +171,8 @@ impl Drop for Recorder {
 // Recorder Receiver Implementation -------------------------------------------
 impl AudioReceiver for Recorder {
 
-    fn speaking_update(&mut self, source_id: u32, user_id: &UserId, _: bool) {
-        self.get_track(source_id).set_user_id(user_id);
+    fn speaking_update(&mut self, source_id: u32, user_id: UserId, _: bool) {
+        self.get_track(source_id).set_user_id(&user_id);
     }
 
     fn voice_packet(
