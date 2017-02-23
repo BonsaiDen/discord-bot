@@ -23,6 +23,7 @@ pub struct Channel {
     pub id: ChannelId,
     pub server_id: Option<ServerId>,
     pub name: String,
+    bitrate: Option<u64>,
     is_voice: bool,
     voice_users: Vec<UserId>,
     permissions: Vec<PermissionOverwrite>
@@ -42,6 +43,7 @@ impl Channel {
                         "".to_string()
 
                     }).to_string(),
+                    bitrate: None,
                     voice_users: Vec::new(),
                     permissions: Vec::new(),
                     is_voice: false
@@ -52,6 +54,7 @@ impl Channel {
                     id: channel.id,
                     server_id: None,
                     name: "".to_string(),
+                    bitrate: None,
                     voice_users: Vec::new(),
                     permissions: Vec::new(),
                     is_voice: false
@@ -62,6 +65,7 @@ impl Channel {
                     id: channel.id,
                     server_id: Some(channel.server_id),
                     name: channel.name.to_string(),
+                    bitrate: channel.bitrate,
                     voice_users: Vec::new(),
                     permissions: channel.permission_overwrites.clone(),
                     is_voice: channel.kind == ChannelType::Voice
@@ -73,6 +77,11 @@ impl Channel {
     pub fn update(&mut self, channel: Channel) {
         self.name = channel.name;
         self.permissions = channel.permissions;
+        self.bitrate = channel.bitrate;
+    }
+
+    pub fn bitrate(&self) -> u64 {
+        (self.bitrate.unwrap_or(8000) as f64 / 1000.0).round() as u64
     }
 
     pub fn add_voice_member(&mut self, member_id: &UserId) {
@@ -129,8 +138,10 @@ impl fmt::Display for Channel {
         if self.is_voice {
             write!(
                 f,
-                "[Voice Channel {} {} speaker(s)]",
-                self.name, self.voice_users.len()
+                "[Voice Channel {} {} speaker(s) {} kbps]",
+                self.name,
+                self.voice_users.len(),
+                self.bitrate.unwrap_or(0) as f64 / 1000.0
             )
 
         } else {

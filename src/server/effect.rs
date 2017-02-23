@@ -23,26 +23,26 @@ impl Server {
         complete_action: Option<Box<ActionHandler>>
     ) {
 
-        let has_channel = if let Some(channel) = self.channels.get(channel_id) {
+        let (has_channel, bitrate) = if let Some(channel) = self.channels.get(channel_id) {
 
             // When pinned, only play effects for the pinned channel
             if let Some(pinned_channel_id) = self.pinned_channel_id {
                 if *channel_id == pinned_channel_id {
                     info!("{} {} playing {} effect(s)...", self, channel, effects.len());
-                    true
+                    (true, channel.bitrate())
 
                 } else {
                     info!("{} {} not playing effect(s), pinned to another channel.", self, channel);
-                    false
+                    (false, 0)
                 }
 
             } else {
                 info!("{} {} playing {} effect(s)...", self, channel, effects.len());
-                true
+                (true, channel.bitrate())
             }
 
         } else {
-            false
+            (false, 0)
         };
 
         // See if we're actually in the requested channel or if we're going
@@ -58,7 +58,7 @@ impl Server {
                 // Mark effect as played
                 self.effects.played_effect(&effect.name);
 
-                (effect.clone(), None)
+                (effect.clone_with_bitrate(bitrate), None)
 
             }).collect();
 

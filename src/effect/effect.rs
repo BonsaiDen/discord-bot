@@ -16,7 +16,8 @@ pub struct Effect {
     path: PathBuf,
     stats: Option<EffectStat>,
     uploader: Option<String>,
-    transcript: Option<String>
+    transcript: Option<String>,
+    bitrate: Option<u64>,
 }
 
 impl Effect {
@@ -33,7 +34,8 @@ impl Effect {
             path: path,
             stats: stats,
             uploader: uploader,
-            transcript: None
+            transcript: None,
+            bitrate: None
         }
     }
 
@@ -74,6 +76,21 @@ impl Effect {
         self.transcript.as_ref()
     }
 
+    pub fn bitrate(&self) -> i16 {
+        self.bitrate.unwrap() as i16
+    }
+
+    pub fn clone_with_bitrate(&self, bitrate: u64) -> Self {
+        Effect {
+            name: self.name.to_string(),
+            path: self.path.clone(),
+            stats: self.stats.clone(),
+            uploader: self.uploader.clone(),
+            transcript: None,
+            bitrate: Some(bitrate)
+        }
+    }
+
 }
 
 impl Clone for Effect {
@@ -83,7 +100,8 @@ impl Clone for Effect {
             path: self.path.clone(),
             stats: self.stats.clone(),
             uploader: self.uploader.clone(),
-            transcript: None
+            transcript: None,
+            bitrate: self.bitrate
         }
     }
 }

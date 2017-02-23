@@ -15,10 +15,11 @@ use ::effect::Effect;
 pub struct MixerSource {
     active: bool,
     channels: usize,
+    gain: f32,
+    bitrate: i16,
     effect: Option<Effect>,
     action: ActionOption,
     stream: flac::StreamIter<flac::ReadStream<File>, i64>,
-    gain: f32
 }
 
 impl MixerSource {
@@ -35,6 +36,7 @@ impl MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
                 gain: effect.auto_adjust_gain(),
+                bitrate: effect.bitrate(),
                 effect: Some(effect),
                 action: action,
                 stream: flac::StreamIter::new(stream),
@@ -61,12 +63,25 @@ impl MixerSource {
 
         let gain = self.gain;
         let (mut written, mut iter) = (0, &mut self.stream);
-        for s in iter.take(buffer.len()).map(|s| {
-            ((s as f32) * gain) as i16
 
-        }) {
-            buffer[written] = s;
-            written += 1;
+        if self.bitrate < 64 {
+            let rate = 8 * (96 - self.bitrate) as i16;
+            for s in iter.take(buffer.len()).map(|s| {
+                (((s as f32) * gain) as i16 / rate) * rate
+
+            }) {
+                buffer[written] = s;
+                written += 1;
+            }
+
+        } else {
+            for s in iter.take(buffer.len()).map(|s| {
+                ((s as f32) * gain) as i16
+
+            }) {
+                buffer[written] = s;
+                written += 1;
+            }
         }
 
         if written > 0 {

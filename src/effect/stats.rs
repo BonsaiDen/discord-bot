@@ -194,10 +194,15 @@ fn anaylze_flac_stream(stream: StreamReader<File>) -> EffectStat {
     let samples: StreamIter<ReadStream<File>, i64> = StreamIter::new(stream);
 
     let mut sample_count = 0;
+    let mut last_active_sample = 0;
+
     let sum_squares = samples.into_iter().fold(0.0f64, |acc, s| {
-        let sample = (s as f64 / 32768.0);
+        let sample = s as f64 / 32768.0;
         if sample > 0.01 {
             sample_count += 1;
+            if sample > 0.025 {
+                last_active_sample = sample_count;
+            }
             acc + sample.powf(2.0f64)
 
         } else {
@@ -210,7 +215,7 @@ fn anaylze_flac_stream(stream: StreamReader<File>) -> EffectStat {
         duration_ms: (stream_info.total_samples * 1000) / stream_info.sample_rate as u64,
         peak_db: (20.0 * rms.log(10.0)) as f32,
         silent_start_samples: 0,
-        silent_end_samples: 0
+        silent_end_samples: sample_count - last_active_sample
     }
 
 }
