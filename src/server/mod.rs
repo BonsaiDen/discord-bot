@@ -1,4 +1,5 @@
 // STD Dependencies -----------------------------------------------------------
+use std::env;
 use std::fmt;
 use std::sync::mpsc;
 use std::collections::HashMap;
@@ -16,7 +17,10 @@ use discord::model::{
 
 
 // External Dependencies ------------------------------------------------------
+use diesel;
 use clock_ticks;
+use diesel::Connection;
+use diesel::sqlite::SqliteConnection;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -62,6 +66,8 @@ pub struct Server {
     pub id: ServerId,
     pub name: String,
 
+    connection: SqliteConnection,
+
     region: String,
     config: ServerConfig,
     startup_time: u64,
@@ -103,10 +109,11 @@ impl Server {
                 Server {
                     id: server_id,
                     name: "".to_string(),
+                    connection: establish_connection(),
                     region: "".to_string(),
                     startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&server_id, bot_config),
-                    effects: EffectRegistry::new(),
+                    effects: EffectRegistry::new(server_id),
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
@@ -123,10 +130,11 @@ impl Server {
                 let mut server = Server {
                     id: live_server.id,
                     name: live_server.name,
+                    connection: establish_connection(),
                     region: live_server.region,
                     startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&live_server.id, bot_config),
-                    effects: EffectRegistry::new(),
+                    effects: EffectRegistry::new(live_server.id),
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
@@ -183,6 +191,25 @@ impl Server {
         }
 
         self.effects.reload(&self.config);
+
+        self.sync_to_db();
+
+    }
+
+    pub fn sync_to_db(&mut self) {
+
+        use diesel::connection::SimpleConnection;
+
+        self.connection.batch_execute(
+            "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;"
+
+        ).expect("Failed to set pragmas.");
+
+        self.connection.transaction::<_, diesel::result::Error, _>(|| {
+            self.effects.sync_to_db(&self.connection);
+            self.config.sync_to_db(&self.connection);
+            Ok(())
+        });
 
     }
 
@@ -244,6 +271,7 @@ impl Server {
     }
 
     fn sync_config(&mut self) {
+        // TODO get user from database and check is_ fields instead
         for mut member in self.members.values_mut() {
             member.is_admin = self.config.admins.contains(&member.nickname);
             member.is_uploader = self.config.uploaders.contains(&member.nickname);
@@ -263,5 +291,16 @@ impl fmt::Display for Server {
             self.name, self.channels.len(), self.members.len()
         )
     }
+}
+
+
+// Helpers --------------------------------------------------------------------
+fn establish_connection() -> SqliteConnection {
+
+    let database_url = env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+
+    SqliteConnection::establish(&database_url)
+        .expect(&format!("Error connecting to {}", database_url))
 }
 

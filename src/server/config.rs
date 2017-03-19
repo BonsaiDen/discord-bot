@@ -12,6 +12,9 @@ use discord::model::ServerId;
 
 // External Dependencies ------------------------------------------------------
 use toml;
+use diesel;
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -22,6 +25,7 @@ use ::bot::BotConfig;
 #[derive(Debug)]
 pub struct ServerConfig {
     config_path: PathBuf,
+    server_id: ServerId,
     pub effects_path: PathBuf,
     pub recordings_path: PathBuf,
     pub aliases: HashMap<String, Vec<String>>,
@@ -49,6 +53,7 @@ impl ServerConfig {
         recordings_path.push("recordings");
 
         ServerConfig {
+            server_id: *server_id,
             config_path: config_path,
             effects_path: effects_path,
             recordings_path: recordings_path,
@@ -57,6 +62,127 @@ impl ServerConfig {
             admins: Vec::new(),
             uploaders: Vec::new(),
             banned: Vec::new()
+        }
+
+    }
+
+    pub fn sync_to_db(&self, connection: &SqliteConnection) {
+
+        let sid = format!("{}", self.server_id);
+        info!("Synchronizing configuration for server {} to sqlite database...", sid);
+
+        {
+            use ::db::models::NewAlias;
+            use ::db::schema::aliases::dsl::{aliases, server_id};
+
+            // Delete existing aliases
+            diesel::delete(aliases.filter(server_id.eq(&sid)))
+                   .execute(connection)
+                   .expect("Error deleting aliases.");
+
+            // Insert new aliases
+            for (alias_name, mapped_names) in &self.aliases {
+
+                use ::db::schema::aliases;
+
+                let names = mapped_names.join(" ");
+                let alias = NewAlias {
+                    server_id: &sid,
+                    name: &alias_name,
+                    effect_names: &names
+                };
+
+                diesel::insert(&alias).into(aliases::table)
+                       .execute(connection)
+                       .expect("Error saving new alias.");
+
+            }
+        }
+
+        {
+            use ::db::models::NewGreeting;
+            use ::db::schema::greetings::dsl::{greetings, server_id};
+
+            // Delete existing users
+            diesel::delete(greetings.filter(server_id.eq(&sid)))
+                   .execute(connection)
+                   .expect("Error deleting greeting.");
+
+            // Insert new greetings
+            for (user_name, mapped_name) in &self.greetings {
+
+                use ::db::schema::greetings;
+
+                let alias = NewGreeting {
+                    server_id: &sid,
+                    nickname: &user_name,
+                    effect_name: &mapped_name
+                };
+
+                diesel::insert(&alias).into(greetings::table)
+                       .execute(connection)
+                       .expect("Error saving new greeting.");
+
+            }
+        }
+
+        {
+            use ::db::models::NewUser;
+            use ::db::schema::users::dsl::{users, server_id};
+
+            // Delete existing users
+            diesel::delete(users.filter(server_id.eq(&sid)))
+                   .execute(connection)
+                   .expect("Error deleting users.");
+
+            let mut new_users: HashMap<String, NewUser> = HashMap::new();
+
+            for nickname in &self.admins {
+                new_users.entry(nickname.clone()).or_insert_with(|| {
+                    NewUser {
+                        server_id: &sid,
+                        nickname: nickname,
+                        is_admin: false,
+                        is_uploader: false,
+                        is_banned: false
+                    }
+
+                }).is_admin = true;
+            }
+
+            for nickname in &self.uploaders {
+                new_users.entry(nickname.clone()).or_insert_with(|| {
+                    NewUser {
+                        server_id: &sid,
+                        nickname: nickname,
+                        is_admin: false,
+                        is_uploader: false,
+                        is_banned: false
+                    }
+
+                }).is_uploader = true;
+            }
+
+            for nickname in &self.banned {
+                new_users.entry(nickname.clone()).or_insert_with(|| {
+                    NewUser {
+                        server_id: &sid,
+                        nickname: nickname,
+                        is_admin: false,
+                        is_uploader: false,
+                        is_banned: false
+                    }
+
+                }).is_banned = true;
+            }
+
+            for new_user in new_users.values() {
+                use ::db::schema::users;
+                diesel::insert(new_user).into(users::table)
+                       .execute(connection)
+                       .expect("Error saving new user.");
+            }
+
         }
 
     }

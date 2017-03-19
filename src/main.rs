@@ -16,6 +16,10 @@ extern crate app_dirs;
 extern crate vorbis_enc;
 extern crate clock_ticks;
 extern crate edit_distance;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 
 
 // STD Dependencies -----------------------------------------------------------
@@ -41,6 +45,7 @@ mod effect;
 mod server;
 mod upload;
 
+mod db;
 mod bot;
 mod logger;
 mod text_util;

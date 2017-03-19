@@ -13,7 +13,12 @@ use clock_ticks;
 use rand::{thread_rng, Rng};
 use hyper::Client;
 use hyper::header::Connection;
+use discord::model::ServerId;
 use edit_distance::edit_distance;
+
+use diesel;
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
 
 
 // Modules --------------------------------------------------------------------
@@ -32,6 +37,7 @@ pub use self::effect::Effect as Effect;
 // Effects Registration -------------------------------------------------------
 #[derive(Debug)]
 pub struct EffectRegistry {
+    server_id: ServerId,
     effects: HashMap<String, Effect>,
     last_played: HashMap<String, u64>,
     stat_cache: EffectStatCache
@@ -41,12 +47,42 @@ pub struct EffectRegistry {
 // Public Interface -----------------------------------------------------------
 impl EffectRegistry {
 
-    pub fn new() -> EffectRegistry {
+    pub fn new(server_id: ServerId) -> EffectRegistry {
         EffectRegistry {
+            server_id: server_id,
             effects: HashMap::new(),
             last_played: HashMap::new(),
             stat_cache: EffectStatCache::new()
         }
+    }
+
+    pub fn sync_to_db(&self, connection: &SqliteConnection)  {
+
+        let start = clock_ticks::precise_time_ms();
+        let sid = format!("{}", self.server_id);
+
+        {
+
+            use ::db::schema::effects::dsl::{effects, server_id};
+
+            // Delete existing effects
+            diesel::delete(effects.filter(server_id.eq(&sid)))
+                   .execute(connection)
+                   .expect("Error deleting effects.");
+
+            // Insert new effects
+            for effect in self.effects.values() {
+                effect.sync_to_db(connection);
+            }
+
+        }
+
+        info!(
+            "{} Effects stored into database in {}ms.",
+            self,
+            clock_ticks::precise_time_ms() - start
+        );
+
     }
 
     pub fn reload(&mut self, config: &ServerConfig) {
@@ -330,6 +366,7 @@ impl EffectRegistry {
             let effect = match *descriptor.as_slice() {
                 [name, uploader] => {
                     Effect::new(
+                        self.server_id,
                         name,
                         path.clone(),
                         self.stat_cache.get(config, path, name),
@@ -338,6 +375,7 @@ impl EffectRegistry {
                 },
                 [name] => {
                     Effect::new(
+                        self.server_id,
                         name,
                         path.clone(),
                         self.stat_cache.get(config, path, name),

@@ -1,6 +1,5 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
-use std::cmp;
 use std::fs::File;
 use std::path::PathBuf;
 use std::io::{Read, Write};

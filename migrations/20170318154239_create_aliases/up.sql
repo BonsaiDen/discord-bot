@@ -1,0 +1,6 @@
+CREATE TABLE aliases (
+    id INTEGER PRIMARY KEY NOT NULL,
+    server_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    effect_names VARCHAR(255) NOT NULL
+);

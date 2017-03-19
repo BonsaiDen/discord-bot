@@ -6,6 +6,7 @@ use super::Server;
 impl Server {
 
     pub fn has_alias(&self, alias_name: &str) -> bool {
+        // TODO select where server_id
         self.config.aliases.contains_key(alias_name)
     }
 

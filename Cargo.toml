@@ -9,6 +9,8 @@ discord = { git = "https://github.com/bonsaiden/discord-rs.git", rev = "master" 
 flac = { git = "https://github.com/bonsaiden/flac.git", rev = "master" }
 vorbis-enc = { git="https://github.com/BonsaiDen/vorbis-enc.git", rev = "master" }
 edit-distance = "1.0.0"
+diesel = { version = "0.11.0", features = ["sqlite"] }
+diesel_codegen = { version = "0.11.0", features = ["sqlite"] }
 clock_ticks = "*"
 dotenv = "*"
 chrono = "0.3"
