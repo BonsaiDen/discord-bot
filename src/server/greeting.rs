@@ -2,9 +2,17 @@
 use discord::model::UserId;
 
 
+// External Dependencies ------------------------------------------------------
+use diesel;
+use diesel::prelude::*;
+
+
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
 use ::effect::Effect;
+use ::db::models::{Greeting, NewGreeting};
+use ::db::schema::greetings::dsl::{server_id, nickname as greeting_nickname};
+use ::db::schema::greetings::table as greetingsTable;
 use super::Server;
 
 
@@ -20,17 +28,17 @@ impl Server {
         if let Some(member) = self.members.get(member_id) {
 
             // User specific greeting
-            if let Some(effect_name) = self.config.greetings.get(&member.nickname) {
+            if let Some(greeting) = self._get_greeting(&member.nickname) {
                 Some(self.map_effects(
-                    &[effect_name.to_string()],
+                    &[greeting.effect_name.to_string()],
                     false,
                     bot_config
                 ))
 
             // Default greeting
-            } else if let Some(effect_name) = self.config.greetings.get("default") {
+            } else if let Some(greeting) = self._get_greeting("default") {
                 Some(self.map_effects(
-                    &[effect_name.to_string()],
+                    &[greeting.effect_name.to_string()],
                     false,
                     bot_config
                 ))
@@ -44,25 +52,43 @@ impl Server {
         }
     }
 
+    fn _get_greeting(&self, nickname: &str) -> Option<Greeting> {
+        greetingsTable.filter(server_id.eq(&self.table_id))
+                      .filter(greeting_nickname.eq(nickname))
+                      .first(&self.connection)
+                      .ok()
+    }
+
     pub fn has_greeting(&self, nickname: &str) -> bool {
-        self.config.greetings.contains_key(nickname)
+        greetingsTable.filter(server_id.eq(&self.table_id))
+                      .filter(greeting_nickname.eq(nickname))
+                      .count()
+                      .get_result(&self.connection)
+                      .unwrap_or(0) > 0
     }
 
     pub fn add_greeting(&mut self, nickname: &str, effect_name: &str) {
-        self.config.greetings.insert(nickname.to_string(), effect_name.to_string());
-        self.store_config().expect("add_greeting failed to store config.");
+        diesel::insert(&NewGreeting {
+                    server_id: &self.table_id,
+                    nickname: nickname,
+                    effect_name: effect_name
+
+                }).into(greetingsTable)
+               .execute(&self.connection)
+               .expect("add_greeting failed to insert into database");
     }
 
     pub fn remove_greeting(&mut self, nickname: &str) {
-        self.config.greetings.remove(nickname);
-        self.store_config().expect("remove_greeting failed to store config.");
+        diesel::delete(greetingsTable.filter(server_id.eq(&self.table_id)).filter(greeting_nickname.eq(nickname)))
+               .execute(&self.connection)
+               .expect("remove_greeting failed to delete from database");
     }
 
-    pub fn list_greetings(&self) -> Vec<(&String, &String)> {
-        self.config.greetings.iter().map(|(nickname, effect)| {
-            (nickname, effect)
-
-        }).collect()
+    pub fn list_greetings(&self) -> Vec<Greeting> {
+        greetingsTable.filter(server_id.eq(&self.table_id))
+                      .order(greeting_nickname)
+                      .load::<Greeting>(&self.connection)
+                      .unwrap_or_else(|_| vec![])
     }
 
 }

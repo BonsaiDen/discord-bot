@@ -147,12 +147,12 @@ impl Bot {
 
     fn discord_event(
         &mut self,
-        event: DiscordEvent,
+        event: Box<DiscordEvent>,
         config: &BotConfig,
         queue: &mut EventQueue
 
     ) -> ActionGroup {
-        match event {
+        match *event {
 
             // Server Related Events
             DiscordEvent::ServerCreate(server) => {
@@ -221,12 +221,13 @@ impl Bot {
 
 
             // Message Related Events
-            DiscordEvent::MessageUpdate { id, channel_id, content, author, .. } => {
-                if let Some(content) = content {
-                    if let Some(author) = author {
+            DiscordEvent::MessageUpdate { id, channel_id, ref content, ref author, .. } => {
+                if let Some(ref content) = *content {
+                    if let Some(ref author) = *author {
                         return self.message_event(
                             id, channel_id,
-                            content, author,
+                            content,
+                            author,
                             Vec::new(),
                             config
                         );
@@ -237,7 +238,8 @@ impl Bot {
             DiscordEvent::MessageCreate(msg) => {
                 return self.message_event(
                     msg.id, msg.channel_id,
-                    msg.content, msg.author,
+                    &msg.content,
+                    &msg.author,
                     msg.attachments,
                     config
                 );
@@ -327,7 +329,7 @@ impl Bot {
     fn message_event(
         &mut self,
         id: MessageId, channel_id: ChannelId,
-        content: String, author: DiscordUser,
+        content: &str, author: &DiscordUser,
         attachments: Vec<Attachment>,
         bot_config: &BotConfig
 

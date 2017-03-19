@@ -16,10 +16,6 @@ use hyper::header::Connection;
 use discord::model::ServerId;
 use edit_distance::edit_distance;
 
-use diesel;
-use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
-
 
 // Modules --------------------------------------------------------------------
 mod effect;
@@ -54,35 +50,6 @@ impl EffectRegistry {
             last_played: HashMap::new(),
             stat_cache: EffectStatCache::new()
         }
-    }
-
-    pub fn sync_to_db(&self, connection: &SqliteConnection)  {
-
-        let start = clock_ticks::precise_time_ms();
-        let sid = format!("{}", self.server_id);
-
-        {
-
-            use ::db::schema::effects::dsl::{effects, server_id};
-
-            // Delete existing effects
-            diesel::delete(effects.filter(server_id.eq(&sid)))
-                   .execute(connection)
-                   .expect("Error deleting effects.");
-
-            // Insert new effects
-            for effect in self.effects.values() {
-                effect.sync_to_db(connection);
-            }
-
-        }
-
-        info!(
-            "{} Effects stored into database in {}ms.",
-            self,
-            clock_ticks::precise_time_ms() - start
-        );
-
     }
 
     pub fn reload(&mut self, config: &ServerConfig) {
@@ -135,8 +102,7 @@ impl EffectRegistry {
 
     pub fn map_similiar(
         &self,
-        patterns: &[String],
-        _: &HashMap<String, Vec<String>>
+        patterns: &[String]
 
     ) -> Vec<&str> {
         self.effects.keys().map(|name| name.as_str()).filter(|name| {

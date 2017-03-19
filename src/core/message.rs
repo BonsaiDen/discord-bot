@@ -46,7 +46,7 @@ impl Message {
 
     pub fn parse_contents(
         self,
-        content: String,
+        content: &str,
         attachments: Vec<Attachment>
 
     ) -> Vec<MessageContent> {

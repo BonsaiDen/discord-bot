@@ -17,7 +17,6 @@ use discord::model::{
 
 
 // External Dependencies ------------------------------------------------------
-use diesel;
 use clock_ticks;
 use diesel::Connection;
 use diesel::sqlite::SqliteConnection;
@@ -66,6 +65,7 @@ pub struct Server {
     pub id: ServerId,
     pub name: String,
 
+    table_id: String,
     connection: SqliteConnection,
 
     region: String,
@@ -73,6 +73,7 @@ pub struct Server {
     startup_time: u64,
 
     effects: EffectRegistry,
+    aliases: HashMap<String, Vec<String>>,
     voice_channel_id: Option<ChannelId>,
     pinned_channel_id: Option<ChannelId>,
     voice_status: ServerVoiceStatus,
@@ -109,10 +110,12 @@ impl Server {
                 Server {
                     id: server_id,
                     name: "".to_string(),
+                    table_id: format!("{}", server_id),
                     connection: establish_connection(),
                     region: "".to_string(),
                     startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&server_id, bot_config),
+                    aliases: HashMap::new(),
                     effects: EffectRegistry::new(server_id),
                     voice_channel_id: None,
                     pinned_channel_id: None,
@@ -130,10 +133,12 @@ impl Server {
                 let mut server = Server {
                     id: live_server.id,
                     name: live_server.name,
+                    table_id: format!("{}", live_server.id),
                     connection: establish_connection(),
                     region: live_server.region,
                     startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&live_server.id, bot_config),
+                    aliases: HashMap::new(),
                     effects: EffectRegistry::new(live_server.id),
                     voice_channel_id: None,
                     pinned_channel_id: None,
@@ -163,7 +168,7 @@ impl Server {
                     );
                 }
 
-                server.sync_config();
+                // TODO why was sync_members needed in the first place?
 
                 server
 
@@ -184,33 +189,8 @@ impl Server {
     }
 
     pub fn reload(&mut self) {
-
-        match self.load_config() {
-            Ok(_) => info!("{} Configuration loaded", self),
-            Err(reason) => warn!("{} Failed to load configuration: {}", self, reason)
-        }
-
+        self.update_aliases();
         self.effects.reload(&self.config);
-
-        self.sync_to_db();
-
-    }
-
-    pub fn sync_to_db(&mut self) {
-
-        use diesel::connection::SimpleConnection;
-
-        self.connection.batch_execute(
-            "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;"
-
-        ).expect("Failed to set pragmas.");
-
-        self.connection.transaction::<_, diesel::result::Error, _>(|| {
-            self.effects.sync_to_db(&self.connection);
-            self.config.sync_to_db(&self.connection);
-            Ok(())
-        });
-
     }
 
     pub fn get_bot(&self) -> Option<&Member> {
@@ -256,29 +236,6 @@ impl Server {
         self.add_channel(Channel::from_discord_channel(channel));
     }
 
-    fn load_config(&mut self) -> Result<(), String> {
-        let server_name = format!("{}", self);
-        self.config.load(&server_name).and_then(|_| {
-            self.sync_config();
-            Ok(())
-        })
-    }
-
-    fn store_config(&mut self) -> Result<(), String> {
-        let server_name = format!("{}", self);
-        self.sync_config();
-        self.config.store(&server_name)
-    }
-
-    fn sync_config(&mut self) {
-        // TODO get user from database and check is_ fields instead
-        for mut member in self.members.values_mut() {
-            member.is_admin = self.config.admins.contains(&member.nickname);
-            member.is_uploader = self.config.uploaders.contains(&member.nickname);
-            member.is_banned = self.config.banned.contains(&member.nickname);
-        }
-    }
-
 }
 
 
@@ -297,10 +254,20 @@ impl fmt::Display for Server {
 // Helpers --------------------------------------------------------------------
 fn establish_connection() -> SqliteConnection {
 
+    use diesel::connection::SimpleConnection;
+
     let database_url = env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set");
 
-    SqliteConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+    let connection = SqliteConnection::establish(&database_url)
+        .expect(&format!("Error connecting to {}", database_url));
+
+    connection.batch_execute(
+        "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;"
+
+    ).expect("Failed to set pragmas.");
+
+    connection
+
 }
 

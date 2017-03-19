@@ -65,9 +65,9 @@ fn main() {
 
     logger::Logger::init().ok();
 
-    let token = env::var("DISCORD_BOT_TOKEN").unwrap_or("".into());
+    let token = env::var("DISCORD_BOT_TOKEN").unwrap_or_else(|_| "".into());
     let config = bot::BotConfig {
-        bot_nickname: env::var("DISCORD_BOT_NICKNAME").unwrap_or("".into()),
+        bot_nickname: env::var("DISCORD_BOT_NICKNAME").unwrap_or_else(|_| "".into()),
         server_whitelist: env::var("SERVER_WHITELIST").ok().and_then(|servers| {
             Some(servers.split(',').map(|id| {
                 ServerId(id.parse().unwrap_or(0))
@@ -76,9 +76,9 @@ fn main() {
 
         }).unwrap_or_else(Vec::new),
         config_path: app_dirs::app_root(AppDataType::UserConfig, &APP_INFO).expect("Failed to retrieve configuration directory."),
-        effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or("".into()).parse().unwrap_or(10000),
-        greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or("".into()).parse().unwrap_or(30000),
-        flac_max_file_size: env::var("FLAC_MAX_FILE_SIZE").unwrap_or("".into()).parse().unwrap_or(2048 * 1024),
+        effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(10000),
+        greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(30000),
+        flac_max_file_size: env::var("FLAC_MAX_FILE_SIZE").unwrap_or_else(|_| "".into()).parse().unwrap_or(2048 * 1024),
         flac_sample_rate: 48000,
         flac_bits_per_sample: 16
     };

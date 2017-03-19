@@ -27,9 +27,7 @@ impl ActionHandler for Action {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
-            let mut bans = server.list_bans();
-            bans.sort();
-
+            let bans = server.list_bans();
             if bans.is_empty() {
                 MessageActions::Send::private(
                     &self.message,
@@ -38,7 +36,8 @@ impl ActionHandler for Action {
 
             } else {
                 let title = format!("Banned Users on {}", server.name);
-                list_lines(&title, bans, 25).into_iter().map(|text| {
+                let user_nicknames: Vec<String> = bans.into_iter().map(|user| user.nickname).collect();
+                list_lines(&title, &user_nicknames, 25).into_iter().map(|text| {
                     MessageActions::Send::single_private(&self.message, text) as Box<ActionHandler>
 
                 }).collect()

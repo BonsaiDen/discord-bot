@@ -113,17 +113,14 @@ impl Server {
     ) -> Vec<&Effect> {
         self.effects.map_patterns(
             patterns,
-            Some(&self.config.aliases),
+            Some(self.get_alias_map()),
             match_all,
             bot_config
         )
     }
 
     pub fn map_similiar_effects(&self, patterns: &[String]) -> Vec<&str> {
-        self.effects.map_similiar(
-            patterns,
-            &self.config.aliases
-        )
+        self.effects.map_similiar(patterns)
     }
 
     pub fn rename_effect(&mut self, effect: &Effect, effect_name: &str) -> Result<(), String> {

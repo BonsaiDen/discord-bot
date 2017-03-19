@@ -27,11 +27,8 @@ impl ActionHandler for Action {
 
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
-            let mut aliases = server.list_aliases();
-            aliases.sort();
-
-            let aliases: Vec<String> = aliases.into_iter().map(|(name, effects)| {
-                format!("- `{}` -> `{}`", name, effects.join("`, `"))
+            let aliases: Vec<String> = server.list_aliases().into_iter().map(|alias| {
+                format!("- `{}` -> `{}`", alias.name, alias.effect_names.split(' ').collect::<Vec<&str>>().join("`, `"))
 
             }).collect();
 
@@ -42,7 +39,7 @@ impl ActionHandler for Action {
                 )
 
             } else {
-                list_lines("Effect Aliases", aliases, 25).into_iter().map(|text| {
+                list_lines("Effect Aliases", &aliases, 25).into_iter().map(|text| {
                     MessageActions::Send::single_private(&self.message, text) as Box<ActionHandler>
 
                 }).collect()

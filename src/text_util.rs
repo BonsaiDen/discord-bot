@@ -5,7 +5,7 @@ use std::cmp;
 // Text Utilities -------------------------------------------------------------
 pub fn list_words(
     title: &str,
-    words: Vec<&str>,
+    words: &[&str],
     block_size: usize,
     line_size: usize
 
@@ -35,7 +35,7 @@ pub fn list_words(
 
 pub fn list_lines(
     title: &str,
-    lines: Vec<String>,
+    lines: &[String],
     line_size: usize
 
 ) -> Vec<String> {

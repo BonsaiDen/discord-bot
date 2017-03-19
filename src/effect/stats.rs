@@ -57,14 +57,14 @@ impl EffectStatCache {
 
             let mut loaded = false;
             if !cache.contains_key(effect_name) {
-                if let Ok(stat) = anaylze_flac(path) {
+                if let Ok(stat) = anaylze_flac(&path) {
                     info!("{} Analyzing flac effect \"{}\"...", cache_name, effect_name);
                     cache.insert(effect_name.to_string(), stat);
                     loaded = true;
                 }
             }
 
-            (cache.get(effect_name).map(|stat| stat.clone()), loaded)
+            (cache.get(effect_name).cloned(), loaded)
 
         } else {
             (None, false)
@@ -165,7 +165,7 @@ fn decode_toml_cache(cache_path: PathBuf) -> Result<BTreeMap<String, toml::Value
                 .map_or_else(|| {
                     Err("Failed to parse cache toml.".to_string())
 
-                }, |table| Ok(table))
+                }, Ok)
         })
 }
 
@@ -179,7 +179,7 @@ fn encode_toml_cache(cache_path: PathBuf, value: BTreeMap<String, toml::Value>) 
 
 }
 
-fn anaylze_flac(flac_path: PathBuf) -> Result<EffectStat, String> {
+fn anaylze_flac(flac_path: &PathBuf) -> Result<EffectStat, String> {
     StreamReader::<File>::from_file(flac_path.to_str().unwrap_or(""))
         .map_err(|_| "Failed to open flac file.".to_string())
         .and_then(|stream| {

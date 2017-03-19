@@ -61,7 +61,7 @@ impl Upload {
             name: name.to_string(),
             url: attachment.url.to_string(),
             info: if name.is_ascii() && name.len() >= 2 && ext == "flac" {
-                retrieve_flac_info(attachment.url).ok()
+                retrieve_flac_info(attachment.url.as_str()).ok()
 
             } else if name.is_ascii() && name.len() >= 2 && ext == "txt" {
                 Some(FileInfo::Text)
@@ -191,10 +191,10 @@ fn os_str_to_string(os_str: Option<&OsStr>) -> String {
 }
 
 
-fn retrieve_flac_info(url: String) -> Result<FileInfo, String> {
+fn retrieve_flac_info(url: &str) -> Result<FileInfo, String> {
 
     let client = Client::new();
-    client.get(&url)
+    client.get(url)
         .header(Range::Bytes(vec![ByteRangeSpec::FromTo(0, 256)]))
         .header(Connection::close())
         .send()

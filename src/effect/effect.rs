@@ -12,12 +12,6 @@ use discord::model::ServerId;
 use ::effect::EffectStat;
 
 
-// External Dependencies ------------------------------------------------------
-use diesel;
-use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
-
-
 // Effect Abstraction ---------------------------------------------------------
 #[derive(Debug)]
 pub struct Effect {
@@ -49,33 +43,6 @@ impl Effect {
             transcript: None,
             bitrate: None
         }
-    }
-
-    pub fn sync_to_db(&self, connection: &SqliteConnection) {
-
-        use ::db::models::NewEffect;
-        use ::db::schema::effects;
-
-        let sid = format!("{}", self.server_id);
-
-        let uploader = self.uploader.as_ref().unwrap_or(&String::new()).clone();
-        let transcript = self.transcript.as_ref().unwrap_or(&String::new()).clone();
-
-        let new_effect = NewEffect {
-            server_id: &sid,
-            name: &self.name,
-            uploader: &uploader,
-            transcript: &transcript,
-            peak_db: self.stats.as_ref().unwrap().peak_db,
-            duration_ms: self.stats.as_ref().unwrap().duration_ms as i32,
-            silent_start_samples: self.stats.as_ref().unwrap().silent_start_samples as i32,
-            silent_end_samples: self.stats.as_ref().unwrap().silent_end_samples as i32
-        };
-
-        diesel::insert(&new_effect).into(effects::table)
-               .execute(connection)
-               .expect("Error saving new effect.");
-
     }
 
     pub fn auto_adjust_gain(&self) -> f32 {

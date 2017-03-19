@@ -20,7 +20,7 @@ pub enum Event {
     Reconnected,
     Disconnected,
     Timer,
-    Received(DiscordEvent),
+    Received(Box<DiscordEvent>),
     SendMessageFailure(ChannelId, String),
     DeleteMessageFailure(ChannelId, MessageId)
 }
@@ -52,7 +52,7 @@ impl EventQueue {
         match self.receiver.recv_event() {
             Ok(event) => {
                 self.receiver.update(&event);
-                self.events.push_back(Event::Received(event));
+                self.events.push_back(Event::Received(Box::new(event)));
             },
             Err(err) => {
                 if let Error::WebSocket(..) = err {
@@ -124,7 +124,7 @@ impl EventQueue {
 
     pub fn send_message_to_channel(&mut self, channel_id: &ChannelId, content: String) {
 
-        if let Err(_) = self.receiver.discord.send_message(*channel_id, content.as_str(), "", false) {
+        if self.receiver.discord.send_message(*channel_id, content.as_str(), "", false).is_err() {
             warn!("[EL] Failed to sent message.");
             self.events.push_back(Event::SendMessageFailure(*channel_id, content));
 
@@ -135,7 +135,7 @@ impl EventQueue {
     }
 
     pub fn delete_message(&mut self, message_id: MessageId, channel_id: ChannelId) {
-        if let Err(_) = self.receiver.discord.delete_message(channel_id, message_id) {
+        if self.receiver.discord.delete_message(channel_id, message_id).is_err() {
             warn!("[EL] Failed to delete message.");
             self.events.push_back(Event::DeleteMessageFailure(channel_id, message_id));
 

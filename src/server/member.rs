@@ -17,6 +17,7 @@ use ::bot::BotConfig;
 use ::audio::MixerCommand;
 use ::action::{ActionGroup, EffectActions};
 use ::core::{EventQueue, Member};
+use ::db::models::User as UserModel;
 use super::{Server, ServerRecordingStatus, ServerVoiceStatus};
 
 
@@ -52,8 +53,11 @@ impl Server {
             self.id,
             bot_config
         );
-        member.is_admin = self.config.admins.contains(&member.nickname);
-        member.is_uploader = self.config.uploaders.contains(&member.nickname);
+
+        let user = self.get_user_from_db(&member.nickname);
+        member.is_admin = user.is_admin;
+        member.is_uploader = user.is_uploader;
+        member.is_banned = user.is_banned;
 
         info!("{} {} added", self, member);
         self.members.insert(member.id, member);
@@ -260,6 +264,28 @@ impl Server {
             self.pinned_channel_id = None;
             self.voice_channel_id = None;
         }
+    }
+
+    fn get_user_from_db(&self, nickname: &str) -> UserModel {
+
+        use diesel::prelude::*;
+        use ::db::schema::users::dsl::{server_id, nickname as user_nickname};
+        use ::db::schema::users::table as userTable;
+
+        userTable.filter(server_id.eq(&self.table_id))
+                 .filter(user_nickname.eq(nickname))
+                 .first::<UserModel>(&self.connection)
+                 .ok()
+                 .unwrap_or_else(|| {
+                     UserModel {
+                         id: -1,
+                         server_id: self.table_id.clone(),
+                         nickname: nickname.to_string(),
+                         is_admin: false,
+                         is_uploader: false,
+                         is_banned: false
+                     }
+                 })
     }
 
 }

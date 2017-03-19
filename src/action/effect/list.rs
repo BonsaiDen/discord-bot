@@ -57,7 +57,7 @@ impl ActionHandler for Action {
                     )
 
                 } else {
-                    list_effects(&self.message, title.as_str(), effects)
+                    list_effects(&self.message, title.as_str(), effects.as_slice())
                 }
 
             } else {
@@ -73,7 +73,7 @@ impl ActionHandler for Action {
                     )
 
                 } else {
-                    list_effects(&self.message, "Sound Effects", effects)
+                    list_effects(&self.message, "Sound Effects", effects.as_slice())
                 }
             }
 
@@ -95,7 +95,7 @@ impl fmt::Display for Action {
 fn list_effects(
     message: &Message,
     title: &str,
-    effects: Vec<&Effect>
+    effects: &[&Effect]
 
 ) -> ActionGroup {
 
@@ -106,7 +106,7 @@ fn list_effects(
 
     effects_names.sort();
 
-    list_words(title, effects_names, 100, 4).into_iter().map(|text| {
+    list_words(title, &effects_names, 100, 4).into_iter().map(|text| {
         MessageActions::Send::single_private(message, text) as Box<ActionHandler>
 
     }).collect()
