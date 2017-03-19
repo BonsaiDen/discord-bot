@@ -1,5 +1,4 @@
 // STD Dependencies -----------------------------------------------------------
-use std::env;
 use std::fmt;
 use std::sync::mpsc;
 use std::collections::HashMap;
@@ -18,8 +17,6 @@ use discord::model::{
 
 // External Dependencies ------------------------------------------------------
 use clock_ticks;
-use diesel::Connection;
-use diesel::sqlite::SqliteConnection;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -65,9 +62,6 @@ pub struct Server {
     pub id: ServerId,
     pub name: String,
 
-    table_id: String,
-    connection: SqliteConnection,
-
     region: String,
     config: ServerConfig,
     startup_time: u64,
@@ -110,13 +104,11 @@ impl Server {
                 Server {
                     id: server_id,
                     name: "".to_string(),
-                    table_id: format!("{}", server_id),
-                    connection: establish_connection(),
                     region: "".to_string(),
                     startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&server_id, bot_config),
                     aliases: HashMap::new(),
-                    effects: EffectRegistry::new(server_id),
+                    effects: EffectRegistry::new(),
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
@@ -133,13 +125,11 @@ impl Server {
                 let mut server = Server {
                     id: live_server.id,
                     name: live_server.name,
-                    table_id: format!("{}", live_server.id),
-                    connection: establish_connection(),
                     region: live_server.region,
                     startup_time: clock_ticks::precise_time_ms(),
                     config: ServerConfig::new(&live_server.id, bot_config),
                     aliases: HashMap::new(),
-                    effects: EffectRegistry::new(live_server.id),
+                    effects: EffectRegistry::new(),
                     voice_channel_id: None,
                     pinned_channel_id: None,
                     voice_status: ServerVoiceStatus::Left,
@@ -248,26 +238,5 @@ impl fmt::Display for Server {
             self.name, self.channels.len(), self.members.len()
         )
     }
-}
-
-
-// Helpers --------------------------------------------------------------------
-fn establish_connection() -> SqliteConnection {
-
-    use diesel::connection::SimpleConnection;
-
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-
-    let connection = SqliteConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url));
-
-    connection.batch_execute(
-        "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;"
-
-    ).expect("Failed to set pragmas.");
-
-    connection
-
 }
 

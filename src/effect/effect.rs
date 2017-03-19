@@ -4,9 +4,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 
-// Discord Dependencies -------------------------------------------------------
-use discord::model::ServerId;
-
 
 // Internal Dependencies ------------------------------------------------------
 use ::effect::EffectStat;
@@ -16,7 +13,6 @@ use ::effect::EffectStat;
 #[derive(Debug)]
 pub struct Effect {
     pub name: String,
-    server_id: ServerId,
     path: PathBuf,
     stats: Option<EffectStat>,
     uploader: Option<String>,
@@ -27,7 +23,6 @@ pub struct Effect {
 impl Effect {
 
     pub fn new(
-        server_id: ServerId,
         name: &str,
         path: PathBuf,
         stats: Option<EffectStat>,
@@ -36,7 +31,6 @@ impl Effect {
     ) -> Effect {
         Effect {
             name: name.to_string(),
-            server_id: server_id,
             path: path,
             stats: stats,
             uploader: uploader,
@@ -88,7 +82,6 @@ impl Effect {
 
     pub fn clone_with_bitrate(&self, bitrate: u64) -> Self {
         Effect {
-            server_id: self.server_id,
             name: self.name.to_string(),
             path: self.path.clone(),
             stats: self.stats.clone(),
@@ -103,7 +96,6 @@ impl Effect {
 impl Clone for Effect {
     fn clone(&self) -> Self {
         Effect {
-            server_id: self.server_id,
             name: self.name.to_string(),
             path: self.path.clone(),
             stats: self.stats.clone(),

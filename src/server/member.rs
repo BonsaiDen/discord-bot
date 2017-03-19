@@ -272,14 +272,14 @@ impl Server {
         use ::db::schema::users::dsl::{server_id, nickname as user_nickname};
         use ::db::schema::users::table as userTable;
 
-        userTable.filter(server_id.eq(&self.table_id))
+        userTable.filter(server_id.eq(&self.config.table_id))
                  .filter(user_nickname.eq(nickname))
-                 .first::<UserModel>(&self.connection)
+                 .first::<UserModel>(&self.config.connection)
                  .ok()
                  .unwrap_or_else(|| {
                      UserModel {
                          id: -1,
-                         server_id: self.table_id.clone(),
+                         server_id: self.config.table_id.clone(),
                          nickname: nickname.to_string(),
                          is_admin: false,
                          is_uploader: false,

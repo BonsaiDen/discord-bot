@@ -18,38 +18,38 @@ use ::db::schema::aliases::table as aliasTable;
 impl Server {
 
     pub fn has_alias(&self, name: &str) -> bool {
-        aliasTable.filter(server_id.eq(&self.table_id))
+        aliasTable.filter(server_id.eq(&self.config.table_id))
                   .filter(alias_name.eq(name))
                   .count()
-                  .get_result(&self.connection)
+                  .get_result(&self.config.connection)
                   .unwrap_or(0) > 0
     }
 
     pub fn add_alias(&mut self, name: &str, effect_names: &[String]) {
         diesel::insert(&NewAlias {
-                    server_id: &self.table_id,
+                    server_id: &self.config.table_id,
                     name: name,
                     effect_names: &effect_names.join(" ")
 
                 }).into(aliasTable)
-               .execute(&self.connection)
+               .execute(&self.config.connection)
                .expect("add_alias failed to insert into database");
 
         self.update_aliases();
     }
 
     pub fn remove_alias(&mut self, name: &str) {
-        diesel::delete(aliasTable.filter(server_id.eq(&self.table_id)).filter(alias_name.eq(name)))
-               .execute(&self.connection)
+        diesel::delete(aliasTable.filter(server_id.eq(&self.config.table_id)).filter(alias_name.eq(name)))
+               .execute(&self.config.connection)
                .expect("remove_alias failed to delete from database");
 
         self.update_aliases();
     }
 
     pub fn list_aliases(&self) -> Vec<Alias> {
-        aliasTable.filter(server_id.eq(&self.table_id))
+        aliasTable.filter(server_id.eq(&self.config.table_id))
                   .order(alias_name)
-                  .load::<Alias>(&self.connection)
+                  .load::<Alias>(&self.config.connection)
                   .unwrap_or_else(|_| vec![])
     }
 
@@ -57,8 +57,8 @@ impl Server {
 
         self.aliases.clear();
 
-        for alias in aliasTable.filter(server_id.eq(&self.table_id))
-                  .load::<Alias>(&self.connection)
+        for alias in aliasTable.filter(server_id.eq(&self.config.table_id))
+                  .load::<Alias>(&self.config.connection)
                   .unwrap_or_else(|_| vec![]) {
 
             self.aliases.insert(

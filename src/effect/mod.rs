@@ -9,11 +9,12 @@ use std::collections::HashMap;
 
 
 // External Dependencies ------------------------------------------------------
+use diesel;
+use diesel::prelude::*;
 use clock_ticks;
 use rand::{thread_rng, Rng};
 use hyper::Client;
 use hyper::header::Connection;
-use discord::model::ServerId;
 use edit_distance::edit_distance;
 
 
@@ -25,7 +26,11 @@ mod stats;
 // Internal Dependencies ------------------------------------------------------
 use ::bot::BotConfig;
 use ::server::ServerConfig;
+use ::db::models::{Effect as EffectModel, NewEffect as NewEffectModel};
+//use ::db::schema::effects::dsl::{server_id, name as effect_name};
+use ::db::schema::effects::table as effectTable;
 use self::stats::EffectStatCache;
+
 pub use self::stats::EffectStat;
 pub use self::effect::Effect as Effect;
 
@@ -33,7 +38,6 @@ pub use self::effect::Effect as Effect;
 // Effects Registration -------------------------------------------------------
 #[derive(Debug)]
 pub struct EffectRegistry {
-    server_id: ServerId,
     effects: HashMap<String, Effect>,
     last_played: HashMap<String, u64>,
     stat_cache: EffectStatCache
@@ -43,9 +47,8 @@ pub struct EffectRegistry {
 // Public Interface -----------------------------------------------------------
 impl EffectRegistry {
 
-    pub fn new(server_id: ServerId) -> EffectRegistry {
+    pub fn new() -> EffectRegistry {
         EffectRegistry {
-            server_id: server_id,
             effects: HashMap::new(),
             last_played: HashMap::new(),
             stat_cache: EffectStatCache::new()
@@ -53,7 +56,18 @@ impl EffectRegistry {
     }
 
     pub fn reload(&mut self, config: &ServerConfig) {
+
+        //use ::db::schema::effects::dsl::server_id;
+
         self.effects.clear();
+
+        //for effect in effectTable.filter(server_id.eq(&self.table_id))
+        //          .load::<EffectModel>(&self.connection)
+        //          .unwrap_or_else(|_| vec![]) {
+
+
+        //}
+
         self.load_effects(config)
     }
 
@@ -160,6 +174,7 @@ impl EffectRegistry {
             err.to_string()
 
         }).and_then(|_| {
+            // TODO rename effect in DB
             fs::rename(effect.transcript_path(), new_transcript_path).ok();
             self.reload(config);
             Ok(())
@@ -173,6 +188,7 @@ impl EffectRegistry {
         effect: &Effect
 
     ) -> Result<(), String> {
+        // TODO remove effect to DB
         fs::remove_file(effect.to_path_str()).map_err(|err| {
             err.to_string()
 
@@ -191,6 +207,7 @@ impl EffectRegistry {
         uploader: &str
 
     ) -> Result<(), String> {
+        // TODO add effect to DB and get stats
         download_file(
             config.effects_path.clone(),
             effect_name,
@@ -213,6 +230,7 @@ impl EffectRegistry {
         upload_url: &str
 
     ) -> Result<(), String> {
+        // TODO update transcript for effect in DB
         download_file(
             config.effects_path.clone(),
             effect_name,
@@ -324,6 +342,8 @@ impl EffectRegistry {
 
     fn load_effects(&mut self, config: &ServerConfig) {
 
+        // TODO load from database
+
         let start = clock_ticks::precise_time_ms();
         filter_dir(&config.effects_path, "flac", |name, path| {
 
@@ -331,7 +351,6 @@ impl EffectRegistry {
             let descriptor: Vec<&str> = name.split('.').collect();
             let effect = if descriptor.len() == 2 {
                 Effect::new(
-                    self.server_id,
                     descriptor[0],
                     path.clone(),
                     self.stat_cache.get(config, path, descriptor[0]),
@@ -340,7 +359,6 @@ impl EffectRegistry {
 
             } else {
                 Effect::new(
-                    self.server_id,
                     descriptor[0],
                     path.clone(),
                     self.stat_cache.get(config, path, descriptor[0]),

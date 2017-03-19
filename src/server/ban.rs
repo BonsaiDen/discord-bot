@@ -14,43 +14,43 @@ use ::db::schema::users::table as userTable;
 impl Server {
 
     pub fn list_bans(&self) -> Vec<User> {
-        userTable.filter(server_id.eq(&self.table_id))
+        userTable.filter(server_id.eq(&self.config.table_id))
                  .filter(is_banned.eq(true))
                  .order(user_nickname)
-                 .load::<User>(&self.connection)
+                 .load::<User>(&self.config.connection)
                  .unwrap_or_else(|_| vec![])
     }
 
     pub fn add_ban(&mut self, nickname: &str) -> bool {
 
         // TODO dry
-        let q = userTable.filter(server_id.eq(&self.table_id))
+        let q = userTable.filter(server_id.eq(&self.config.table_id))
                          .filter(user_nickname.eq(nickname));
 
         // Create user
-        if q.count().get_result(&self.connection).unwrap_or(0) == 0 {
+        if q.count().get_result(&self.config.connection).unwrap_or(0) == 0 {
             diesel::insert(&NewUser {
-                        server_id: &self.table_id,
+                        server_id: &self.config.table_id,
                         nickname: nickname,
                         is_admin: false,
                         is_uploader: false,
                         is_banned: false
 
                     }).into(userTable)
-                   .execute(&self.connection)
+                   .execute(&self.config.connection)
                    .expect("add_alias failed to insert into database");
 
         }
 
         // Ban user
-        let q = userTable.filter(server_id.eq(&self.table_id))
+        let q = userTable.filter(server_id.eq(&self.config.table_id))
                          .filter(user_nickname.eq(nickname))
                          .filter(is_banned.eq(false));
 
-        if q.count().get_result(&self.connection).unwrap_or(0) > 0 {
+        if q.count().get_result(&self.config.connection).unwrap_or(0) > 0 {
             diesel::update(q)
                    .set(is_banned.eq(true))
-                   .execute(&self.connection)
+                   .execute(&self.config.connection)
                    .expect("add_ban failed to update database");
             true
 
@@ -61,14 +61,14 @@ impl Server {
     }
 
     pub fn remove_ban(&mut self, nickname: &str) -> bool {
-        let q = userTable.filter(server_id.eq(&self.table_id))
+        let q = userTable.filter(server_id.eq(&self.config.table_id))
                          .filter(user_nickname.eq(nickname))
                          .filter(is_banned.eq(true));
 
-        if q.count().get_result(&self.connection).unwrap_or(0) > 0 {
+        if q.count().get_result(&self.config.connection).unwrap_or(0) > 0 {
             diesel::update(q)
                    .set(is_banned.eq(false))
-                   .execute(&self.connection)
+                   .execute(&self.config.connection)
                    .expect("remove_ban failed to update database");
             true
 

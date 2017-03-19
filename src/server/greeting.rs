@@ -53,41 +53,41 @@ impl Server {
     }
 
     fn _get_greeting(&self, nickname: &str) -> Option<Greeting> {
-        greetingsTable.filter(server_id.eq(&self.table_id))
+        greetingsTable.filter(server_id.eq(&self.config.table_id))
                       .filter(greeting_nickname.eq(nickname))
-                      .first(&self.connection)
+                      .first(&self.config.connection)
                       .ok()
     }
 
     pub fn has_greeting(&self, nickname: &str) -> bool {
-        greetingsTable.filter(server_id.eq(&self.table_id))
+        greetingsTable.filter(server_id.eq(&self.config.table_id))
                       .filter(greeting_nickname.eq(nickname))
                       .count()
-                      .get_result(&self.connection)
+                      .get_result(&self.config.connection)
                       .unwrap_or(0) > 0
     }
 
     pub fn add_greeting(&mut self, nickname: &str, effect_name: &str) {
         diesel::insert(&NewGreeting {
-                    server_id: &self.table_id,
+                    server_id: &self.config.table_id,
                     nickname: nickname,
                     effect_name: effect_name
 
                 }).into(greetingsTable)
-               .execute(&self.connection)
+               .execute(&self.config.connection)
                .expect("add_greeting failed to insert into database");
     }
 
     pub fn remove_greeting(&mut self, nickname: &str) {
-        diesel::delete(greetingsTable.filter(server_id.eq(&self.table_id)).filter(greeting_nickname.eq(nickname)))
-               .execute(&self.connection)
+        diesel::delete(greetingsTable.filter(server_id.eq(&self.config.table_id)).filter(greeting_nickname.eq(nickname)))
+               .execute(&self.config.connection)
                .expect("remove_greeting failed to delete from database");
     }
 
     pub fn list_greetings(&self) -> Vec<Greeting> {
-        greetingsTable.filter(server_id.eq(&self.table_id))
+        greetingsTable.filter(server_id.eq(&self.config.table_id))
                       .order(greeting_nickname)
-                      .load::<Greeting>(&self.connection)
+                      .load::<Greeting>(&self.config.connection)
                       .unwrap_or_else(|_| vec![])
     }
 
