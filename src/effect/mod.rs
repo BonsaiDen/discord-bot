@@ -363,26 +363,23 @@ impl EffectRegistry {
 
             // let duration = get_flac_duration(path.clone()).unwrap_or(0);
             let descriptor: Vec<&str> = name.split('.').collect();
-            let effect = match *descriptor.as_slice() {
-                [name, uploader] => {
-                    Effect::new(
-                        self.server_id,
-                        name,
-                        path.clone(),
-                        self.stat_cache.get(config, path, name),
-                        Some(uploader.replace("_", "#"))
-                    )
-                },
-                [name] => {
-                    Effect::new(
-                        self.server_id,
-                        name,
-                        path.clone(),
-                        self.stat_cache.get(config, path, name),
-                        None
-                    )
-                },
-                _ => unreachable!()
+            let effect = if descriptor.len() == 2 {
+                Effect::new(
+                    self.server_id,
+                    descriptor[0],
+                    path.clone(),
+                    self.stat_cache.get(config, path, descriptor[0]),
+                    Some(descriptor[1].replace("_", "#"))
+                )
+
+            } else {
+                Effect::new(
+                    self.server_id,
+                    descriptor[0],
+                    path.clone(),
+                    self.stat_cache.get(config, path, descriptor[0]),
+                    None
+                )
             };
 
             self.effects.insert(
