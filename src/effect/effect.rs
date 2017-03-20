@@ -12,10 +12,10 @@ use ::effect::EffectStat;
 pub struct Effect {
     pub name: String,
     path: PathBuf,
-    stats: Option<EffectStat>,
-    uploader: Option<String>,
-    transcript: Option<String>,
-    bitrate: Option<u64>,
+    stats: EffectStat,
+    uploader: String,
+    transcript: String,
+    bitrate: Option<u64>
 }
 
 impl Effect {
@@ -23,8 +23,9 @@ impl Effect {
     pub fn new(
         name: &str,
         path: PathBuf,
-        stats: Option<EffectStat>,
-        uploader: Option<String>
+        stats: EffectStat,
+        uploader: String,
+        transcript: String
 
     ) -> Effect {
         Effect {
@@ -32,37 +33,32 @@ impl Effect {
             path: path,
             stats: stats,
             uploader: uploader,
-            transcript: None,
+            transcript: transcript,
             bitrate: None
         }
     }
 
     pub fn auto_adjust_gain(&self) -> f32 {
-        if let Some(stats) = self.stats.as_ref() {
-            let db_gain_diff = -26.0 - (stats.peak_db);
-            let gain = 10.0f32.powf(db_gain_diff / 20.0) - 1.0;
-            1.0 + gain * 0.75
-
-        } else {
-            1.0
-        }
-    }
-
-    pub fn with_transcript(mut self, transcript: String) -> Effect {
-        self.transcript = Some(transcript);
-        self
+        let db_gain_diff = -26.0 - (self.stats.peak_db);
+        let gain = 10.0f32.powf(db_gain_diff / 20.0) - 1.0;
+        1.0 + gain * 0.75
     }
 
     pub fn to_path_str(&self) -> &str {
         self.path.to_str().unwrap_or("")
     }
 
-    pub fn uploader(&self) -> Option<&String> {
-        self.uploader.as_ref()
+    pub fn uploader(&self) -> Option<&str> {
+        if self.uploader.is_empty() {
+            None
+
+        } else {
+            Some(&self.uploader)
+        }
     }
 
-    pub fn transcript(&self) -> Option<&String> {
-        self.transcript.as_ref()
+    pub fn transcript(&self) -> &str {
+        &self.transcript
     }
 
     pub fn bitrate(&self) -> i16 {
@@ -75,7 +71,7 @@ impl Effect {
             path: self.path.clone(),
             stats: self.stats.clone(),
             uploader: self.uploader.clone(),
-            transcript: None,
+            transcript: "".to_string(),
             bitrate: Some(bitrate)
         }
     }
@@ -89,7 +85,7 @@ impl Clone for Effect {
             path: self.path.clone(),
             stats: self.stats.clone(),
             uploader: self.uploader.clone(),
-            transcript: None,
+            transcript: "".to_string(),
             bitrate: self.bitrate
         }
     }
@@ -99,7 +95,7 @@ impl Clone for Effect {
 // Traits ---------------------------------------------------------------------
 impl fmt::Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(ref uploader) = self.uploader {
+        if let Some(uploader) = self.uploader() {
             write!(f, "[Effect {} by {}]", self.name, uploader)
 
         } else {
