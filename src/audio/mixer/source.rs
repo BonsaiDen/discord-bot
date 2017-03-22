@@ -28,7 +28,7 @@ impl MixerSource {
         effect: Effect,
         action: ActionOption
 
-    ) -> Result<MixerSource, ()> {
+    ) -> Result<MixerSource, (Effect, ActionOption)> {
         let filename = effect.to_path_str().to_string();
         if let Ok(stream) = flac::StreamReader::<File>::from_file(&filename) {
             info!("[Mixer] Multiplier: {}", effect.auto_adjust_gain());
@@ -43,7 +43,7 @@ impl MixerSource {
             })
 
         } else {
-            Err(())
+            Err((effect, action))
         }
     }
 

@@ -30,6 +30,7 @@ impl EffectRegistry {
         self.load_effects(config);
     }
 
+    // TODO cleanup and fix error handling
     pub fn rename_effect(
         &mut self,
         config: &ServerConfig,
@@ -207,16 +208,16 @@ impl EffectRegistry {
 
     ) -> Effect {
 
-        let mut path = PathBuf::new();
-        path.push(config.effects_path.clone());
-
-        if effect.uploader.is_empty() {
-            path.push(effect.name.clone());
+        let name = if effect.uploader.is_empty() {
+            effect.name.clone()
 
         } else {
-            path.push(format!("{}.{}.", effect.name, effect.uploader));
-        }
+            format!("{}.{}.", effect.name, effect.uploader.replace("#", "_"))
+        };
 
+        let mut path = PathBuf::new();
+        path.push(config.effects_path.clone());
+        path.push(name);
         path.set_extension("flac");
 
         Effect::new(
@@ -238,45 +239,6 @@ impl EffectRegistry {
 
 
 // Helpers --------------------------------------------------------------------
-fn download_file(
-    mut directory: PathBuf,
-    name: &str,
-    url: &str,
-    nickname: Option<&str>,
-    ext: &str
-
-) -> Result<PathBuf, String> {
-
-    if let Some(nickname) = nickname {
-        directory.push(&format!("{}.{}.{}", name, nickname, ext));
-
-    } else {
-        directory.push(&format!("{}.{}", name, ext));
-    }
-
-    let client = Client::new();
-    client.get(url)
-        .header(Connection::close())
-        .send()
-        .map_err(|err| err.to_string())
-        .and_then(|mut resp| {
-            let mut buffer = Vec::<u8>::new();
-            resp.read_to_end(&mut buffer)
-                .map_err(|err| err.to_string())
-                .map(|_| buffer)
-        })
-        .and_then(|buffer| {
-            File::create(directory.clone())
-                .map_err(|err| err.to_string())
-                .and_then(|mut file| {
-                    file.write_all(&buffer)
-                        .map_err(|err| err.to_string())
-                        .and_then(|_| Ok(directory))
-                })
-        })
-
-}
-
 fn analyze_flac(flac_path: &PathBuf) -> Result<EffectStat, String> {
     StreamReader::<File>::from_file(flac_path.to_str().unwrap_or(""))
         .map_err(|_| "Failed to open flac file.".to_string())
@@ -314,6 +276,45 @@ fn analyze_flac_stream(stream: StreamReader<File>) -> EffectStat {
         silent_start_samples: 0,
         silent_end_samples: sample_count - last_active_sample
     }
+
+}
+
+fn download_file(
+    mut directory: PathBuf,
+    name: &str,
+    url: &str,
+    nickname: Option<&str>,
+    ext: &str
+
+) -> Result<PathBuf, String> {
+
+    if let Some(nickname) = nickname {
+        directory.push(&format!("{}.{}.{}", name, nickname, ext));
+
+    } else {
+        directory.push(&format!("{}.{}", name, ext));
+    }
+
+    let client = Client::new();
+    client.get(url)
+        .header(Connection::close())
+        .send()
+        .map_err(|err| err.to_string())
+        .and_then(|mut resp| {
+            let mut buffer = Vec::<u8>::new();
+            resp.read_to_end(&mut buffer)
+                .map_err(|err| err.to_string())
+                .map(|_| buffer)
+        })
+        .and_then(|buffer| {
+            File::create(directory.clone())
+                .map_err(|err| err.to_string())
+                .and_then(|mut file| {
+                    file.write_all(&buffer)
+                        .map_err(|err| err.to_string())
+                        .and_then(|_| Ok(directory))
+                })
+        })
 
 }
 

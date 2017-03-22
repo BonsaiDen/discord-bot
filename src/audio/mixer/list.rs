@@ -1,3 +1,7 @@
+// STD Dependencies -----------------------------------------------------------
+use std::fmt;
+
+
 // Internal Dependencies ------------------------------------------------------
 use ::action::ActionOption;
 use ::effect::Effect;
@@ -20,7 +24,7 @@ impl MixerList {
         };
 
         list.effects.reverse();
-        list.udpate_and_complete();
+        list.update_and_complete();
         list
 
     }
@@ -33,7 +37,7 @@ impl MixerList {
         self.source.as_mut()
     }
 
-    pub fn udpate_and_complete(&mut self) -> Option<(Effect, ActionOption)> {
+    pub fn update_and_complete(&mut self) -> Option<(Effect, ActionOption)> {
 
         let mut completed_effect = None;
 
@@ -49,11 +53,22 @@ impl MixerList {
             // Check if there is another, valid effect which should be played
             while let Some(effect) = self.effects.pop() {
 
-                // Use the first valid file as the next source
-                if let Ok(source) = MixerSource::new(effect.0, effect.1) {
-                    self.source = Some(source);
-                    break;
-                }
+                match MixerSource::new(effect.0, effect.1) {
+
+                    // Use the first valid effect as the next source
+                    Ok(source) => {
+                        self.source = Some(source);
+                        break;
+                    },
+
+                    // If we failed to load the effect we return it immediately
+                    // so the list doesn't get stuck
+                    Err(effect) => {
+                        warn!("{} Failed to load effect {:?}", self, effect.0);
+                        completed_effect = Some(effect);
+                        break;
+                    }
+                };
 
             }
         }
@@ -71,5 +86,11 @@ impl MixerList {
         }
     }
 
+}
+
+impl fmt::Display for MixerList {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[MixerList {} effect(s)]", self.effects.len())
+    }
 }
 

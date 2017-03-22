@@ -205,7 +205,7 @@ impl Mixer {
 
             // Update the list to play the next effect and return any previously
             // finished effect
-            if let Some(effect) = list.udpate_and_complete() {
+            if let Some(effect) = list.update_and_complete() {
                 self.event_queue.send(
                     MixerEvent::Completed(effect.0, effect.1)
 
