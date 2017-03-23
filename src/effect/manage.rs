@@ -105,15 +105,12 @@ impl EffectRegistry {
             Some(uploader),
             "flac"
 
-        ).map_err(|err| {
-            err.to_string()
+        ).and_then(|effect_path| {
+            analyze_flac(&effect_path).map_err(|err| {
+                err.to_string()
 
-        }).and_then(|effect_path| {
-
-            // TODO dry error handling
-            if let Ok(stats) = analyze_flac(&effect_path) {
-
-                let new_effect = NewEffectModel {
+            }).and_then(|stats| {
+                diesel::insert(&NewEffectModel {
                     server_id: &config.table_id,
                     name: name,
                     uploader: uploader,
@@ -122,29 +119,27 @@ impl EffectRegistry {
                     silent_start_samples: stats.silent_start_samples as i32,
                     silent_end_samples: stats.silent_end_samples as i32,
                     transcript: ""
-                };
 
-                if diesel::insert(&new_effect).into(effectTable).execute(&config.connection).is_ok() {
+                }).into(effectTable)
+                  .execute(&config.connection)
+                  .and_then(|_| {
+
                     Ok(self.reload(config))
 
-                } else {
-                    fs::remove_file(effect_path).map_err(|err| {
-                        err.to_string()
+                }).map_err(|_| {
+                    "Failed to analyze uploaded flac file.".to_string()
+                })
 
-                    }).and_then(|_| {
-                        Err("Failed to analyze uploaded flac file.".to_string())
-                    })
-                }
-
-            } else {
+            }).map_err(|err| {
                 fs::remove_file(effect_path).map_err(|err| {
                     err.to_string()
 
-                }).and_then(|_| {
-                    Err("Failed to analyze uploaded flac file.".to_string())
-                })
-            }
+                }).ok();
+                err
+            })
 
+        }).map_err(|err| {
+            err.to_string()
         })
 
     }

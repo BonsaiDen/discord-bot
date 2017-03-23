@@ -77,7 +77,7 @@ impl Handler {
                 &command.message,
                 format!(
                     "Cannot add a greeting when there are no effects matching `{}` on {}.",
-                    nickname, command.server.name
+                    effect_name, command.server.name
                 )
             )
         }
@@ -93,7 +93,7 @@ impl Handler {
                 )
             )
 
-        } else if command.server.has_greeting(nickname) {
+        } else if !command.server.has_greeting(nickname) {
             MessageActions::Send::private(
                 &command.message,
                 format!(

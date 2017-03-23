@@ -14,11 +14,13 @@ use ::db::schema::users::table as userTable;
 impl Server {
 
     pub fn list_bans(&self) -> Vec<User> {
-        userTable.filter(server_id.eq(&self.config.table_id))
-                 .filter(is_banned.eq(true))
-                 .order(user_nickname)
-                 .load::<User>(&self.config.connection)
-                 .unwrap_or_else(|_| vec![])
+        userTable.filter(
+            server_id.eq(&self.config.table_id)
+
+        ).filter(is_banned.eq(true))
+         .order(user_nickname)
+         .load::<User>(&self.config.connection)
+         .unwrap_or_else(|_| vec![])
     }
 
     pub fn add_ban(&mut self, nickname: &str) -> bool {
@@ -42,40 +44,28 @@ impl Server {
 
         }
 
-        // Ban user
-        let q = userTable.filter(server_id.eq(&self.config.table_id))
-                         .filter(user_nickname.eq(nickname))
-                         .filter(is_banned.eq(false));
-
-        if q.count().get_result(&self.config.connection).unwrap_or(0) > 0 {
-            diesel::update(q)
-                   .set(is_banned.eq(true))
-                   .execute(&self.config.connection)
-                   .expect("add_ban failed to update database");
-            true
-
-        } else {
-            false
-        }
+        self.update_user(nickname, true)
 
     }
 
     pub fn remove_ban(&mut self, nickname: &str) -> bool {
+        self.update_user(nickname, false)
+    }
+
+    fn update_user(&self, nickname: &str, set_banned: bool) -> bool {
         let q = userTable.filter(server_id.eq(&self.config.table_id))
                          .filter(user_nickname.eq(nickname))
-                         .filter(is_banned.eq(true));
+                         .filter(is_banned.eq(!set_banned));
 
         if q.count().get_result(&self.config.connection).unwrap_or(0) > 0 {
             diesel::update(q)
-                   .set(is_banned.eq(false))
-                   .execute(&self.config.connection)
-                   .expect("remove_ban failed to update database");
+                   .set(is_banned.eq(set_banned))
+                   .execute(&self.config.connection).ok();
             true
 
         } else {
             false
         }
-
     }
 
 }

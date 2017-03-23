@@ -11,6 +11,7 @@ use discord::model::ServerId;
 // External Dependencies ------------------------------------------------------
 use diesel::Connection;
 use diesel::sqlite::SqliteConnection;
+use diesel::connection::SimpleConnection;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -39,7 +40,7 @@ impl ServerConfig {
 
         ServerConfig {
             table_id: format!("{}", server_id),
-            connection: establish_connection(),
+            connection: establish_connection().expect("Failed to establish database connection."),
             effects_path: effects_path,
             recordings_path: recordings_path
         }
@@ -56,22 +57,25 @@ impl fmt::Debug for ServerConfig {
 
 
 // Helpers --------------------------------------------------------------------
-fn establish_connection() -> SqliteConnection {
+fn establish_connection() -> Result<SqliteConnection, String> {
+    env::var("DATABASE_URL").map_err(|err| {
+        err.to_string()
 
-    use diesel::connection::SimpleConnection;
+    }).and_then(|url| {
+        SqliteConnection::establish(&url).map_err(|err| {
+            err.to_string()
+        })
 
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+    }).and_then(|connection| {
+        connection.batch_execute(
+            "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;"
 
-    let connection = SqliteConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url));
+        ).map_err(|err| {
+            err.to_string()
 
-    connection.batch_execute(
-        "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;"
-
-    ).expect("Failed to set pragmas.");
-
-    connection
-
+        }).and_then(|_| {
+            Ok(connection)
+        })
+    })
 }
 
