@@ -284,7 +284,7 @@ fn download_file(
 ) -> Result<PathBuf, String> {
 
     if let Some(nickname) = nickname {
-        directory.push(&format!("{}.{}.{}", name, nickname, ext));
+        directory.push(&format!("{}.{}.{}", name, nickname.replace("#", "_"), ext));
 
     } else {
         directory.push(&format!("{}.{}", name, ext));
