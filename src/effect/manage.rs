@@ -9,6 +9,7 @@ use std::io::{Read, Write};
 use clock_ticks;
 use diesel;
 use diesel::prelude::*;
+use diesel::Connection as DieselConnection;
 use hyper::Client;
 use hyper::header::Connection;
 use flac::{ReadStream, StreamReader, StreamIter};
@@ -30,7 +31,6 @@ impl EffectRegistry {
         self.load_effects(config);
     }
 
-    // TODO cleanup and fix error handling
     pub fn rename_effect(
         &mut self,
         config: &ServerConfig,
@@ -52,19 +52,15 @@ impl EffectRegistry {
             new_effect_path.set_extension("flac");
         }
 
-        // TODO use a transaction?
         let q = effectTable.filter(server_id.eq(&config.table_id)).filter(effect_name.eq(effect.name.clone()));
-        if diesel::update(q).set(effect_name.eq(name)).execute(&config.connection).is_ok() {
-            fs::rename(effect.to_path_str(), new_effect_path).map_err(|err| {
-                err.to_string()
+        config.connection.transaction::<_, Box<::std::error::Error>, _>(|| {
+            try!(diesel::delete(q).execute(&config.connection));
+            try!(fs::rename(effect.to_path_str(), new_effect_path));
+            Ok(self.reload_effects(config))
 
-            }).and_then(|_| {
-                Ok(self.reload(config))
-            })
-
-        } else {
-            Err("Failed to rename effect in database.".to_string())
-        }
+        }).map_err(|_| {
+           "Failed to rename effect from database.".to_string()
+        })
 
     }
 
@@ -74,19 +70,15 @@ impl EffectRegistry {
         effect: &Effect
 
     ) -> Result<(), String> {
-        // TODO use a transaction?
         let q = effectTable.filter(server_id.eq(&config.table_id)).filter(effect_name.eq(&effect.name));
-        if diesel::delete(q).execute(&config.connection).is_ok() {
-            fs::remove_file(effect.to_path_str()).map_err(|err| {
-                err.to_string()
+        config.connection.transaction::<_, Box<::std::error::Error>, _>(|| {
+            try!(diesel::delete(q).execute(&config.connection));
+            try!(fs::remove_file(effect.to_path_str()));
+            Ok(self.reload_effects(config))
 
-            }).and_then(|_| {
-                Ok(self.reload(config))
-            })
-
-        } else {
-            Err("Failed to delete effect from database.".to_string())
-        }
+        }).map_err(|_| {
+           "Failed to delete effect from database.".to_string()
+        })
     }
 
     pub fn download_effect(
@@ -124,7 +116,7 @@ impl EffectRegistry {
                   .execute(&config.connection)
                   .and_then(|_| {
 
-                    Ok(self.reload(config))
+                    Ok(self.reload_effects(config))
 
                 }).map_err(|_| {
                     "Failed to analyze uploaded flac file.".to_string()
@@ -165,7 +157,7 @@ impl EffectRegistry {
             err.to_string()
 
         }).and_then(|_| {
-            Ok(self.reload(config))
+            Ok(self.reload_effects(config))
         })
         */
         Ok(())

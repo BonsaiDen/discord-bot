@@ -5,7 +5,6 @@
 #[macro_use]
 extern crate log;
 extern crate flac;
-extern crate toml;
 extern crate rand;
 extern crate hyper;
 extern crate chrono;
