@@ -34,6 +34,7 @@ mod config;
 mod effect;
 mod greeting;
 mod member;
+mod uploader;
 mod voice;
 
 

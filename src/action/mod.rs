@@ -15,6 +15,7 @@ pub mod greeting;
 pub mod message;
 pub mod recording;
 pub mod server;
+pub mod uploader;
 // pub mod timed;
 
 
@@ -26,6 +27,7 @@ pub use self::greeting as GreetingActions;
 pub use self::message as MessageActions;
 pub use self::recording as RecordingActions;
 pub use self::server as ServerActions;
+pub use self::uploader as UploaderActions;
 //pub use self::timed::Delayed as DelayedAction;
 
 

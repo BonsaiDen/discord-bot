@@ -68,6 +68,8 @@ mod reload;
 mod rename;
 mod sounds;
 mod silence;
+mod uploader;
+mod uploaders;
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -172,6 +174,8 @@ impl<'a> Command<'a> {
                 "greetings" => self.run(greetings::Handler),
                 "ban" => self.run(ban::Handler),
                 "bans" => self.run(bans::Handler),
+                "uploader" => self.run(uploader::Handler),
+                "uploaders" => self.run(uploaders::Handler),
                 "pin" => self.run(pin::Handler),
                 "ip" => self.run(ip::Handler),
                 "leave" => self.run(leave::Handler),
