@@ -8,7 +8,7 @@ use diesel::prelude::*;
 
 
 // Internal Dependencies ------------------------------------------------------
-use super::Server;
+use super::super::Server;
 use ::db::models::{Alias, NewAlias};
 use ::db::schema::aliases::dsl::{server_id, name as alias_name};
 use ::db::schema::aliases::table as aliasTable;

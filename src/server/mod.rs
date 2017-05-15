@@ -27,14 +27,11 @@ use ::effect::EffectRegistry;
 
 
 // Modules --------------------------------------------------------------------
-mod alias;
-mod ban;
+mod actions;
 mod channel;
 mod config;
 mod effect;
-mod greeting;
 mod member;
-mod uploader;
 mod voice;
 
 

@@ -1,7 +1,7 @@
 // External Dependencies ------------------------------------------------------
-use chrono;
 use log;
 use log::{LogRecord, LogLevel, LogMetadata, SetLoggerError, LogLevelFilter};
+use chrono;
 
 
 // Logger Implementation ------------------------------------------------------

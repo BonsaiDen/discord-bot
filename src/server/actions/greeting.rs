@@ -8,12 +8,12 @@ use diesel::prelude::*;
 
 
 // Internal Dependencies ------------------------------------------------------
+use super::super::Server;
 use ::bot::BotConfig;
 use ::effect::Effect;
 use ::db::models::{Greeting, NewGreeting};
 use ::db::schema::greetings::dsl::{server_id, nickname as greeting_nickname};
 use ::db::schema::greetings::table as greetingsTable;
-use super::Server;
 
 
 // Server Greeting Interface --------------------------------------------------

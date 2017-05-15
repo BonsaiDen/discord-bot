@@ -82,7 +82,7 @@ impl Member {
         }
     }
 
-    pub fn should_be_greeted(&mut self, bot_config: &BotConfig ) -> bool {
+    pub fn should_be_greeted(&mut self, bot_config: &BotConfig) -> bool {
         if self.voice_channel_id.is_some() {
             let now = clock_ticks::precise_time_ms();
             let time = self.last_voice_leave
