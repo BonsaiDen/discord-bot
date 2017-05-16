@@ -12,7 +12,7 @@ use ::action::{ActionHandler, ActionGroup};
 use clock_ticks;
 
 
-// Delayed Action Implementation ------------------------------------------------------
+// Delayed Action Implementation ----------------------------------------------
 pub struct Action {
     delay_until: u64,
     action: Option<Box<ActionHandler>>
@@ -21,7 +21,7 @@ pub struct Action {
 
 impl Action {
 
-    fn new(delay_millis: u64, action: Box<ActionHandler>) -> Box<Action> {
+    pub fn new(delay_millis: u64, action: Box<ActionHandler>) -> Box<Action> {
         Box::new(Action {
             delay_until: clock_ticks::precise_time_ms() + delay_millis,
             action: Some(action)

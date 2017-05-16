@@ -15,7 +15,7 @@ use discord::model::{
 // Internal Dependencies ------------------------------------------------------
 use upload::Upload;
 use command::Command;
-use action::ActionGroup;
+use action::{ActionGroup, DebugActions, TimedActions};
 use audio::MixerEvent;
 use server::Server;
 use core::{
@@ -86,13 +86,16 @@ impl Bot {
     fn run(mut self, token: String, config: BotConfig) {
 
         let mut queue = EventQueue::new(token);
+        let mut actions: ActionGroup = vec![
+            TimedActions::Periodic::new(1000, DebugActions::Log::new("Hello World".to_string()))
+        ];
 
         'main: loop {
 
             for event in queue.events() {
 
                 // Handle Events
-                let mut actions = match event {
+                actions.extend(match event {
                     Event::Disconnected => {
                         break 'main;
                     },
@@ -103,7 +106,7 @@ impl Bot {
                         self.timer_event(&config, &mut queue)
                     },
                     _ => self.event(event)
-                };
+                });
 
                 // Run resulting Actions
                 let mut delayed_actions = vec![];

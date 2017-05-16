@@ -1,9 +1,7 @@
 // Modules --------------------------------------------------------------------
-mod delayed;
-mod periodic;
+mod log;
 
 
 // Re-Exports -----------------------------------------------------------------
-pub use self::delayed::Action as Delayed;
-pub use self::periodic::Action as Periodic;
+pub use self::log::Action as Log;
 
