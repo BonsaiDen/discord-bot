@@ -81,3 +81,19 @@ pub struct NewEffect<'a> {
     pub transcript: &'a str
 }
 
+#[derive(Queryable)]
+pub struct Streamer {
+    pub id: i32,
+    pub server_id: String,
+    pub twitch_nick: String,
+    pub is_online: bool
+}
+
+#[derive(Insertable)]
+#[table_name="streamers"]
+pub struct NewStreamer<'a> {
+    pub server_id: &'a str,
+    pub twitch_nick: &'a str,
+    pub is_online: bool
+}
+

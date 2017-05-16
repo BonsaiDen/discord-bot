@@ -68,6 +68,8 @@ mod reload;
 mod rename;
 mod sounds;
 mod silence;
+mod streamer;
+mod streamers;
 mod uploader;
 mod uploaders;
 
@@ -174,6 +176,8 @@ impl<'a> Command<'a> {
                 "greetings" => self.run(greetings::Handler),
                 "ban" => self.run(ban::Handler),
                 "bans" => self.run(bans::Handler),
+                "streamer" => self.run(streamer::Handler),
+                "streamers" => self.run(streamers::Handler),
                 "uploader" => self.run(uploader::Handler),
                 "uploaders" => self.run(uploaders::Handler),
                 "pin" => self.run(pin::Handler),

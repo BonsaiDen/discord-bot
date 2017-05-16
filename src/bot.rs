@@ -15,7 +15,7 @@ use discord::model::{
 // Internal Dependencies ------------------------------------------------------
 use upload::Upload;
 use command::Command;
-use action::{ActionGroup, DebugActions, TimedActions};
+use action::{ActionGroup, TimedActions, TwitchActions};
 use audio::MixerEvent;
 use server::Server;
 use core::{
@@ -86,9 +86,7 @@ impl Bot {
     fn run(mut self, token: String, config: BotConfig) {
 
         let mut queue = EventQueue::new(token);
-        let mut actions: ActionGroup = vec![
-            TimedActions::Periodic::new(1000, DebugActions::Log::new("Hello World".to_string()))
-        ];
+        let mut actions: ActionGroup = vec![];
 
         'main: loop {
 
@@ -172,6 +170,12 @@ impl Bot {
                 } else if config.server_whitelist.contains(&server_id) {
                     let server = Server::from_possible_server(server, config, queue);
                     self.servers.insert(server.id, server);
+                    return vec![
+                        TimedActions::Periodic::new(
+                            30000,
+                            TwitchActions::OnlineCheck::new(server_id)
+                        )
+                    ];
                 }
 
             },
