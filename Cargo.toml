@@ -17,6 +17,9 @@ chrono = "0.3"
 hyper = "0.9"
 rand = "*"
 log = "*"
+serde = "1.0.0"
+serde_derive = "1.0.0"
+serde_json = "1.0.0"
 app_dirs = "^1.1.1"
 clippy = { version = "*", optional = true }
 

@@ -2,11 +2,10 @@
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
 // Crates ---------------------------------------------------------------------
-#[macro_use]
-extern crate log;
+#[macro_use] extern crate log;
 extern crate flac;
 extern crate rand;
-extern crate hyper;
+#[macro_use] extern crate hyper;
 extern crate chrono;
 extern crate dotenv;
 extern crate discord;
@@ -14,10 +13,11 @@ extern crate app_dirs;
 extern crate vorbis_enc;
 extern crate clock_ticks;
 extern crate edit_distance;
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_codegen;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
+#[macro_use] extern crate serde_derive;
+extern crate serde_json;
+extern crate serde;
 
 
 // STD Dependencies -----------------------------------------------------------
@@ -75,6 +75,8 @@ fn main() {
 
         }).unwrap_or_else(Vec::new),
         config_path: app_dirs::app_root(AppDataType::UserConfig, &APP_INFO).expect("Failed to retrieve configuration directory."),
+        twitch_client_id: env::var("TWITCH_CLIENT_ID").unwrap_or_else(|_| "".into()),
+        twitch_update_interval: env::var("TWITCH_UPDATE_INTERVAL").unwrap_or_else(|_| "".into()).parse().unwrap_or(0),
         effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(10000),
         greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(30000),
         flac_max_file_size: env::var("FLAC_MAX_FILE_SIZE").unwrap_or_else(|_| "".into()).parse().unwrap_or(2048 * 1024),

@@ -31,6 +31,8 @@ pub struct BotConfig {
     pub bot_nickname: String,
     pub server_whitelist: Vec<ServerId>,
     pub config_path: PathBuf,
+    pub twitch_client_id: String,
+    pub twitch_update_interval: u64,
     pub effect_playback_separation_ms: u64,
     pub greeting_separation_ms: u64,
     pub flac_max_file_size: u64,
@@ -44,6 +46,8 @@ impl Default for BotConfig {
             bot_nickname: "".to_string(),
             server_whitelist: Vec::new(),
             config_path: PathBuf::from(""),
+            twitch_client_id: "".to_string(),
+            twitch_update_interval: 0,
             effect_playback_separation_ms: 0,
             greeting_separation_ms: 0,
             flac_max_file_size: 0,
@@ -170,12 +174,15 @@ impl Bot {
                 } else if config.server_whitelist.contains(&server_id) {
                     let server = Server::from_possible_server(server, config, queue);
                     self.servers.insert(server.id, server);
-                    return vec![
-                        TimedActions::Periodic::new(
-                            30000,
-                            TwitchActions::OnlineCheck::new(server_id)
-                        )
-                    ];
+
+                    if config.twitch_update_interval > 0 && !config.twitch_client_id.is_empty() {
+                        return vec![
+                            TimedActions::Periodic::new(
+                                config.twitch_update_interval * 1000,
+                                TwitchActions::OnlineCheck::new(server_id)
+                            )
+                        ];
+                    }
                 }
 
             },

@@ -2,6 +2,10 @@
 use std::fmt;
 
 
+// Discord Dependencies -------------------------------------------------------
+use discord::model::ChannelId;
+
+
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
 use ::text_util::list_lines;
@@ -28,7 +32,16 @@ impl ActionHandler for Action {
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
             let streamers: Vec<String> = server.list_streamers().into_iter().map(|streamer| {
-                format!("- https://twitch.tv/{}`", streamer.twitch_nick)
+
+                let channel_id: u64 = streamer.channel_id.parse().expect("Invalid channel id!");
+                let channel_id = ChannelId(channel_id);
+
+                format!(
+                    "`{}` (https://twitch.tv/{}) in **#{}**",
+                    streamer.twitch_nick,
+                    streamer.twitch_nick,
+                    server.channel_name(&channel_id).unwrap_or_else(|| "".to_string())
+                )
 
             }).collect();
 

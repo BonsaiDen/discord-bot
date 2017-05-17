@@ -3,7 +3,7 @@ use std::fmt;
 
 
 // Discord Dependencies -------------------------------------------------------
-use discord::model::ServerId;
+use discord::model::{ChannelId, ServerId};
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -27,12 +27,51 @@ impl Action {
 
 impl ActionHandler for Action {
 
-    fn run(&mut self, bot: &mut Bot, _: &BotConfig, _: &mut EventQueue) -> ActionGroup {
+    fn run(&mut self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
         if let Some(server) = bot.get_server(&self.server_id) {
-            println!("Check Stream online status for {:?}", self.server_id);
             for streamer in server.list_streamers() {
-                println!("Checking {}...", streamer.twitch_nick);
+
+                match super::twitch::get_stream(config, &streamer.twitch_nick) {
+                    Ok(stream) => {
+
+                        let is_online = stream.stream_type == "live";
+                        if is_online != streamer.is_online {
+
+                            let channel_id: u64 = streamer.channel_id.parse().expect("Invalid channel id!");
+                            let channel_id = ChannelId(channel_id);
+
+                            info!("[Twitch] Channel is: {:?}", server.channel_name(&channel_id));
+                            if is_online {
+                                info!(
+                                    "[Twitch] \"{}\" is now online, playing \"{}\" in {}p for {} viewers.",
+                                    streamer.twitch_nick,
+                                    stream.game,
+                                    stream.resolution,
+                                    stream.viewers
+                                );
+
+                            } else {
+                                info!(
+                                    "[Twitch] \"{}\" is now offline.",
+                                    streamer.twitch_nick
+                                );
+                            }
+
+                            server.update_streamer_online_state(&streamer.twitch_nick, is_online);
+
+                        } else {
+                            info!("[Twitch] No state change for \"{}\"", streamer.twitch_nick);
+                        }
+
+                    },
+                    Err(_) => warn!(
+                        "[Twitch] Failed to query twitch API for \"{}\" on {}.",
+                        streamer.twitch_nick,
+                        server.name
+                    )
+                }
+
             }
         }
 

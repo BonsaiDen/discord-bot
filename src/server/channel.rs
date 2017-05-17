@@ -39,6 +39,15 @@ impl Server {
         self.channels.get(channel_id).map(|channel| channel.name.to_string())
     }
 
+    pub fn get_channel_id(&self, channel_name: &str) -> Option<ChannelId> {
+        for channel in self.channels.values() {
+            if channel.name == channel_name {
+                return Some(channel.id);
+            }
+        }
+        None
+    }
+
     pub fn channel_voice_members(&self, channel_id: &ChannelId) -> Vec<&Member> {
         self.channels.get(channel_id).map(|channel| {
             channel.voice_users().iter().filter_map(|user_id| {

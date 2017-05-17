@@ -3,6 +3,10 @@ use diesel;
 use diesel::prelude::*;
 
 
+// Discord Dependencies -------------------------------------------------------
+use discord::model::ChannelId;
+
+
 // Internal Dependencies ------------------------------------------------------
 use super::super::Server;
 use ::db::models::{Streamer, NewStreamer};
@@ -23,9 +27,10 @@ impl Server {
         ).count().get_result(&self.config.connection).unwrap_or(0) > 0
     }
 
-    pub fn add_streamer(&mut self, name: &str) {
+    pub fn add_streamer(&mut self, name: &str, channel_id: ChannelId) {
         diesel::insert(&NewStreamer {
             server_id: &self.config.table_id,
+            channel_id: channel_id.to_string(),
             twitch_nick: name,
             is_online: false
 
@@ -44,7 +49,7 @@ impl Server {
         ).execute(&self.config.connection).ok();
     }
 
-    fn update_streamer_state(&self, name: &str, set_online: bool) -> bool {
+    pub fn update_streamer_online_state(&self, name: &str, set_online: bool) -> bool {
         if self.has_streamer(name) {
             diesel::update(
                 streamerTable.filter(

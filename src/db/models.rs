@@ -85,6 +85,7 @@ pub struct NewEffect<'a> {
 pub struct Streamer {
     pub id: i32,
     pub server_id: String,
+    pub channel_id: String,
     pub twitch_nick: String,
     pub is_online: bool
 }
@@ -93,6 +94,7 @@ pub struct Streamer {
 #[table_name="streamers"]
 pub struct NewStreamer<'a> {
     pub server_id: &'a str,
+    pub channel_id: String,
     pub twitch_nick: &'a str,
     pub is_online: bool
 }
