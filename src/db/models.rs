@@ -87,7 +87,8 @@ pub struct Streamer {
     pub server_id: String,
     pub channel_id: String,
     pub twitch_nick: String,
-    pub is_online: bool
+    pub is_online: bool,
+    pub last_online: i32
 }
 
 #[derive(Insertable)]
@@ -96,6 +97,7 @@ pub struct NewStreamer<'a> {
     pub server_id: &'a str,
     pub channel_id: String,
     pub twitch_nick: &'a str,
-    pub is_online: bool
+    pub is_online: bool,
+    pub last_online: i32
 }
 

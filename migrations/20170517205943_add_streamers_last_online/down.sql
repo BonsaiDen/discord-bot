@@ -1,0 +1,1 @@
+ALTER TABLE streamers ADD COLUMN last_online INTEGER NOT NULL DEFAULT 0;

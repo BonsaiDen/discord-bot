@@ -1,4 +1,5 @@
 // External Dependencies ------------------------------------------------------
+use chrono;
 use diesel;
 use diesel::prelude::*;
 
@@ -10,7 +11,7 @@ use discord::model::ChannelId;
 // Internal Dependencies ------------------------------------------------------
 use super::super::Server;
 use ::db::models::{Streamer, NewStreamer};
-use ::db::schema::streamers::dsl::{server_id, twitch_nick, is_online};
+use ::db::schema::streamers::dsl::{server_id, twitch_nick, is_online, last_online};
 use ::db::schema::streamers::table as streamerTable;
 
 
@@ -32,7 +33,8 @@ impl Server {
             server_id: &self.config.table_id,
             channel_id: channel_id.to_string(),
             twitch_nick: name,
-            is_online: false
+            is_online: false,
+            last_online: 0
 
         }).into(streamerTable).execute(&self.config.connection).ok();
     }
@@ -51,6 +53,8 @@ impl Server {
 
     pub fn update_streamer_online_state(&self, name: &str, set_online: bool) -> bool {
         if self.has_streamer(name) {
+
+            let ts = chrono::UTC::now().timestamp() as i32;
             diesel::update(
                 streamerTable.filter(
                     server_id.eq(&self.config.table_id)
@@ -59,10 +63,11 @@ impl Server {
                     twitch_nick.eq(name)
                 )
 
-            ).set(is_online.eq(set_online)).execute(
+            ).set((is_online.eq(set_online), last_online.eq(ts))).execute(
                 &self.config.connection
 
             ).ok();
+
             true
 
         } else {

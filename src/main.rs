@@ -8,6 +8,7 @@ extern crate rand;
 #[macro_use] extern crate hyper;
 extern crate chrono;
 extern crate dotenv;
+extern crate rayon;
 extern crate discord;
 extern crate app_dirs;
 extern crate vorbis_enc;
