@@ -32,11 +32,14 @@ impl ActionHandler for Action {
 
             if let Some(channel_id) = server.get_channel_id(&self.channel_name) {
 
-                if super::twitch::get_stream(config, &self.name).is_ok() {
+                if let Ok(channel) = super::twitch::get_channel(config, &self.name) {
                     server.add_streamer(&self.name, channel_id);
                     MessageActions::Send::private(&self.message, format!(
-                        "Twitch streamer `{}` is now being watched on {}, with notifcations send to **#{}**.",
-                        self.name, server.name, self.channel_name
+                        "Twitch streamer **{}** ({}) is now being watched on {}, with notifcations send to **#{}**.",
+                        channel.display_name,
+                        channel.url,
+                        server.name,
+                        self.channel_name
                     ))
 
                 } else {
