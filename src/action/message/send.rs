@@ -53,6 +53,14 @@ impl Action {
         })
     }
 
+    pub fn single_public_channel(channel_id: &ChannelId, content: String) -> Box<Action> {
+        Box::new(Action {
+            user_id: None,
+            channel_id: Some(channel_id.clone()),
+            content: content
+        })
+    }
+
 }
 
 impl ActionHandler for Action {

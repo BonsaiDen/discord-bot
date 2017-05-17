@@ -9,7 +9,7 @@ use discord::model::{ChannelId, ServerId};
 // Internal Dependencies ------------------------------------------------------
 use ::bot::{Bot, BotConfig};
 use ::core::EventQueue;
-use ::action::{ActionHandler, ActionGroup};
+use ::action::{ActionHandler, ActionGroup, MessageActions};
 
 
 // Stream Online Check Implementation -----------------------------------------
@@ -29,6 +29,7 @@ impl ActionHandler for Action {
 
     fn run(&mut self, bot: &mut Bot, config: &BotConfig, _: &mut EventQueue) -> ActionGroup {
 
+        let mut messages: ActionGroup = Vec::new();
         if let Some(server) = bot.get_server(&self.server_id) {
             for streamer in server.list_streamers() {
 
@@ -49,6 +50,22 @@ impl ActionHandler for Action {
                                     stream.game,
                                     stream.resolution,
                                     stream.viewers
+                                );
+
+                                messages.push(
+                                    MessageActions::Send::single_public_channel(&channel_id, format!(
+                                        "Twitch streamer **{}** is now online, playing **{}** in {}p for {} viewers!",
+                                        streamer.twitch_nick,
+                                        stream.game,
+                                        stream.resolution,
+                                        stream.viewers
+                                    ))
+                                );
+                                messages.push(
+                                    MessageActions::Send::single_public_channel(&channel_id, format!(
+                                        "https://twitch.tv/{}",
+                                        streamer.twitch_nick,
+                                    ))
                                 );
 
                             } else {
@@ -75,7 +92,7 @@ impl ActionHandler for Action {
             }
         }
 
-        vec![]
+        messages
 
     }
 
