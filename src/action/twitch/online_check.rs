@@ -94,7 +94,7 @@ fn check_stream(config: &BotConfig, streamer: Streamer) -> (Streamer, Option<boo
                     let actions: ActionGroup = if now > streamer.last_online + 60 {
                         vec![
                             MessageActions::Send::single_public_channel(&channel_id, format!(
-                                "Twitch streamer **{}** is now online, playing **{}** in {}p for {} viewers!",
+                                "@here Twitch streamer **{}** is now online, playing **{}** in {}p for {} viewers!",
                                 streamer.twitch_nick,
                                 stream.game,
                                 stream.resolution,
