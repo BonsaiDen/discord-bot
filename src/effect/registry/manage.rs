@@ -20,7 +20,7 @@ use ::server::ServerConfig;
 use ::db::schema::effects::table as effectTable;
 use ::db::schema::effects::dsl::{server_id, name as effect_name};
 use ::db::models::{Effect as EffectModel, NewEffect as NewEffectModel};
-use super::{EffectRegistry, Effect, EffectStat};
+use ::effect::{EffectRegistry, Effect, EffectStat};
 
 
 // Public Effect Management Interface -----------------------------------------

@@ -3,7 +3,7 @@ mod add_streamer;
 mod list_streamers;
 mod online_check;
 mod remove_streamer;
-mod twitch;
+mod stream;
 
 
 // Re-Exports -----------------------------------------------------------------

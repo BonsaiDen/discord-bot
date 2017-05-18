@@ -71,7 +71,7 @@ impl fmt::Display for Action {
 }
 
 fn check_stream(config: &BotConfig, streamer: Streamer) -> (Streamer, Option<bool>, ActionGroup) {
-    match super::twitch::get_stream(config, &streamer.twitch_nick) {
+    match super::stream::get_stream(config, &streamer.twitch_nick) {
         Ok(stream) => {
 
             let is_online = stream.stream_type == "live";
@@ -91,7 +91,6 @@ fn check_stream(config: &BotConfig, streamer: Streamer) -> (Streamer, Option<boo
 
                     // Wait at least 60 seconds between every online announcement
                     let now = chrono::UTC::now().timestamp() as i32;
-                    println!("{} vs. {}", now, streamer.last_online);
                     let actions: ActionGroup = if now > streamer.last_online + 60 {
                         vec![
                             MessageActions::Send::single_public_channel(&channel_id, format!(

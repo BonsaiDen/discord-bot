@@ -17,7 +17,7 @@ impl Server {
     pub fn add_channel(&mut self, channel: Channel) {
         let channel_id = channel.id;
         self.channels.insert(channel_id, channel);
-        info!("{} {} added", self, self.channels.get(&channel_id).unwrap());
+        info!("{} {} added", self, self.channels[&channel_id]);
     }
 
     pub fn update_channel(&mut self, channel: Channel) {
@@ -26,7 +26,7 @@ impl Server {
             if let Some(server_channel) = self.channels.get_mut(&channel.id) {
                 server_channel.update(channel);
             }
-            info!("[{}] {} updated", self, self.channels.get(&channel_id).unwrap());
+            info!("[{}] {} updated", self, self.channels[&channel_id]);
         }
     }
 
