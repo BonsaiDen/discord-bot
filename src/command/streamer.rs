@@ -69,11 +69,11 @@ impl Handler {
     }
 
     fn remove(&self, command: &Command, twitch_nick: &str) -> ActionGroup {
-        if command.server.has_streamer(twitch_nick) {
+        if !command.server.has_streamer(twitch_nick) {
             MessageActions::Send::private(
                 &command.message,
                 format!(
-                    "An twitch streamer named `{}` is not being watched on {}.",
+                    "A twitch streamer named `{}` is not being watched on {}.",
                     twitch_nick, command.server.name
                 )
             )

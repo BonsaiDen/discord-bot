@@ -69,7 +69,7 @@ impl Handler {
     }
 
     fn remove(&self, command: &Command, alias: &str) -> ActionGroup {
-        if command.server.has_alias(alias) {
+        if !command.server.has_alias(alias) {
             MessageActions::Send::private(
                 &command.message,
                 format!(
