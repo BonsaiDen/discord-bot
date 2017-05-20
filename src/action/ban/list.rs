@@ -36,7 +36,10 @@ impl ActionHandler for Action {
 
             } else {
                 let title = format!("Banned Users on {}", server.name);
-                let user_nicknames: Vec<String> = bans.into_iter().map(|user| user.nickname).collect();
+                let user_nicknames: Vec<String> = bans.into_iter().map(|user| {
+                    format!("`{}`", user.nickname)
+
+                }).collect();
                 list_lines(&title, &user_nicknames, 25).into_iter().map(|text| {
                     MessageActions::Send::single_private(&self.message, text) as Box<ActionHandler>
 

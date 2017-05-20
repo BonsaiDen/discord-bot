@@ -28,7 +28,7 @@ impl ActionHandler for Action {
         if let Some(server) = bot.get_server(&self.message.server_id) {
 
             let aliases: Vec<String> = server.list_aliases().into_iter().map(|alias| {
-                format!("- `{}` -> `{}`", alias.name, alias.effect_names.split(' ').collect::<Vec<&str>>().join("`, `"))
+                format!("`{}` -> `{}`", alias.name, alias.effect_names.split(' ').collect::<Vec<&str>>().join("`, `"))
 
             }).collect();
 

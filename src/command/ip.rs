@@ -37,6 +37,17 @@ impl CommandHandler for Handler {
 
     }
 
+    fn help(&self) -> &str {
+        "Post the bot's current IP address onto the channel."
+    }
+
+    fn usage(&self, command: Command) -> ActionGroup {
+        MessageActions::Send::private(
+            &command.message,
+            "Usage: `!ip`".to_string()
+        )
+    }
+
 }
 
 

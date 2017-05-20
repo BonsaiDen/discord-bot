@@ -24,6 +24,16 @@ impl CommandHandler for Handler {
         ]
     }
 
-}
+    fn help(&self) -> &str {
+        "Stop all currently playing sound effects."
+    }
 
+    fn usage(&self, command: Command) -> ActionGroup {
+        MessageActions::Send::private(
+            &command.message,
+            "Usage: `!silence`".to_string()
+        )
+    }
+
+}
 

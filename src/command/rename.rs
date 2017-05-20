@@ -43,6 +43,10 @@ impl CommandHandler for Handler {
         }
     }
 
+    fn help(&self) -> &str {
+        "Ranem existing sound effects."
+    }
+
     fn usage(&self, command: Command) -> ActionGroup {
         MessageActions::Send::public(
             &command.message,

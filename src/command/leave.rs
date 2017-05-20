@@ -24,5 +24,16 @@ impl CommandHandler for Handler {
         ]
     }
 
+    fn help(&self) -> &str {
+        "Force the the bot to leave its current voice channel."
+    }
+
+    fn usage(&self, command: Command) -> ActionGroup {
+        MessageActions::Send::private(
+            &command.message,
+            "Usage: `!leave`".to_string()
+        )
+    }
+
 }
 

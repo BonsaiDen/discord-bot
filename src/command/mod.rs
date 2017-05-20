@@ -1,5 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fmt;
+use std::collections::HashMap;
 
 
 // Macros ---------------------------------------------------------------------
@@ -51,12 +52,9 @@ macro_rules! delete_command_message {
 
 // Modules --------------------------------------------------------------------
 mod alias;
-mod aliases;
 mod ban;
-mod bans;
 mod delete;
 mod greeting;
-mod greetings;
 mod help;
 mod ip;
 mod leave;
@@ -64,14 +62,36 @@ mod not_found;
 mod pin;
 mod play;
 mod record;
-mod reload;
 mod rename;
 mod sounds;
 mod silence;
 mod streamer;
-mod streamers;
 mod uploader;
-mod uploaders;
+
+
+// Statics --------------------------------------------------------------------
+lazy_static! {
+    static ref COMMANDS: HashMap<&'static str, Box<CommandHandler>> = {
+        let mut m: HashMap<&'static str, Box<CommandHandler>> = HashMap::new();
+        m.insert("alias", Box::new(alias::Handler));
+        m.insert("ban", Box::new(ban::Handler));
+        m.insert("delete", Box::new(delete::Handler));
+        m.insert("greeting", Box::new(greeting::Handler));
+        m.insert("ip", Box::new(ip::Handler));
+        m.insert("leave", Box::new(leave::Handler));
+        m.insert("pin", Box::new(pin::Handler));
+        m.insert("s", Box::new(play::Handler::instant()));
+        m.insert("q", Box::new(play::Handler::queued()));
+        m.insert("help", Box::new(help::Handler));
+        m.insert("record", Box::new(record::Handler));
+        m.insert("rename", Box::new(rename::Handler));
+        m.insert("silence", Box::new(silence::Handler));
+        m.insert("sounds", Box::new(sounds::Handler));
+        m.insert("streamer", Box::new(streamer::Handler));
+        m.insert("uploader", Box::new(uploader::Handler));
+        m
+    };
+}
 
 
 // Internal Dependencies ------------------------------------------------------
@@ -88,7 +108,8 @@ pub struct Command<'a> {
     pub message: Message,
     pub server: &'a Server,
     pub member: &'a Member,
-    pub config: &'a BotConfig
+    pub config: &'a BotConfig,
+    pub all_commands: &'a HashMap<&'static str, Box<CommandHandler>>
 }
 
 
@@ -110,11 +131,12 @@ impl<'a> Command<'a> {
             message: message,
             server: server,
             member: member,
-            config: config
+            config: config,
+            all_commands: &COMMANDS
         }
     }
 
-    fn run<T: CommandHandler>(self, handler: T) -> ActionGroup {
+    fn run(self, handler: &Box<CommandHandler>) -> ActionGroup {
 
         let argc = self.arguments.len();
         let mut actions: ActionGroup = vec![];
@@ -160,34 +182,14 @@ impl<'a> Command<'a> {
     pub fn process(self) -> ActionGroup {
 
         if self.member.is_banned {
-            return vec![];
+            vec![]
+
+        } else if let Some(handler) = COMMANDS.get(self.name.as_str()) {
+            self.run(handler)
 
         } else {
-            match self.name.as_str() {
-                "s" => self.run(play::Handler::instant()),
-                "q" => self.run(play::Handler::queued()),
-                "delete" => self.run(delete::Handler),
-                "rename" => self.run(rename::Handler),
-                "sounds" => self.run(sounds::Handler),
-                "silence" => self.run(silence::Handler),
-                "alias" => self.run(alias::Handler),
-                "aliases" => self.run(aliases::Handler),
-                "greeting" => self.run(greeting::Handler),
-                "greetings" => self.run(greetings::Handler),
-                "ban" => self.run(ban::Handler),
-                "bans" => self.run(bans::Handler),
-                "streamer" => self.run(streamer::Handler),
-                "streamers" => self.run(streamers::Handler),
-                "uploader" => self.run(uploader::Handler),
-                "uploaders" => self.run(uploaders::Handler),
-                "pin" => self.run(pin::Handler),
-                "ip" => self.run(ip::Handler),
-                "leave" => self.run(leave::Handler),
-                "reload" => self.run(reload::Handler),
-                "record" => self.run(record::Handler),
-                "help" => self.run(help::Handler),
-                _ => self.run(not_found::Handler)
-            }
+            let not_found: Box<CommandHandler> = Box::new(not_found::Handler);
+            self.run(&not_found)
         }
 
     }
@@ -209,13 +211,13 @@ impl<'a> fmt::Display for Command<'a> {
 }
 
 // Command Implementation Trait -----------------------------------------------
-pub trait CommandHandler {
+pub trait CommandHandler: Sync {
 
     fn run(&self, _: Command) -> ActionGroup;
 
-    fn usage(&self, _: Command) -> ActionGroup {
-        vec![]
-    }
+    fn usage(&self, _: Command) -> ActionGroup;
+
+    fn help(&self) -> &str;
 
     fn require_unique_server(&self) -> bool {
         false

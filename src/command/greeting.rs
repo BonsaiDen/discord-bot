@@ -9,7 +9,7 @@ pub struct Handler;
 impl CommandHandler for Handler {
 
     require_unique_server!();
-    require_min_arguments!(2);
+    require_min_arguments!(1);
     delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
@@ -24,15 +24,25 @@ impl CommandHandler for Handler {
                     &command.arguments[2]
                 )
             },
-            "remove" => self.remove(&command, &command.arguments[1]),
+            "remove" => if command.arguments.len() < 2 {
+                self.usage(command)
+
+            } else {
+                self.remove(&command, &command.arguments[1])
+            },
+            "list" => vec![GreetingActions::List::new(command.message)],
             _ => self.usage(command)
         }
+    }
+
+    fn help(&self) -> &str {
+        "List, add or remove customs user greetings."
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
         MessageActions::Send::private(
             &command.message,
-            "Usage: `!greeting add <user#ident> <effect_name>` or `!greeting remove <user#ident>`".to_string()
+            "Usage: `!greeting add <user#ident> <effect_name>` or `!greeting remove <user#ident>` or `!greeting list`".to_string()
         )
     }
 

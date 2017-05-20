@@ -20,5 +20,13 @@ impl CommandHandler for Handler {
         )
     }
 
+    fn help(&self) -> &str {
+        ""
+    }
+
+    fn usage(&self, _: Command) -> ActionGroup {
+        vec![]
+    }
+
 }
 

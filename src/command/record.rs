@@ -21,6 +21,10 @@ impl CommandHandler for Handler {
         }
     }
 
+    fn help(&self) -> &str {
+        "Start or stop voice recording in your current voice channel."
+    }
+
     fn usage(&self, command: Command) -> ActionGroup {
         MessageActions::Send::private(
             &command.message,

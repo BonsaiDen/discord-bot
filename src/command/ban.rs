@@ -10,21 +10,36 @@ impl CommandHandler for Handler {
 
     require_unique_server!();
     require_server_admin!();
-    require_min_arguments!(2);
+    require_min_arguments!(1);
     delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
         match command.arguments[0].as_str() {
-            "add" => self.add(&command, &command.arguments[1]),
-            "remove" => self.remove(&command, &command.arguments[1]),
+            "add" => if command.arguments.len() < 2 {
+                self.usage(command)
+
+            } else {
+                self.add(&command, &command.arguments[1])
+            },
+            "remove" => if command.arguments.len() < 2 {
+                self.usage(command)
+
+            } else {
+                self.remove(&command, &command.arguments[1])
+            },
+            "list" => vec![BanActions::List::new(command.message)],
             _ => self.usage(command)
         }
+    }
+
+    fn help(&self) -> &str {
+        "List, add or remove banned users."
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
         MessageActions::Send::private(
             &command.message,
-            "Usage: `!ban add <user#ident>` or `!ban remove <user#ident>`".to_string()
+            "Usage: `!ban add <user#ident>` or `!ban remove <user#ident>` or `!ban list`".to_string()
         )
     }
 

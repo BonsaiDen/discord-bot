@@ -13,6 +13,7 @@ extern crate discord;
 extern crate app_dirs;
 extern crate vorbis_enc;
 extern crate clock_ticks;
+#[macro_use] extern crate lazy_static;
 extern crate edit_distance;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_codegen;

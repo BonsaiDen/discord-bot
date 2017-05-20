@@ -34,5 +34,16 @@ impl CommandHandler for Handler {
 
     }
 
+    fn help(&self) -> &str {
+        "Pin the bot onto the current channel."
+    }
+
+    fn usage(&self, command: Command) -> ActionGroup {
+        MessageActions::Send::private(
+            &command.message,
+            "Usage: `!pin`".to_string()
+        )
+    }
+
 }
 

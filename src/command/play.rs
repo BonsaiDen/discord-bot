@@ -3,6 +3,42 @@ use ::command::{Command, CommandHandler};
 use ::action::{ActionGroup, EffectActions, MessageActions};
 
 
+// Statics --------------------------------------------------------------------
+static USAGE_TEXT_S: &str = "Usage: `!s <effect_name>, ...`
+
+Instantly starts the playback of one or more requested sound effects.
+
+Each **`effect_name`** can be one of the following patterns:
+
+- `full_sound_name` - Only the exactly matching effect.
+- `prefix` - A random effect which name starts with the specified prefix, followed by an underscore.
+- `*wildcard` - A random effect which *ends* with the specified wildcard.
+- `wildcard*` - A random effect which *starts* with the specified wildcard.
+- `*wildcard*` - A random effect which *contains* the specified wildcard.
+
+If more than one effect is requested, a playback queue will be created and the effects will be played back one after another.
+
+If another queue is created via the `!s` command while the previous one is still active, at most two effects will be played simultaneously.";
+
+static USAGE_TEXT_Q: &str = "Usage: `!q <effect_name>, ...`
+
+Queues starts the playback of one or more requested sound effects.
+
+*Playback will only start once all other currently playing / requested sound effects have finished.*
+
+Each **`effect_name`** can be one of the following patterns:
+
+- `full_sound_name` - Only the exactly matching effect.
+- `prefix` - A random effect which name starts with the specified prefix, followed by an underscore.
+- `*wildcard` - A random effect which *ends* with the specified wildcard.
+- `wildcard*` - A random effect which *starts* with the specified wildcard.
+- `*wildcard*` - A random effect which *contains* the specified wildcard.
+
+If more than one effect is requested, a playback queue will be created and the effects will be played back one after another.
+
+If another queue is created via the `!q` command while the previous one is still active, at most two effects will be played simultaneously.";
+
+
 // Command Implementation -----------------------------------------------------
 pub struct Handler {
     queued: bool
@@ -95,6 +131,24 @@ impl CommandHandler for Handler {
 
         }
 
+    }
+
+    fn help(&self) -> &str {
+        if self.queued {
+            "Queue a sound effect to be played in current voice channel."
+
+        } else {
+            "Instantly play a sound effect in your current voice channel."
+        }
+    }
+
+    fn usage(&self, command: Command) -> ActionGroup {
+        if self.queued {
+            MessageActions::Send::private(&command.message, USAGE_TEXT_Q.to_string())
+
+        } else {
+            MessageActions::Send::private(&command.message, USAGE_TEXT_S.to_string())
+        }
     }
 
 }

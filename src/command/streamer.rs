@@ -9,7 +9,7 @@ pub struct Handler;
 impl CommandHandler for Handler {
 
     require_unique_server!();
-    require_min_arguments!(2);
+    require_min_arguments!(1);
     delete_command_message!();
 
     fn run(&self, command: Command) -> ActionGroup {
@@ -24,18 +24,28 @@ impl CommandHandler for Handler {
                     &command.arguments[2]
                 )
             },
-            "remove" => self.remove(
-                &command,
-                &command.arguments[1],
-            ),
+            "remove" => if command.arguments.len() < 2 {
+                self.usage(command)
+
+            } else {
+                self.remove(
+                    &command,
+                    &command.arguments[1],
+                )
+            },
+            "list" => vec![TwitchActions::ListStreamers::new(command.message)],
             _ => self.usage(command)
         }
+    }
+
+    fn help(&self) -> &str {
+        "List, add or remove watched twitch streamers."
     }
 
     fn usage(&self, command: Command) -> ActionGroup {
         MessageActions::Send::private(
             &command.message,
-            "Usage: `!streamer add <twitch_nick> <channel_name>` or `!streamer remove <twitch_nick>`".to_string()
+            "Usage: `!streamer add <twitch_nick> <channel_name>` or `!streamer remove <twitch_nick>` or `!streamer list`".to_string()
         )
     }
 

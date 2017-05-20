@@ -45,7 +45,7 @@ pub fn list_lines(
 
         let offset = index * line_size + 1;
         format!(
-            "\n__{} {} - {} of {}:__\n\n - {}",
+            "\n__{}  |  {} - {} of {}:__\n\n - {}",
             title,
             offset,
             cmp::min(offset + (line_size - 1), total),

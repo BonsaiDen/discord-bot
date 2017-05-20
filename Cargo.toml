@@ -12,6 +12,7 @@ edit-distance = "1.0.0"
 diesel = { version = "0.11.0", features = ["sqlite"] }
 diesel_codegen = { version = "0.11.0", features = ["sqlite"] }
 clock_ticks = "*"
+lazy_static = "*"
 dotenv = "*"
 chrono = "0.3"
 hyper = "0.9"
