@@ -58,7 +58,7 @@ impl Server {
                 // Mark effect as played
                 self.effects.played_effect(&effect.name);
 
-                (effect.clone_with_bitrate(bitrate), None)
+                (effect.clone(), None)
 
             }).collect();
 
@@ -68,6 +68,7 @@ impl Server {
             }
 
             if let Some(queue) = self.mixer_commands.as_mut() {
+                queue.send(MixerCommand::SetBitrate(bitrate)).ok();
                 queue.send(if queued {
                     MixerCommand::QueueEffects(effects)
 
@@ -79,6 +80,12 @@ impl Server {
 
         }
 
+    }
+
+    pub fn update_effect_bitrate(&mut self, bitrate: u64) {
+        if let Some(queue) = self.mixer_commands.as_mut() {
+            queue.send(MixerCommand::SetBitrate(bitrate)).ok();
+        }
     }
 
     pub fn silence_active_effects(&mut self) {

@@ -37,6 +37,7 @@ static MIXER_DELAY_MILLIS: u64 = 5000;
 pub enum MixerCommand {
     PlayEffects(Vec<(Effect, ActionOption)>),
     QueueEffects(Vec<(Effect, ActionOption)>),
+    SetBitrate(u64),
     ClearDelay,
     ClearQueue
 }
@@ -58,7 +59,8 @@ pub struct Mixer {
     active_source_lists: Vec<MixerList>,
     queued_source_lists: VecDeque<MixerList>,
     audio_buffer: [i16; 960 * 2],
-    delay: u64
+    delay: u64,
+    bitrate: u64
 }
 
 
@@ -73,6 +75,7 @@ impl Mixer {
 
         let mut rng = thread_rng();
         let mixer = Mixer {
+            id: rng.next_u64(),
             command_queue: command_queue,
             command_buffer: VecDeque::new(),
             event_queue: event_queue,
@@ -80,7 +83,7 @@ impl Mixer {
             queued_source_lists: VecDeque::new(),
             audio_buffer: [0; 960 * 2],
             delay: MIXER_DELAY_MILLIS,
-            id: rng.next_u64()
+            bitrate: 96
         };
 
         info!("{} Created", mixer);
@@ -131,6 +134,12 @@ impl Mixer {
         while let Ok(command) = self.command_queue.try_recv() {
             match command {
 
+                // Update mixing bitrate
+                MixerCommand::SetBitrate(bitrate) => {
+                    info!("{} Bitrate set to {}kbits", self, bitrate);
+                    self.bitrate = bitrate;
+                }
+
                 // Clear audio delay once we joined the channel
                 MixerCommand::ClearDelay => {
                     info!("{} Delay cleared", self);
@@ -177,6 +186,7 @@ impl Mixer {
                 let channels = source.channels();
                 let channel_offset = 3 - channels;
                 if let Some(written) = source.read_frame(
+                    self.bitrate,
                     &mut self.audio_buffer[..960 * channels]
                 ) {
 

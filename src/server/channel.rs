@@ -23,9 +23,19 @@ impl Server {
     pub fn update_channel(&mut self, channel: Channel) {
         let channel_id = channel.id;
         if self.channels.contains_key(&channel_id) {
-            if let Some(server_channel) = self.channels.get_mut(&channel.id) {
+
+            let bitrate = if let Some(server_channel) = self.channels.get_mut(&channel.id) {
                 server_channel.update(channel);
+                Some(server_channel.bitrate())
+
+            } else {
+                None
+            };
+
+            if let Some(bitrate) = bitrate {
+                self.update_effect_bitrate(bitrate);
             }
+
             info!("[{}] {} updated", self, self.channels[&channel_id]);
         }
     }

@@ -16,7 +16,6 @@ pub struct MixerSource {
     active: bool,
     channels: usize,
     gain: f32,
-    bitrate: i16,
     effect: Option<Effect>,
     action: ActionOption,
     stream: flac::StreamIter<flac::ReadStream<File>, i64>,
@@ -36,7 +35,6 @@ impl MixerSource {
                 active: true,
                 channels: stream.info().channels as usize,
                 gain: effect.auto_adjust_gain(),
-                bitrate: effect.bitrate(),
                 effect: Some(effect),
                 action: action,
                 stream: flac::StreamIter::new(stream),
@@ -59,18 +57,102 @@ impl MixerSource {
         self.channels
     }
 
-    pub fn read_frame(&mut self, buffer: &mut [i16]) -> Option<usize> {
+    pub fn read_frame(&mut self, bitrate: u64, buffer: &mut [i16]) -> Option<usize> {
 
         let gain = self.gain;
         let (mut written, mut iter) = (0, &mut self.stream);
 
-        if self.bitrate < 64 {
-            let rate = 8 * (96 - self.bitrate) as i16;
+        // Downsampling
+        // TODO reduce code required
+        if bitrate <= 16 {
+
+            buffer[0] = 0;
+
+            let rc = 1.0 / (4000.0 * 2.0 * 3.14);
+            let dt = 1.0 / 48000.0;
+            let alpha = dt / (rc + dt);
+
             for s in iter.take(buffer.len()).map(|s| {
-                (((s as f32) * gain) as i16 / rate) * rate
+                (s as f32) * gain
 
             }) {
-                buffer[written] = s;
+                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let i = written / 12 * 12;
+                buffer[i] = b as i16;
+                buffer[i + 1] = b as i16;
+                buffer[i + 2] = b as i16;
+                buffer[i + 3] = b as i16;
+                buffer[i + 4] = b as i16;
+                buffer[i + 5] = b as i16;
+                buffer[i + 6] = b as i16;
+                buffer[i + 7] = b as i16;
+                buffer[i + 8] = b as i16;
+                buffer[i + 9] = b as i16;
+                buffer[i + 10] = b as i16;
+                buffer[i + 11] = b as i16;
+                written += 1;
+            }
+
+        } else if bitrate <= 32 {
+
+            buffer[0] = 0;
+
+            let rc = 1.0 / (8000.0 * 2.0 * 3.14);
+            let dt = 1.0 / 48000.0;
+            let alpha = dt / (rc + dt);
+
+            for s in iter.take(buffer.len()).map(|s| {
+                (s as f32) * gain
+
+            }) {
+                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let i = written / 6 * 6;
+                buffer[i] = b as i16;
+                buffer[i + 1] = b as i16;
+                buffer[i + 2] = b as i16;
+                buffer[i + 3] = b as i16;
+                buffer[i + 4] = b as i16;
+                buffer[i + 5] = b as i16;
+                written += 1;
+            }
+
+        } else if bitrate <= 48 {
+
+            buffer[0] = 0;
+
+            let rc = 1.0 / (12000.0 * 2.0 * 3.14);
+            let dt = 1.0 / 48000.0;
+            let alpha = dt / (rc + dt);
+
+            for s in iter.take(buffer.len()).map(|s| {
+                (s as f32) * gain
+
+            }) {
+                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let i = written / 4 * 4;
+                buffer[i] = b as i16;
+                buffer[i + 1] = b as i16;
+                buffer[i + 2] = b as i16;
+                buffer[i + 3] = b as i16;
+                written += 1;
+            }
+
+        } else if bitrate <= 63 {
+
+            buffer[0] = 0;
+
+            let rc = 1.0 / (24000.0 * 2.0 * 3.14);
+            let dt = 1.0 / 48000.0;
+            let alpha = dt / (rc + dt);
+
+            for s in iter.take(buffer.len()).map(|s| {
+                (s as f32) * gain
+
+            }) {
+                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let i = written / 2 * 2;
+                buffer[i] = b as i16;
+                buffer[i + 1] = b as i16;
                 written += 1;
             }
 
