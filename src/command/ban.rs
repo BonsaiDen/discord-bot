@@ -19,13 +19,19 @@ impl CommandHandler for Handler {
                 self.usage(command)
 
             } else {
-                self.add(&command, &command.arguments[1])
+                self.add(
+                    &command,
+                    command.server.name_to_nickname(&command.arguments[1])
+                )
             },
             "remove" => if command.arguments.len() < 2 {
                 self.usage(command)
 
             } else {
-                self.remove(&command, &command.arguments[1])
+                self.remove(
+                    &command,
+                    command.server.name_to_nickname(&command.arguments[1])
+                )
             },
             "list" => vec![BanActions::List::new(command.message)],
             _ => self.usage(command)

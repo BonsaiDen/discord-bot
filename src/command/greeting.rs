@@ -20,7 +20,7 @@ impl CommandHandler for Handler {
             } else {
                 self.add(
                     &command,
-                    &command.arguments[1],
+                    command.server.name_to_nickname(&command.arguments[1]),
                     &command.arguments[2]
                 )
             },
@@ -28,7 +28,10 @@ impl CommandHandler for Handler {
                 self.usage(command)
 
             } else {
-                self.remove(&command, &command.arguments[1])
+                self.remove(
+                    &command,
+                    command.server.name_to_nickname(&command.arguments[1])
+                )
             },
             "list" => vec![GreetingActions::List::new(command.message)],
             _ => self.usage(command)

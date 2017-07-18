@@ -1,3 +1,7 @@
+// STD Dependencies -----------------------------------------------------------
+use std::ascii::AsciiExt;
+
+
 // Discord Dependencies -------------------------------------------------------
 use discord::model::{
     ChannelId,
@@ -35,6 +39,32 @@ impl Server {
 
     pub fn has_member(&self, member_id: &UserId) -> bool {
         self.members.contains_key(member_id)
+    }
+
+    pub fn name_to_nickname<'a>(&'a self, name: &'a str) -> &'a str {
+
+        // Quickly pass through user#discriminator combinations
+        if name.contains('#') {
+            name
+
+        // Otherwise try to match against the user's name
+        } else {
+
+            let members: Vec<&Member>  = self.members.values().filter(|m| {
+                m.name.eq_ignore_ascii_case(name)
+
+            }).collect();
+
+            // If there is one exact match return the user's nickname
+            if members.len() == 1 {
+                members[0].nickname.as_str()
+
+            } else {
+                name
+            }
+
+        }
+
     }
 
     pub fn has_member_with_nickname(&self, nickname: &str) -> bool {
