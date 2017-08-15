@@ -101,7 +101,7 @@ fn check_stream(config: &BotConfig, streamer: Streamer) -> (Streamer, Option<boo
                                 stream.viewers
                             )),
                             MessageActions::Send::single_public_channel(&channel_id, format!(
-                                "https://twitch.tv/{}",
+                                "__https://twitch.tv/{}__",
                                 streamer.twitch_nick,
                             ))
                         ]
