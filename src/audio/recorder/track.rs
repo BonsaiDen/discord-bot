@@ -170,12 +170,12 @@ impl ChunkPacket {
 
         let channels = self.channels;
         let mono_samples = self.data.len() / channels;
-        let max_sample_value = i16::max_value() as f32;
+        let max_sample_value = f32::from(i16::max_value());
 
         for e in 0..mono_samples {
             let i = e * channels;
             if channels == 2 {
-                let s = (self.data[i] + self.data[i + 1]) as f32;
+                let s = f32::from(self.data[i] + self.data[i + 1]);
                 self.data[e] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
 
             } else {
@@ -199,7 +199,7 @@ pub struct VoicePacket {
 
 
 // Helpers --------------------------------------------------------------------
-const MAX_SEQ_NUMBER: u16 = 65535;
+const MAX_SEQ_NUMBER: u16 = 65_535;
 
 fn seq_is_more_recent(a: u16, b: u16) -> bool {
     (a > b) && (a - b <= MAX_SEQ_NUMBER / 2) ||

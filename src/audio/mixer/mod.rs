@@ -169,7 +169,7 @@ impl Mixer {
     fn mix_sources(&mut self, buffer: &mut [i16]) -> usize {
 
         // Maximum possible sample value
-        let max_sample_value = i16::max_value() as f32;
+        let max_sample_value = f32::from(i16::max_value());
 
         // Clear buffer
         let samples = buffer.len();
@@ -198,12 +198,12 @@ impl Mixer {
                         let i = e * channel_offset;
 
                         // Left / Mono Sample
-                        let s = buffer[i] as f32 + self.audio_buffer[e] as f32;
+                        let s = f32::from(buffer[i]) + f32::from(self.audio_buffer[e]);
                         buffer[i] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
 
                         // Right Sample
                         if channels == 1 {
-                            let s = buffer[i + 1] as f32 + self.audio_buffer[e] as f32;
+                            let s = f32::from(buffer[i + 1]) + f32::from(self.audio_buffer[e]);
                             buffer[i + 1] = (compress(s / max_sample_value, 0.6) * max_sample_value) as i16;
                         }
 

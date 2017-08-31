@@ -64,7 +64,7 @@ impl Recorder {
 
             info!("[AudioWiter] Created");
 
-            let silence_buffer: Vec<i16> = iter::repeat(0).take(48000).collect();
+            let silence_buffer: Vec<i16> = iter::repeat(0).take(48_000).collect();
             let mut streams: HashMap<UserId, OggVorbisEncoder> = HashMap::new();
 
             fn write_silence(
@@ -74,8 +74,8 @@ impl Recorder {
             ) {
 
                 let silence_samples = silence_millis * 48;
-                let buffers = silence_samples / 48000;
-                let remainder = silence_samples % 48000;
+                let buffers = silence_samples / 48_000;
+                let remainder = silence_samples % 48_000;
 
                 for _ in 0..buffers {
                     stream.write_samples(silence_buffer).ok();
@@ -99,7 +99,7 @@ impl Recorder {
                     info!("[AudioWriter] Creating file \"{}\"...", filename);
 
                     let mut encoder = OggVorbisEncoder::new(filename).expect("[AudioWiter] Failed to open ogg file for recording.");
-                    encoder.initialize_with_vbr(1, 48000, 0.2).expect("[AudioWiter] Failed to initialize vorbis stream.");
+                    encoder.initialize_with_vbr(1, 48_000, 0.2).expect("[AudioWiter] Failed to initialize vorbis stream.");
                     encoder
 
                 });

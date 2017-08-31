@@ -51,14 +51,13 @@ impl MixerList {
             }
 
             // Check if there is another, valid effect which should be played
-            while let Some(effect) = self.effects.pop() {
+            if let Some(effect) = self.effects.pop() {
 
                 match MixerSource::new(effect.0, effect.1) {
 
                     // Use the first valid effect as the next source
                     Ok(source) => {
                         self.source = Some(source);
-                        break;
                     },
 
                     // If we failed to load the effect we return it immediately
@@ -66,7 +65,6 @@ impl MixerList {
                     Err(effect) => {
                         warn!("{} Failed to load effect {:?}", self, effect.0);
                         completed_effect = Some(effect);
-                        break;
                     }
                 };
 

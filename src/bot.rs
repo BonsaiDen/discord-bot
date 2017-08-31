@@ -167,7 +167,7 @@ impl Bot {
                 if self.servers.contains_key(&server_id) {
                     // In case of a client reconnect, also reconnect any existing
                     // voice connections
-                    if let Some(mut server) = self.servers.get_mut(&server_id) {
+                    if let Some(server) = self.servers.get_mut(&server_id) {
                         server.reconnect_voice(queue);
                     }
 

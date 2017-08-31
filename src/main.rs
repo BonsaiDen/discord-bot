@@ -19,7 +19,6 @@ extern crate edit_distance;
 #[macro_use] extern crate diesel_codegen;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
-extern crate serde;
 
 
 // STD Dependencies -----------------------------------------------------------
@@ -79,10 +78,10 @@ fn main() {
         config_path: app_dirs::app_root(AppDataType::UserConfig, &APP_INFO).expect("Failed to retrieve configuration directory."),
         twitch_client_id: env::var("TWITCH_CLIENT_ID").unwrap_or_else(|_| "".into()),
         twitch_update_interval: env::var("TWITCH_UPDATE_INTERVAL").unwrap_or_else(|_| "".into()).parse().unwrap_or(0),
-        effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(10000),
-        greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(30000),
+        effect_playback_separation_ms: env::var("EFFECT_PLAYBACK_SEPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(10_000),
+        greeting_separation_ms: env::var("USER_GREETING_SERPARATION").unwrap_or_else(|_| "".into()).parse().unwrap_or(30_000),
         flac_max_file_size: env::var("FLAC_MAX_FILE_SIZE").unwrap_or_else(|_| "".into()).parse().unwrap_or(2048 * 1024),
-        flac_sample_rate: 48000,
+        flac_sample_rate: 48_000,
         flac_bits_per_sample: 16
     };
 

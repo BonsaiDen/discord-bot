@@ -1,5 +1,6 @@
 // STD Dependencies -----------------------------------------------------------
 use std::fs::File;
+use std::f32::consts::PI;
 
 
 // External Dependencies ------------------------------------------------------
@@ -60,7 +61,7 @@ impl MixerSource {
     pub fn read_frame(&mut self, bitrate: u64, buffer: &mut [i16]) -> Option<usize> {
 
         let gain = self.gain;
-        let (mut written, mut iter) = (0, &mut self.stream);
+        let (mut written, iter) = (0, &mut self.stream);
 
         // Downsampling
         // TODO reduce code required
@@ -68,7 +69,7 @@ impl MixerSource {
 
             buffer[0] = 0;
 
-            let rc = 1.0 / (4000.0 * 2.0 * 3.14);
+            let rc = 1.0 / (4000.0 * 2.0 * PI);
             let dt = 1.0 / 48000.0;
             let alpha = dt / (rc + dt);
 
@@ -76,7 +77,7 @@ impl MixerSource {
                 (s as f32) * gain
 
             }) {
-                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let b = f32::from(buffer[written]) + (alpha * (s - f32::from(buffer[written])));
                 let i = written / 12 * 12;
                 buffer[i] = b as i16;
                 buffer[i + 1] = b as i16;
@@ -97,7 +98,7 @@ impl MixerSource {
 
             buffer[0] = 0;
 
-            let rc = 1.0 / (8000.0 * 2.0 * 3.14);
+            let rc = 1.0 / (8000.0 * 2.0 * PI);
             let dt = 1.0 / 48000.0;
             let alpha = dt / (rc + dt);
 
@@ -105,7 +106,7 @@ impl MixerSource {
                 (s as f32) * gain
 
             }) {
-                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let b = f32::from(buffer[written]) + (alpha * (s - f32::from(buffer[written])));
                 let i = written / 6 * 6;
                 buffer[i] = b as i16;
                 buffer[i + 1] = b as i16;
@@ -120,7 +121,7 @@ impl MixerSource {
 
             buffer[0] = 0;
 
-            let rc = 1.0 / (12000.0 * 2.0 * 3.14);
+            let rc = 1.0 / (12000.0 * 2.0 * PI);
             let dt = 1.0 / 48000.0;
             let alpha = dt / (rc + dt);
 
@@ -128,7 +129,7 @@ impl MixerSource {
                 (s as f32) * gain
 
             }) {
-                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let b = f32::from(buffer[written]) + (alpha * (s - f32::from(buffer[written])));
                 let i = written / 4 * 4;
                 buffer[i] = b as i16;
                 buffer[i + 1] = b as i16;
@@ -141,7 +142,7 @@ impl MixerSource {
 
             buffer[0] = 0;
 
-            let rc = 1.0 / (24000.0 * 2.0 * 3.14);
+            let rc = 1.0 / (24000.0 * 2.0 * PI);
             let dt = 1.0 / 48000.0;
             let alpha = dt / (rc + dt);
 
@@ -149,7 +150,7 @@ impl MixerSource {
                 (s as f32) * gain
 
             }) {
-                let b = buffer[written] as f32 + (alpha * (s - buffer[written] as f32));
+                let b = f32::from(buffer[written]) + (alpha * (s - f32::from(buffer[written])));
                 let i = written / 2 * 2;
                 buffer[i] = b as i16;
                 buffer[i + 1] = b as i16;
