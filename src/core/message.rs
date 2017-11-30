@@ -72,6 +72,7 @@ impl Message {
 
         } else {
             attachments.into_iter().map(|attachment| {
+                info!("Found attachment {:?}", attachment);
                 MessageContent::Upload(attachment, self)
 
             }).collect()

@@ -30,6 +30,7 @@ enum FileInfo {
         sample_rate: u32,
         bits_per_sample: u8
     },
+    Error(String),
     Text
 }
 
@@ -56,12 +57,16 @@ impl Upload {
         let path = Path::new(attachment.filename.as_str());
         let name = os_str_to_string(path.file_stem()).replace(".", "_");
         let ext = os_str_to_string(path.extension());
+        info!("[Upload] [Message] {:?}.{:?}", name, ext);
 
         Upload {
             name: name.to_string(),
             url: attachment.url.to_string(),
             info: if name.is_ascii() && name.len() >= 2 && ext == "flac" {
-                retrieve_flac_info(attachment.url.as_str()).ok()
+                match retrieve_flac_info(attachment.url.as_str()) {
+                    Ok(info) => Some(info),
+                    Err(err) => Some(FileInfo::Error(err))
+                }
 
             } else if name.is_ascii() && name.len() >= 2 && ext == "txt" {
                 Some(FileInfo::Text)
@@ -135,6 +140,14 @@ impl Upload {
                 ]
             }
 
+        } else if let Some(FileInfo::Error(message)) = self.info {
+            vec![
+                MessageActions::Send::single_public(
+                    &self.message,
+                    format!("Failed to parse uploaded file: {}", message)
+                )
+            ]
+
         } else if let Some(FileInfo::Text) = self.info {
             vec![
                 MessageActions::Send::single_public(
@@ -195,7 +208,7 @@ fn retrieve_flac_info(url: &str) -> Result<FileInfo, String> {
 
     let client = Client::new();
     client.get(url)
-        .header(Range::Bytes(vec![ByteRangeSpec::FromTo(0, 256)]))
+        .header(Range::Bytes(vec![ByteRangeSpec::FromTo(0, 512)]))
         .header(Connection::close())
         .send()
         .map_err(|err| err.to_string())
@@ -207,8 +220,9 @@ fn retrieve_flac_info(url: &str) -> Result<FileInfo, String> {
                 .map(|_| (length, header))
         })
         .and_then(|(length, header)| {
+            println!("[Upload] [FlacHeader] {:?}", header);
             Stream::<ByteStream>::from_buffer(&header[..])
-                .map_err(|_| "Failed to parse FLAC header.".to_string())
+                .map_err(|err| format!("Failed to parse FLAC header: {:?}", err))
                 .map(|stream| {
                     let stream_info = stream.info();
                     FileInfo::Flac {
