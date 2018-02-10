@@ -41,20 +41,30 @@ If another queue is created via the `!q` command while the previous one is still
 
 // Command Implementation -----------------------------------------------------
 pub struct Handler {
-    queued: bool
+    queued: bool,
+    prefixes: Option<Vec<String>>
 }
 
 impl Handler {
 
     pub fn instant() -> Handler {
         Handler {
-            queued: false
+            queued: false,
+            prefixes: None
         }
     }
 
     pub fn queued() -> Handler {
         Handler {
-            queued: true
+            queued: true,
+            prefixes: None
+        }
+    }
+
+    pub fn nippel() -> Handler {
+        Handler {
+            queued: true,
+            prefixes: Some(vec!["nippel".to_string()])
         }
     }
 
@@ -79,7 +89,7 @@ impl CommandHandler for Handler {
 
         } else {
 
-            let effects = command.server.map_effects(
+            let mut effects = command.server.map_effects(
                 &command.arguments[..],
                 false,
                 command.config
@@ -111,6 +121,15 @@ impl CommandHandler for Handler {
                 }
 
             } else if let Some(channel_id) = command.member.voice_channel_id {
+                if let Some(ref prefixes) = self.prefixes {
+                    let mut prefix_effects = command.server.map_effects(
+                        &prefixes,
+                        false,
+                        command.config
+                    );
+                    prefix_effects.append(&mut effects);
+                    effects = prefix_effects;
+                }
                 vec![EffectActions::Play::new(
                     command.message.server_id,
                     channel_id,

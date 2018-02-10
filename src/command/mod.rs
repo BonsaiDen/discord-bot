@@ -82,6 +82,7 @@ lazy_static! {
         m.insert("pin", Box::new(pin::Handler));
         m.insert("s", Box::new(play::Handler::instant()));
         m.insert("q", Box::new(play::Handler::queued()));
+        m.insert("n", Box::new(play::Handler::nippel()));
         m.insert("help", Box::new(help::Handler));
         m.insert("record", Box::new(record::Handler));
         m.insert("rename", Box::new(rename::Handler));
